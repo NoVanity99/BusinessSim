@@ -1,0 +1,15 @@
+{
+  "convenience": {
+    "name": "Convenience Store",
+    "description": "Shelves, fridges and a checkout. Simple, steady and a good first business.",
+    "color": "#4fc3a1",
+    "licenseCost": 400,
+    "unlockLevel": 1,
+    "minArea": 40,
+    "defaultHours": [7, 21],
+    "baseStorage": 80,
+    "defaultFloor": "floor_concrete",
+    "furniture": ["shelf", "rack", "fridge", "freezer", "register", "storage_rack", "plant", "lamp", "rug", "bin"],
+    "products": ["chips", "candy", "gum", "noodles", "bread", "newspaper", "toiletpaper", "batteries", "soda", "water", "energy", "milk", "sandwich", "icecream", "pizza"]
+  }
+}

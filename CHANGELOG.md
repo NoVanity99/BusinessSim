@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0 - Milestone 3: build mode and the convenience store
+
+- Open a business on any lot you hold; the setup fee covers the licence, floor, outer walls and a door.
+- Build mode: place furniture on the grid with a ghost preview, rotate (R), move, and sell back; drag to paint floors, walls and doors.
+- Furniture, products and shop types are defined in `src/data/furniture.json`, `products.json` and `shops.json`.
+- Wholesale ordering with case sizes, bulk discounts, standard and express delivery, and limited back-room storage.
+- Shelves, fridges and freezers hold specific product classes; assign a product per section and fill from storage.
+- Food expiry: perishable batches are tracked by date and discarded when they spoil.
+- Per-product pricing against a market price that drifts daily.
+- Checkout that the owner can staff personally (one in the whole city).
+- Lots are larger (6x8 tiles and up) so interiors have room for walls.
+
 ## 0.2.0 - Milestone 2: city, camera, time, renting
 
 - Generated city: street grid with sidewalks and crosswalks, 30 blocks, two parks, a beach, and about 150 lots of varied sizes.

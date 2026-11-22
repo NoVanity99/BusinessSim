@@ -3,7 +3,15 @@ import { bakeCity } from '../art/cityArt';
 import { SPEEDS, TILE } from '../core/constants';
 import { bus, toast } from '../core/events';
 import { clamp, money } from '../core/format';
-import { session } from '../core/state';
+import { session, shopOnLot } from '../core/state';
+import { resetUi, selectLot, selectObject, ui } from '../core/uiState';
+import { inLot, objectAt, footprint } from '../entities/Shop';
+import { driftMarket } from '../systems/economy/market';
+import { expireStock, processDeliveries } from '../systems/economy/stock';
+import { BuildTool } from './city/BuildTool';
+import { DEPTH, ShopViews } from './city/ShopViews';
+import { ShopPanel } from '../ui/panels/ShopPanel';
+import { ObjectPanel } from '../ui/panels/ObjectPanel';
 import { idx, type LotDef } from '../systems/city/generate';
 import { closeDay } from '../systems/economy/finance';
 import { chargeDailyRent, rentOf } from '../systems/economy/property';
@@ -31,6 +39,9 @@ export class CityScene extends Phaser.Scene {
   private cleanups: (() => void)[] = [];
   private night = nightLayer();
   private lastSpeed = 1;
+  private shopViews!: ShopViews;
+  private buildTool!: BuildTool;
+  private selGfx!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super('City');
@@ -41,12 +52,17 @@ export class CityScene extends Phaser.Scene {
     this.cleanups = [];
     this.hoverLot = -1;
     this.selectedLot = null;
+    resetUi();
 
     for (const chunk of bakeCity(this, city)) {
       this.add.image(chunk.tx * TILE, chunk.ty * TILE, chunk.key).setOrigin(0).setDepth(0);
     }
-    this.lotGfx = this.add.graphics().setDepth(5);
-    this.hoverGfx = this.add.graphics().setDepth(6);
+    this.lotGfx = this.add.graphics().setDepth(DEPTH.lots);
+    this.hoverGfx = this.add.graphics().setDepth(DEPTH.lots);
+    this.selGfx = this.add.graphics().setDepth(DEPTH.ghost);
+    this.shopViews = new ShopViews(this);
+    this.buildTool = new BuildTool(this);
+    for (const shop of state.shops) this.shopViews.sync(shop.id);
     this.drawLots();
 
     this.setupCamera();
@@ -57,9 +73,16 @@ export class CityScene extends Phaser.Scene {
       bus.on('lot:changed', () => this.drawLots()),
       bus.on('lot:selected', (id) => {
         this.selectedLot = id;
+        if (this.buildTool.active) this.buildTool.cancel();
         this.drawHover();
       }),
       bus.on('time:day', (day) => this.onNewDay(day)),
+      bus.on('time:minute', () => processDeliveries(session.state)),
+      bus.on('shop:changed', (id) => this.shopViews.sync(id)),
+      bus.on('shop:removed', (id) => this.shopViews.remove(id)),
+      bus.on('stock:changed', (id) => this.shopViews.markStockDirty(id)),
+      bus.on('object:selected', () => this.drawSelection()),
+      bus.on('shop:changed', () => this.drawSelection()),
     );
 
     this.events.once('shutdown', () => {
@@ -101,7 +124,12 @@ export class CityScene extends Phaser.Scene {
     kb.on('keydown-ONE', () => setSpeed(time, SPEEDS[1]));
     kb.on('keydown-TWO', () => setSpeed(time, SPEEDS[2]));
     kb.on('keydown-THREE', () => setSpeed(time, SPEEDS[3]));
-    kb.on('keydown-ESC', () => bus.emit('lot:selected', null));
+    kb.on('keydown-ESC', () => {
+      if (this.buildTool.active) this.buildTool.cancel();
+      else if (ui.selectedObject) selectObject(null);
+      else selectLot(null);
+    });
+    kb.on('keydown-R', () => this.buildTool.rotate());
     kb.on('keydown-PLUS', () => this.zoomBy(1.2));
     kb.on('keydown-MINUS', () => this.zoomBy(1 / 1.2));
     kb.on('keydown-NUMPAD_ADD', () => this.zoomBy(1.2));
@@ -111,9 +139,20 @@ export class CityScene extends Phaser.Scene {
       this.zoomBy(dy > 0 ? 1 / 1.15 : 1.15, p);
     });
 
-    this.input.on('pointerdown', () => (this.dragging = false));
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      this.dragging = false;
+      if (!this.buildTool.active) return;
+      if (p.rightButtonDown()) this.buildTool.cancel();
+      else if (p.leftButtonDown()) {
+        const t = this.tileAt(p);
+        this.buildTool.onDown(t.x, t.y);
+      }
+    });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
-      if (p.isDown) {
+      const building = this.buildTool.active;
+      // With a build tool out, the left button builds; pan with the middle or right button instead.
+      const panning = p.isDown && (!building || !p.leftButtonDown());
+      if (panning) {
         if (!this.dragging && p.getDistance() > DRAG_THRESHOLD) this.dragging = true;
         if (this.dragging) {
           const cam = this.cameras.main;
@@ -123,17 +162,25 @@ export class CityScene extends Phaser.Scene {
         hideTip();
         return;
       }
+      if (building) {
+        const t = this.tileAt(p);
+        this.buildTool.onMove(t.x, t.y, p.leftButtonDown());
+        hideTip();
+        return;
+      }
       this.updateHover(p);
     });
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
+      if (this.buildTool.active) {
+        this.buildTool.onUp();
+        this.dragging = false;
+        return;
+      }
       if (this.dragging) {
         this.dragging = false;
         return;
       }
-      if (p.leftButtonReleased()) {
-        const lot = this.lotAtPointer(p);
-        bus.emit('lot:selected', lot?.rentable ? lot.id : null);
-      }
+      if (p.leftButtonReleased()) this.clickWorld(p);
     });
     this.input.on('gameout', () => {
       this.hoverLot = -1;
@@ -143,10 +190,9 @@ export class CityScene extends Phaser.Scene {
   }
 
   private setupHud(): void {
-    const top = TopBar();
-    const lotPanel = LotPanel();
-    uiRoot().append(top.el, lotPanel.el, h('div.hint', 'Drag or WASD to move · Scroll to zoom · Space to pause'));
-    this.cleanups.push(top.destroy, lotPanel.destroy, mountToasts());
+    const parts = [TopBar(), LotPanel(), ShopPanel(), ObjectPanel()];
+    uiRoot().append(...parts.map((p) => p.el), h('div.hint', 'Drag or WASD to move · Scroll to zoom · Space to pause'));
+    this.cleanups.push(...parts.map((p) => p.destroy), mountToasts());
   }
 
   // ---------- Camera ----------
@@ -170,11 +216,36 @@ export class CityScene extends Phaser.Scene {
 
   // ---------- Lots ----------
 
+  private tileAt(p: Phaser.Input.Pointer): { x: number; y: number } {
+    const w = this.cameras.main.getWorldPoint(p.x, p.y);
+    return { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) };
+  }
+
+  /** Left click with no tool: select a piece of furniture in your shop, or the lot. */
+  private clickWorld(p: Phaser.Input.Pointer): void {
+    const lot = this.lotAtPointer(p);
+    if (!lot?.rentable) return selectLot(null);
+    const shop = shopOnLot(session.state, lot.id);
+    const t = this.tileAt(p);
+    const obj = shop && inLot(lot, t.x, t.y) ? objectAt(shop, t.x, t.y) : undefined;
+    if (ui.selectedLot !== lot.id) selectLot(lot.id);
+    selectObject(shop && obj ? { shopId: shop.id, objectId: obj.id } : null);
+  }
+
+  private drawSelection(): void {
+    const g = this.selGfx;
+    g.clear();
+    const sel = ui.selectedObject;
+    if (!sel) return;
+    const obj = session.state.shops.find((sh) => sh.id === sel.shopId)?.objects.find((o) => o.id === sel.objectId);
+    if (!obj) return;
+    const { w, h: fh } = footprint(obj.def, obj.rot);
+    g.lineStyle(2, 0xffffff, 1).strokeRect(obj.x * TILE - 1, obj.y * TILE - 1, w * TILE + 2, fh * TILE + 2);
+  }
+
   private lotAtPointer(p: Phaser.Input.Pointer): LotDef | null {
     const { city } = session;
-    const w = this.cameras.main.getWorldPoint(p.x, p.y);
-    const tx = Math.floor(w.x / TILE);
-    const ty = Math.floor(w.y / TILE);
+    const { x: tx, y: ty } = this.tileAt(p);
     if (tx < 0 || ty < 0 || tx >= city.w || ty >= city.h) return null;
     const id = city.lotAt[idx(city, tx, ty)];
     return id >= 0 ? city.lots[id] : null;
@@ -187,7 +258,8 @@ export class CityScene extends Phaser.Scene {
       this.hoverLot = id;
       this.drawHover();
     }
-    if (lot?.rentable) {
+    if (lot?.rentable && shopOnLot(session.state, lot.id)) hideTip();
+    else if (lot?.rentable) {
       const s = session.state;
       const own = s.lots[lot.id];
       const n = NEIGHBORHOODS[lot.district];
@@ -210,8 +282,10 @@ export class CityScene extends Phaser.Scene {
       const y = lot.y * TILE;
       const w = lot.w * TILE;
       const hgt = lot.h * TILE;
-      if (own) g.fillStyle(color, 0.08).fillRect(x, y, w, hgt);
-      g.lineStyle(3, color, own ? 0.95 : 0.7).strokeRect(x + 2, y + 2, w - 4, hgt - 4);
+      const hasShop = !!shopOnLot(state, lot.id);
+      if (own && !hasShop) g.fillStyle(color, 0.08).fillRect(x, y, w, hgt);
+      if (hasShop) g.lineStyle(2, color, 0.9).strokeRect(x - 1, y - 1, w + 2, hgt + 2);
+      else g.lineStyle(3, color, own ? 0.95 : 0.7).strokeRect(x + 2, y + 2, w - 4, hgt - 4);
       if (!own) {
         // "For rent" sign post near the street edge.
         const sx = x + w / 2;
@@ -233,7 +307,7 @@ export class CityScene extends Phaser.Scene {
       g.lineStyle(4, color, alpha).strokeRect(lot.x * TILE + 2, lot.y * TILE + 2, lot.w * TILE - 4, lot.h * TILE - 4);
     };
     if (this.hoverLot >= 0 && this.hoverLot !== this.selectedLot) outline(this.hoverLot, 0xffffff, 0.8, 0.1);
-    if (this.selectedLot !== null) outline(this.selectedLot, 0xffffff, 1, 0.16);
+    if (this.selectedLot !== null) outline(this.selectedLot, 0xffffff, 1, shopOnLot(session.state, this.selectedLot) ? 0 : 0.16);
   }
 
   // ---------- Simulation ----------
@@ -242,6 +316,8 @@ export class CityScene extends Phaser.Scene {
     const { state, city } = session;
     const rent = chargeDailyRent(state, city);
     closeDay(state, day);
+    driftMarket(state);
+    expireStock(state);
     if (rent > 0) toast(`Day ${day}. Paid ${money(rent)} in rent.`, 'info');
   }
 
@@ -258,6 +334,7 @@ export class CityScene extends Phaser.Scene {
     if (k.S.isDown || k.DOWN.isDown) cam.scrollY += step;
 
     advanceClock(session.state.time, dt);
+    this.shopViews.flush();
     this.night.style.opacity = (darkness(hourFloat(session.state.time)) * 0.55).toFixed(3);
   }
 }

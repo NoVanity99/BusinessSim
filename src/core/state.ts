@@ -3,6 +3,9 @@ import { DIFFICULTIES } from '../data';
 import { newFinanceState, type FinanceState } from '../systems/economy/finance';
 import { dayOf, newTimeState, type TimeState } from '../systems/time/clock';
 import type { City } from '../systems/city/generate';
+import type { ShopState } from '../entities/Shop';
+import { newMarketState, type MarketState } from '../systems/economy/market';
+import type { Order } from '../systems/economy/stock';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
@@ -21,6 +24,13 @@ export interface GameState {
   /** Player-held lots keyed by lot id. */
   lots: Record<number, LotOwnership>;
   finance: FinanceState;
+  shops: ShopState[];
+  nextShopId: number;
+  market: MarketState;
+  orders: Order[];
+  nextOrderId: number;
+  /** Register the owner is personally working, if any. */
+  ownerAt: { shopId: number; objectId: number } | null;
 }
 
 export interface NewGameOptions {
@@ -38,6 +48,12 @@ export function createNewGame(opts: NewGameOptions): GameState {
     time,
     lots: {},
     finance: newFinanceState(dayOf(time)),
+    shops: [],
+    nextShopId: 1,
+    market: newMarketState(),
+    orders: [],
+    nextOrderId: 1,
+    ownerAt: null,
   };
 }
 
@@ -46,3 +62,6 @@ export const session: { state: GameState; city: City } = {
   state: undefined as unknown as GameState,
   city: undefined as unknown as City,
 };
+
+export const shopById = (s: GameState, id: number): ShopState | undefined => s.shops.find((sh) => sh.id === id);
+export const shopOnLot = (s: GameState, lotId: number): ShopState | undefined => s.shops.find((sh) => sh.lotId === lotId);

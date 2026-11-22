@@ -1,0 +1,27 @@
+{
+  "wholesale": {
+    "deliveryFee": 25,
+    "standardHours": 8,
+    "expressHours": 2,
+    "expressSurcharge": 0.2,
+    "bulkDiscounts": [
+      { "cases": 5, "discount": 0.05 },
+      { "cases": 10, "discount": 0.1 },
+      { "cases": 20, "discount": 0.15 }
+    ]
+  },
+  "market": {
+    "driftPerDay": 0.04,
+    "minMult": 0.8,
+    "maxMult": 1.3
+  },
+  "build": {
+    "sellBackShare": 0.6,
+    "structureRefundShare": 0.5
+  },
+  "utilities": {
+    "basePerDay": 8,
+    "perTilePerDay": 0.25,
+    "perPowerUnitPerDay": 1.5
+  }
+}

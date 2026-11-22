@@ -1,0 +1,21 @@
+{
+  "floor_concrete": { "name": "Concrete Floor", "category": "structure", "kind": "floor", "cost": 4,  "color": "#a9adb3", "decor": 0,    "description": "Cheap and plain." },
+  "floor_tile":     { "name": "Tile Floor",     "category": "structure", "kind": "floor", "cost": 9,  "color": "#e4e1d6", "decor": 0.02, "description": "Clean look that customers like." },
+  "floor_wood":     { "name": "Wood Floor",     "category": "structure", "kind": "floor", "cost": 14, "color": "#b98a56", "decor": 0.04, "description": "Warm and inviting." },
+  "wall":           { "name": "Wall",           "category": "structure", "kind": "wall",  "cost": 12, "color": "#6d6259", "decor": 0,    "description": "Blocks movement. Drag to build a run of wall." },
+  "door":           { "name": "Door",           "category": "structure", "kind": "door",  "cost": 60, "color": "#8fd1e8", "decor": 0,    "description": "Customers enter and leave through doors." },
+
+  "shelf":       { "name": "Shelf",          "category": "display",  "kind": "shelf",    "w": 2, "h": 1, "cost": 160, "sprite": "shelf",    "color": "#a97c50", "slots": 2, "slotCapacity": 20, "accepts": ["ambient"], "decor": 0,   "description": "Holds two kinds of shelf-stable product." },
+  "rack":        { "name": "Counter Rack",   "category": "display",  "kind": "shelf",    "w": 1, "h": 1, "cost": 70,  "sprite": "rack",     "color": "#8c8f96", "slots": 1, "slotCapacity": 14, "accepts": ["ambient"], "decor": 0,   "description": "Small rack for one product." },
+  "fridge":      { "name": "Drinks Fridge",  "category": "display",  "kind": "shelf",    "w": 2, "h": 1, "cost": 520, "sprite": "fridge",   "color": "#dfe7ee", "slots": 2, "slotCapacity": 18, "accepts": ["chilled"], "decor": 0,   "power": 6, "description": "Keeps chilled products. Uses electricity." },
+  "freezer":     { "name": "Chest Freezer",  "category": "display",  "kind": "shelf",    "w": 2, "h": 1, "cost": 640, "sprite": "freezer",  "color": "#c7dcec", "slots": 2, "slotCapacity": 14, "accepts": ["frozen"],  "decor": 0,   "power": 8, "description": "Holds frozen products. Uses electricity." },
+
+  "register":    { "name": "Checkout",       "category": "checkout", "kind": "register", "w": 1, "h": 1, "cost": 380, "sprite": "register", "color": "#4d5563", "checkoutSeconds": 9, "decor": 0, "power": 1, "description": "Customers pay here. Needs someone to operate it." },
+
+  "storage_rack":{ "name": "Storage Rack",   "category": "storage",  "kind": "storage",  "w": 2, "h": 1, "cost": 140, "sprite": "storage",  "color": "#7a6a55", "storage": 160, "decor": -0.02, "description": "Adds 160 units of back-room storage. Customers dislike seeing it." },
+
+  "plant":       { "name": "Potted Plant",   "category": "decor",    "kind": "decor",    "w": 1, "h": 1, "cost": 45,  "sprite": "plant",    "color": "#4f9148", "decor": 0.05, "description": "Makes the place feel nicer." },
+  "lamp":        { "name": "Floor Lamp",     "category": "decor",    "kind": "decor",    "w": 1, "h": 1, "cost": 80,  "sprite": "lamp",     "color": "#f4dc8a", "decor": 0.06, "light": 3, "power": 1, "description": "Lights up the shop at night." },
+  "rug":         { "name": "Welcome Rug",    "category": "decor",    "kind": "decor",    "w": 2, "h": 1, "cost": 60,  "sprite": "rug",      "color": "#b04a5a", "decor": 0.04, "walkable": true, "description": "Customers can walk over it." },
+  "bin":         { "name": "Trash Bin",      "category": "decor",    "kind": "bin",      "w": 1, "h": 1, "cost": 35,  "sprite": "bin",      "color": "#55606b", "decor": 0, "description": "Customers drop litter here instead of on the floor." }
+}

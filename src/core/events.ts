@@ -1,3 +1,5 @@
+import type { Tool } from './uiState';
+
 /** Game-wide events. Systems emit, UI and scenes listen. */
 export interface GameEvents {
   'money:changed': number;
@@ -9,6 +11,17 @@ export interface GameEvents {
   'lot:selected': number | null;
   toast: { text: string; kind?: 'info' | 'good' | 'warn' | 'bad' };
   'game:loaded': void;
+  /** Layout changed (walls, floors, furniture, hours, name). Payload: shop id. */
+  'shop:changed': number;
+  'shop:created': number;
+  'shop:removed': number;
+  /** Shelf or storage quantities changed. Payload: shop id. */
+  'stock:changed': number;
+  'orders:changed': void;
+  'prices:changed': number;
+  'market:changed': void;
+  'tool:changed': Tool | null;
+  'object:selected': { shopId: number; objectId: number } | null;
 }
 
 type Handler<T> = (payload: T) => void;
