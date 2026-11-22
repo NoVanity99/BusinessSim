@@ -1,0 +1,27 @@
+appId: com.businesssim.game
+productName: BusinessSim
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  # Lets the Windows build cross-compile from Linux/macOS without Wine.
+  # Set to true when building on Windows to embed a custom icon / version info.
+  signAndEditExecutable: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-Setup-${version}.${ext}
+  shortcutName: BusinessSim
+portable:
+  artifactName: ${productName}-Portable-${version}.${ext}
+publish: null
