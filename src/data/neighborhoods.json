@@ -1,0 +1,47 @@
+{
+  "downtown": {
+    "name": "Downtown",
+    "description": "Busy offices and nightlife. Huge foot traffic, wealthy customers, brutal rent.",
+    "color": "#5aa9e6",
+    "footTraffic": 1.6,
+    "wealth": 1.35,
+    "rentPerTile": 5.2,
+    "buildingStyle": "office"
+  },
+  "oldtown": {
+    "name": "Old Town",
+    "description": "Charming streets full of tourists and collectors. Good traffic, fair rent.",
+    "color": "#d9a05b",
+    "footTraffic": 1.15,
+    "wealth": 1.1,
+    "rentPerTile": 3.2,
+    "buildingStyle": "brick"
+  },
+  "suburbs": {
+    "name": "Suburbs",
+    "description": "Quiet family homes. Modest traffic and budgets, cheap rent. A good place to start.",
+    "color": "#7cc576",
+    "footTraffic": 0.75,
+    "wealth": 0.9,
+    "rentPerTile": 1.7,
+    "buildingStyle": "house"
+  },
+  "industrial": {
+    "name": "Industrial Park",
+    "description": "Warehouses and workers on a budget. Low traffic, the cheapest and largest lots.",
+    "color": "#a0a7b4",
+    "footTraffic": 0.5,
+    "wealth": 0.75,
+    "rentPerTile": 1.1,
+    "buildingStyle": "warehouse"
+  },
+  "beach": {
+    "name": "Beachfront",
+    "description": "Tourists with money to burn, mostly by day. Great for leisure businesses.",
+    "color": "#e8c468",
+    "footTraffic": 1.3,
+    "wealth": 1.25,
+    "rentPerTile": 4.0,
+    "buildingStyle": "resort"
+  }
+}

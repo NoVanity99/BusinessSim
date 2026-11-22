@@ -1,0 +1,29 @@
+{
+  "easy": {
+    "name": "Easy",
+    "description": "Generous savings, lower costs and patient customers.",
+    "startingMoney": 15000,
+    "costMult": 0.85,
+    "patienceMult": 1.2,
+    "loanInterestMult": 0.8,
+    "netWorthGoal": 1000000
+  },
+  "normal": {
+    "name": "Normal",
+    "description": "The intended experience. Every dollar counts at the start.",
+    "startingMoney": 8000,
+    "costMult": 1,
+    "patienceMult": 1,
+    "loanInterestMult": 1,
+    "netWorthGoal": 2500000
+  },
+  "hard": {
+    "name": "Hard",
+    "description": "Almost broke, higher costs and picky customers.",
+    "startingMoney": 4500,
+    "costMult": 1.15,
+    "patienceMult": 0.85,
+    "loanInterestMult": 1.25,
+    "netWorthGoal": 5000000
+  }
+}

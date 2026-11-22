@@ -1,21 +1,23 @@
 import Phaser from 'phaser';
+import './ui/styles.css';
 import { BootScene } from './scenes/BootScene';
-import { MainMenuScene } from './scenes/MainMenuScene';
-import { COLORS } from './ui/theme';
+import { CityScene } from './scenes/CityScene';
+import { MenuScene } from './scenes/MenuScene';
+import { session } from './core/state';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
-  backgroundColor: COLORS.bg,
+  backgroundColor: '#10141c',
   scale: {
     mode: Phaser.Scale.RESIZE,
     width: window.innerWidth,
     height: window.innerHeight,
   },
-  render: { antialias: true, roundPixels: true },
+  render: { antialias: true, roundPixels: false },
   disableContextMenu: true,
-  scene: [BootScene, MainMenuScene],
+  scene: [BootScene, MenuScene, CityScene],
 });
 
 // Handy for debugging and automated smoke tests.
-(window as unknown as { game: Phaser.Game }).game = game;
+Object.assign(window, { game, session });

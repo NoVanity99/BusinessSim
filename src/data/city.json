@@ -1,0 +1,23 @@
+{
+  "seed": 20261,
+  "blocksX": 6,
+  "blocksY": 5,
+  "blockW": 16,
+  "blockH": 12,
+  "roadW": 2,
+  "sidewalkW": 1,
+  "waterRows": 7,
+  "sandRows": 2,
+  "rentableShare": 0.42,
+  "purchasePriceDays": 75,
+  "lotWidths": [4, 5, 6, 8],
+  "bigLotBlockChance": 0.22,
+  "districts": [
+    ["suburbs", "suburbs", "suburbs", "suburbs", "suburbs", "industrial"],
+    ["suburbs", "oldtown", "downtown", "downtown", "suburbs", "industrial"],
+    ["oldtown", "oldtown", "downtown", "downtown", "suburbs", "industrial"],
+    ["oldtown", "oldtown", "downtown", "suburbs", "industrial", "industrial"],
+    ["beach", "beach", "beach", "beach", "beach", "industrial"]
+  ],
+  "parkBlocks": [[1, 0], [4, 2]]
+}

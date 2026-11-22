@@ -1,12 +1,14 @@
 import Phaser from 'phaser';
+import { installTooltips } from '../ui/tooltip';
 
-/** Generates procedural textures and loads settings before the menu appears. */
+/** One-time setup before the menu appears. */
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
   }
 
   create(): void {
-    this.scene.start('MainMenu');
+    installTooltips();
+    this.scene.start('Menu');
   }
 }
