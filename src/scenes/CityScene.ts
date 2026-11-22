@@ -4,7 +4,10 @@ import { SPEEDS, TILE } from '../core/constants';
 import { bus, toast } from '../core/events';
 import { clamp, money } from '../core/format';
 import { session, shopOnLot } from '../core/state';
-import { resetUi, selectLot, selectObject, ui } from '../core/uiState';
+import { resetUi, selectLot, selectNpc, selectObject, ui } from '../core/uiState';
+import { initAi, onShopLayoutChanged, updateAi } from '../systems/ai/customers';
+import { NpcViews } from './city/NpcViews';
+import { NpcPanel } from '../ui/panels/NpcPanel';
 import { inLot, objectAt, footprint } from '../entities/Shop';
 import { driftMarket } from '../systems/economy/market';
 import { expireStock, processDeliveries } from '../systems/economy/stock';
@@ -42,6 +45,9 @@ export class CityScene extends Phaser.Scene {
   private shopViews!: ShopViews;
   private buildTool!: BuildTool;
   private selGfx!: Phaser.GameObjects.Graphics;
+  private npcViews!: NpcViews;
+  /** Remembers where each shop stood so its tiles can be freed when it is removed. */
+  private shopLots = new Map<number, number>();
 
   constructor() {
     super('City');
@@ -63,6 +69,9 @@ export class CityScene extends Phaser.Scene {
     this.shopViews = new ShopViews(this);
     this.buildTool = new BuildTool(this);
     for (const shop of state.shops) this.shopViews.sync(shop.id);
+    this.shopLots = new Map(state.shops.map((sh) => [sh.id, sh.lotId]));
+    initAi();
+    this.npcViews = new NpcViews(this);
     this.drawLots();
 
     this.setupCamera();
@@ -78,8 +87,20 @@ export class CityScene extends Phaser.Scene {
       }),
       bus.on('time:day', (day) => this.onNewDay(day)),
       bus.on('time:minute', () => processDeliveries(session.state)),
-      bus.on('shop:changed', (id) => this.shopViews.sync(id)),
-      bus.on('shop:removed', (id) => this.shopViews.remove(id)),
+      bus.on('shop:changed', (id) => {
+        this.shopViews.sync(id);
+        const lotId = session.state.shops.find((sh) => sh.id === id)?.lotId;
+        if (lotId === undefined) return;
+        this.shopLots.set(id, lotId);
+        onShopLayoutChanged(id, lotId);
+      }),
+      bus.on('shop:removed', (id) => {
+        this.shopViews.remove(id);
+        const lotId = this.shopLots.get(id);
+        if (lotId !== undefined) onShopLayoutChanged(id, lotId);
+        this.shopLots.delete(id);
+      }),
+      () => this.npcViews.destroy(),
       bus.on('stock:changed', (id) => this.shopViews.markStockDirty(id)),
       bus.on('object:selected', () => this.drawSelection()),
       bus.on('shop:changed', () => this.drawSelection()),
@@ -126,6 +147,7 @@ export class CityScene extends Phaser.Scene {
     kb.on('keydown-THREE', () => setSpeed(time, SPEEDS[3]));
     kb.on('keydown-ESC', () => {
       if (this.buildTool.active) this.buildTool.cancel();
+      else if (ui.selectedNpc !== null) selectNpc(null);
       else if (ui.selectedObject) selectObject(null);
       else selectLot(null);
     });
@@ -190,7 +212,7 @@ export class CityScene extends Phaser.Scene {
   }
 
   private setupHud(): void {
-    const parts = [TopBar(), LotPanel(), ShopPanel(), ObjectPanel()];
+    const parts = [TopBar(), LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel()];
     uiRoot().append(...parts.map((p) => p.el), h('div.hint', 'Drag or WASD to move · Scroll to zoom · Space to pause'));
     this.cleanups.push(...parts.map((p) => p.destroy), mountToasts());
   }
@@ -223,6 +245,13 @@ export class CityScene extends Phaser.Scene {
 
   /** Left click with no tool: select a piece of furniture in your shop, or the lot. */
   private clickWorld(p: Phaser.Input.Pointer): void {
+    const w = this.cameras.main.getWorldPoint(p.x, p.y);
+    const npc = this.npcViews.pick(w.x, w.y);
+    if (npc !== null) {
+      selectObject(null);
+      return selectNpc(npc);
+    }
+    if (ui.selectedNpc !== null) selectNpc(null);
     const lot = this.lotAtPointer(p);
     if (!lot?.rentable) return selectLot(null);
     const shop = shopOnLot(session.state, lot.id);
@@ -333,7 +362,9 @@ export class CityScene extends Phaser.Scene {
     if (k.W.isDown || k.UP.isDown) cam.scrollY -= step;
     if (k.S.isDown || k.DOWN.isDown) cam.scrollY += step;
 
-    advanceClock(session.state.time, dt);
+    const gameMinutes = advanceClock(session.state.time, dt);
+    updateAi(gameMinutes);
+    this.npcViews.update(dt);
     this.shopViews.flush();
     this.night.style.opacity = (darkness(hourFloat(session.state.time)) * 0.55).toFixed(3);
   }

@@ -4,7 +4,7 @@ A top-down 2D business tycoon game for Windows. Start broke with one tiny shop a
 
 Built with TypeScript, Phaser 3, Vite and Electron.
 
-**Status:** milestone 3 of 9 (build mode and the convenience store). See [CHANGELOG.md](CHANGELOG.md).
+**Status:** milestone 4 of 9 (AI customers). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements (for building only)
 
@@ -53,7 +53,7 @@ To embed a custom icon and version info in the `.exe`, put `icon.ico` (256x256) 
 - Drag with the mouse, or `WASD` / arrow keys: move the camera
 - Mouse wheel, `+` / `-`: zoom
 - `Space`: pause, `1` / `2` / `3`: speed 1x / 2x / 4x
-- Left click: select a lot or a piece of furniture, `Esc`: deselect or put the tool away
+- Left click: select a person, a lot or a piece of furniture, `Esc`: deselect or put the tool away
 - Build mode: left click places, drag paints floors and walls, `R` rotates, right click cancels; pan with the middle or right mouse button
 - `F11`: toggle fullscreen
 - `F12`: developer tools (development builds only)

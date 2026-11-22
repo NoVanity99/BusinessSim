@@ -21,6 +21,12 @@ export interface GameEvents {
   'prices:changed': number;
   'market:changed': void;
   'tool:changed': Tool | null;
+  'npc:thought': { id: number; text: string; kind: 'good' | 'bad' | 'neutral' };
+  'npc:removed': number;
+  'npc:selected': number | null;
+  /** A customer paid. Tile coordinates of the checkout for effects. */
+  sale: { shopId: number; amount: number; x: number; y: number };
+  'door:enter': { shopId: number };
   'object:selected': { shopId: number; objectId: number } | null;
 }
 

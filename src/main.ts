@@ -4,6 +4,7 @@ import { BootScene } from './scenes/BootScene';
 import { CityScene } from './scenes/CityScene';
 import { MenuScene } from './scenes/MenuScene';
 import { session } from './core/state';
+import { rt } from './systems/ai/runtime';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -20,4 +21,4 @@ const game = new Phaser.Game({
 });
 
 // Handy for debugging and automated smoke tests.
-Object.assign(window, { game, session });
+Object.assign(window, { game, session, rt });

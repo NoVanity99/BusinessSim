@@ -5,6 +5,7 @@ import productsJson from './products.json';
 import furnitureJson from './furniture.json';
 import shopsJson from './shops.json';
 import economyJson from './economy.json';
+import populationJson from './population.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -112,6 +113,8 @@ export interface ShopTypeDef {
   defaultFloor: string;
   furniture: string[];
   products: string[];
+  /** Share of all pedestrians out looking for this kind of business (all types together must stay below 1). */
+  demand: number;
 }
 
 export interface EconomyConfig {
@@ -131,3 +134,25 @@ export const PRODUCTS = productsJson as Record<string, ProductDef>;
 export const FURNITURE = furnitureJson as Record<string, FurnitureDef>;
 export const SHOP_TYPES = shopsJson as unknown as Record<string, ShopTypeDef>;
 export const ECONOMY = economyJson as EconomyConfig;
+
+export interface PopulationConfig {
+  /** Pedestrians on the map at the busiest hour, before difficulty and events. */
+  basePopulation: number;
+  maxPopulation: number;
+  /** Activity multiplier for each hour of the day. */
+  hourly: number[];
+  weekendMult: number;
+  /** Tiles per game minute. */
+  walkSpeed: number;
+  /** How close (in tiles) a shopper must pass to notice a shop. */
+  noticeRadius: number;
+  budgetMin: number;
+  budgetMax: number;
+  /** Game minutes a customer will queue before giving up. */
+  patienceMin: number;
+  patienceMax: number;
+  firstNames: string[];
+  lastNames: string[];
+}
+
+export const POPULATION = populationJson as PopulationConfig;

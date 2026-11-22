@@ -217,3 +217,5 @@ select {
 .slot select { flex: 1; min-width: 0; }
 label.check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .totals { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+.npc-panel { left: 12px; top: 56px; width: 270px; }
+.thought { font-size: 13px; padding: 2px 0; }
