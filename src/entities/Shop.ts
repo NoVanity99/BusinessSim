@@ -33,6 +33,8 @@ export interface ShopDayStats {
   walkouts: number;
   revenue: number;
   unitsSold: number;
+  /** Stock orders, wages, rent and utilities attributed to this shop. */
+  costs: number;
 }
 
 export interface ShopState {
@@ -64,7 +66,7 @@ export interface ShopState {
   yesterday: ShopDayStats;
 }
 
-export const emptyStats = (): ShopDayStats => ({ customers: 0, served: 0, walkouts: 0, revenue: 0, unitsSold: 0 });
+export const emptyStats = (): ShopDayStats => ({ customers: 0, served: 0, walkouts: 0, revenue: 0, unitsSold: 0, costs: 0 });
 
 export const DIRS = [
   { x: 0, y: 1 },

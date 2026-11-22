@@ -4,7 +4,7 @@ A top-down 2D business tycoon game for Windows. Start broke with one tiny shop a
 
 Built with TypeScript, Phaser 3, Vite and Electron.
 
-**Status:** milestone 5 of 9 (employees, wages, shifts). See [CHANGELOG.md](CHANGELOG.md).
+**Status:** milestone 6 of 9 (finances, save/load, menus, audio). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements (for building only)
 
@@ -55,12 +55,17 @@ To embed a custom icon and version info in the `.exe`, put `icon.ico` (256x256) 
 - `Space`: pause, `1` / `2` / `3`: speed 1x / 2x / 4x
 - Left click: select a person, a lot or a piece of furniture, `Esc`: deselect or put the tool away
 - Build mode: left click places, drag paints floors and walls, `R` rotates, right click cancels; pan with the middle or right mouse button
+- `B` / `F` / `T`: businesses, finances and staff windows
+- `Esc`: back out of the current selection, then open the pause menu
+- `F5`: quick save to slot 1
 - `F11`: toggle fullscreen
+
+All keys except `F11` can be rebound in Settings.
 - `F12`: developer tools (development builds only)
 
 ## Save files
 
-- Desktop: `%APPDATA%\BusinessSim\saves\*.json`
+- Desktop: `%APPDATA%\BusinessSim\saves\*.json` (five slots, an autosave, and `settings.json`)
 - Browser dev mode: `localStorage` keys prefixed `businesssim:`
 
 ## Project layout

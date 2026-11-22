@@ -85,6 +85,7 @@ export function placeOrder(s: GameState, shop: ShopState, lines: OrderLine[], ex
     toast(`You need ${money(q.total)} for that order.`, 'bad');
     return false;
   }
+  shop.today.costs += q.total;
   s.orders.push({ id: s.nextOrderId++, shopId: shop.id, lines, cost: q.total, arriveAt: Math.floor(s.time.minutes) + q.hours * 60, express });
   toast(`Order placed for ${shop.name}. Arrives in ${q.hours} hours.`, 'good');
   bus.emit('orders:changed');

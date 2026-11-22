@@ -1,4 +1,7 @@
 import Phaser from 'phaser';
+import { installInput } from '../core/input';
+import { loadSettings } from '../core/settings';
+import { installAudio } from '../systems/audio/audio';
 import { installTooltips } from '../ui/tooltip';
 
 /** One-time setup before the menu appears. */
@@ -9,6 +12,11 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     installTooltips();
-    this.scene.start('Menu');
+    installInput();
+    installAudio();
+    // Settings load from disk; the menu waits for them so volume and keys are right from the start.
+    void loadSettings()
+      .catch((err) => console.warn('Could not load settings', err))
+      .then(() => this.scene.start('Menu'));
   }
 }

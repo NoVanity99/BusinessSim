@@ -9,6 +9,7 @@ import { footprint, frontTiles, inLot, lotIndex, objectAt, WALL_NONE, type ShopS
 import { buildCost, checkPlace, moveObject, paintStructure, placeObject, removeWall, sellObject } from '../../systems/build/build';
 import type { LotDef } from '../../systems/city/generate';
 import { DEPTH } from './ShopViews';
+import { sfx } from '../../systems/audio/audio';
 
 const isStructure = (defId: string): boolean => FURNITURE[defId].category === 'structure';
 
@@ -81,7 +82,7 @@ export class BuildTool {
         if (obj) moveObject(shop, lot, obj, x, y, t.rot);
         setTool({ type: 'move' });
       } else {
-        placeObject(s, shop, lot, t.def, x, y, t.rot);
+        if (placeObject(s, shop, lot, t.def, x, y, t.rot)) sfx('place');
       }
       this.refresh();
       return;
@@ -96,6 +97,7 @@ export class BuildTool {
     if (obj) {
       if (ui.selectedObject?.objectId === obj.id) selectObject(null);
       sellObject(s, shop, obj);
+      sfx('sell');
     } else if (removeWall(s, shop, lot, tx, ty)) {
       bus.emit('shop:changed', shop.id);
     }
@@ -116,6 +118,7 @@ export class BuildTool {
     if (!ctx || t?.type !== 'place') return;
     if (paintStructure(session.state, ctx.shop, ctx.lot, t.def, tx, ty)) {
       this.painted = true;
+      sfx('place', 0.5);
       // Show progress while dragging; the walk grid is rebuilt when the drag ends too.
       bus.emit('shop:changed', ctx.shop.id);
     }

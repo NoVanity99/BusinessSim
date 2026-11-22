@@ -169,6 +169,7 @@ export function staffHourly(s: GameState): void {
     if (scheduled && e.absentDay !== today) {
       const into = (hour - e.shift[0] + 24) % 24;
       spend(s, hourlyCost(e, into), 'wages');
+      shop.today.costs += hourlyCost(e, into);
       e.hoursWorked++;
       const late = hour >= 22 || hour < 6;
       const drain = 9 * traitSum(e, 'energyDrain') * (late && !hasTrait(e, 'nightOwl') ? 1.4 : 1) * (into >= EMPLOYEES.overtimeAfterHours ? 1.5 : 1);

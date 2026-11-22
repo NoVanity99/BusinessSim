@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0 - Milestone 6: finances, save/load, menus, audio
+
+- Finances window: cash, net worth breakdown, progress to the net-worth goal, a 28-day income vs expenses chart with hover values, and ledgers for today, yesterday and the last 7 days.
+- Businesses window listing every shop with reputation, today's revenue, customers served, yesterday's profit and staffing; click a row to jump there.
+- Staff window listing everyone on the payroll and what they are doing.
+- Save/load: five manual slots plus an autosave (06:00 daily), stored as JSON in `%APPDATA%/BusinessSim/saves`. Quick save with F5. Older saves are migrated on load.
+- Main menu with Continue, New Game, Load Game, Settings and Quit; pause menu (Esc) with save, load, settings and quit.
+- Settings: master, effects and music volume, fullscreen, window resolution, autosave, and rebindable keys.
+- Synthesised sound effects (cash register, door chime, building, selling, alerts) that fade with zoom and are silent off-screen, and a generative background music hook.
+- Per-shop cost tracking for profit figures.
+
 ## 0.5.0 - Milestone 5: employees, wages and shifts
 
 - Daily candidate pool with names, three skills (speed, friendliness, reliability), traits and asking wages (`src/data/employees.json`).

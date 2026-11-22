@@ -28,6 +28,8 @@ export class ShopViews {
     let v = this.views.get(shopId);
     const key = `shop_struct_${shopId}`;
     if (!v) {
+      // A previous session (before a load) may have left this key behind.
+      if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
       this.scene.textures.createCanvas(key, lot.w * TILE, lot.h * TILE);
       v = {
         structure: this.scene.add.image(lot.x * TILE, lot.y * TILE, key).setOrigin(0).setDepth(DEPTH.structure),
