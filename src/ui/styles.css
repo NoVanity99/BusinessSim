@@ -219,3 +219,18 @@ label.check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .totals { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
 .npc-panel { left: 12px; top: 56px; width: 270px; }
 .thought { font-size: 13px; padding: 2px 0; }
+
+/* ---------- Staff ---------- */
+.skills { display: flex; gap: 8px; }
+.skill { flex: 1; display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--dim); }
+.skill .meter { flex: 1; margin: 0; }
+.trait { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; background: var(--panel-2); border: 1px solid var(--border); }
+.person { border: 1px solid var(--border); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+.person .head { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; }
+.person .name { font-weight: 600; cursor: pointer; }
+.person .line { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; font-size: 13px; }
+.person button { padding: 3px 8px; font-size: 12.5px; }
+.person select { padding: 2px 4px; font-size: 12.5px; }
+.bars { display: flex; gap: 8px; margin-top: 6px; }
+.bars > div { flex: 1; font-size: 11px; color: var(--dim); }
+.bars .meter { margin: 2px 0 0; }

@@ -4,7 +4,7 @@ A top-down 2D business tycoon game for Windows. Start broke with one tiny shop a
 
 Built with TypeScript, Phaser 3, Vite and Electron.
 
-**Status:** milestone 4 of 9 (AI customers). See [CHANGELOG.md](CHANGELOG.md).
+**Status:** milestone 5 of 9 (employees, wages, shifts). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements (for building only)
 

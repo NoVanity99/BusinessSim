@@ -4,6 +4,7 @@ import { newFinanceState, type FinanceState } from '../systems/economy/finance';
 import { dayOf, newTimeState, type TimeState } from '../systems/time/clock';
 import type { City } from '../systems/city/generate';
 import type { ShopState } from '../entities/Shop';
+import type { Candidate, Employee } from '../entities/Employee';
 import { newMarketState, type MarketState } from '../systems/economy/market';
 import type { Order } from '../systems/economy/stock';
 
@@ -31,6 +32,9 @@ export interface GameState {
   nextOrderId: number;
   /** Register the owner is personally working, if any. */
   ownerAt: { shopId: number; objectId: number } | null;
+  staff: Employee[];
+  candidates: Candidate[];
+  nextPersonId: number;
 }
 
 export interface NewGameOptions {
@@ -54,6 +58,9 @@ export function createNewGame(opts: NewGameOptions): GameState {
     orders: [],
     nextOrderId: 1,
     ownerAt: null,
+    staff: [],
+    candidates: [],
+    nextPersonId: 1,
   };
 }
 

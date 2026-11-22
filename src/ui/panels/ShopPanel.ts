@@ -10,6 +10,14 @@ import { rentOf } from '../../systems/economy/property';
 import { freeStorage, hoursUntil, incomingUnits, placeOrder, quoteOrder } from '../../systems/economy/stock';
 import { formatHour } from '../../systems/time/clock';
 import { h, setChildren } from '../dom';
+import { EMPLOYEES } from '../../data';
+import { shiftLength, type Employee } from '../../entities/Employee';
+import { deepCleanCost, utilityCost } from '../../systems/shop/status';
+import { tryPay } from '../../systems/economy/finance';
+import { managerOnDuty } from '../../systems/staff/manager';
+import { dailyWageBill, fire, giveBonus, giveRaise, hire, onDuty, staffOf } from '../../systems/staff/staff';
+import { selectStaff } from '../../core/uiState';
+import { roleTag, skillBars, traitTags } from './staffWidgets';
 
 interface Tab {
   el: HTMLElement;
@@ -40,9 +48,9 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
     );
 
   const update = (): void => {
-    if (body.contains(document.activeElement) && ['SELECT', 'INPUT'].includes(document.activeElement?.tagName ?? '')) return;
+    if ((body.contains(document.activeElement) && document.activeElement?.tagName === 'SELECT') || body.querySelector(':active')) return;
     const regs = registers(shop);
-    const staffed = regs.some((r) => s.ownerAt?.shopId === shop.id && s.ownerAt.objectId === r.id);
+    const staffed = regs.some((r) => s.ownerAt?.shopId === shop.id && s.ownerAt.objectId === r.id) || staffOf(s, shop.id).some((e) => e.role === 'cashier' && onDuty(s, e));
     const stocked = shop.objects.some((o) => o.slots?.some((sl) => batchQty(sl.batches) > 0));
     const problems = [
       !regs.length && 'No checkout. Customers cannot pay.',
@@ -58,10 +66,15 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
       h('div.kv', h('span.k', 'Rent'), h('span.v', s.lots[lot.id]?.owner === 'owned' ? 'Owned' : `${money(rentOf(s, lot))} / day`)),
       h('div.kv', { tip: 'Customers remember good and bad visits. Reputation draws people in or keeps them away.' }, h('span.k', 'Reputation'), h('span.v', `${Math.round(shop.reputation)} / 100`)),
       h('div.meter', h('div', { style: { width: `${shop.reputation}%`, background: 'var(--accent)' } })),
+      h('div.kv', { tip: 'Every visitor leaves a little mess. Dirt puts customers in a bad mood. Bins slow it down; a cleaner removes it.' }, h('span.k', 'Cleanliness'), h('span.v', { class: shop.dirt > 55 ? 'bad' : shop.dirt > 30 ? 'warn' : '' }, `${Math.round(100 - shop.dirt)}%`)),
+      shop.dirt > 15 && h('div.actions', { style: { margin: '2px 0 8px' } }, h('button', { disabled: s.money < deepCleanCost(shop), onclick: () => { if (tryPay(s, deepCleanCost(shop), 'maintenance')) { shop.dirt = 0; bus.emit('shop:changed', shop.id); } }, tip: 'Pay a cleaning crew for a one-off scrub.' }, `Deep clean (${money(deepCleanCost(shop))})`)),
       h('div.kv', h('span.k', 'Back-room storage'), h('span.v', `${storageUsed(shop)} / ${storageCapacity(shop)} units`)),
+      h('div.kv', { tip: 'Charged at midnight: a base fee, floor area and powered equipment.' }, h('span.k', 'Utilities'), h('span.v', `${money(utilityCost(s, shop))} / day`)),
+      h('div.kv', h('span.k', 'Wages'), h('span.v', `${money(Math.round(staffOf(s, shop.id).reduce((a, e) => a + dailyWageBill(e), 0)))} / day`)),
       h('div.section', 'Opening hours'),
       h('div.row', hourSelect(0), 'to', hourSelect(1)),
       h('label.check', { style: { marginTop: '8px' } }, h('input', { type: 'checkbox', checked: shop.closed, onchange: (e: Event) => { shop.closed = (e.target as HTMLInputElement).checked; bus.emit('shop:changed', shop.id); } }), 'Closed until further notice'),
+      h('label.check', { style: { marginTop: '6px' }, tip: 'With a manager on shift, stock for every product on your shelves is reordered automatically.' }, h('input', { type: 'checkbox', checked: shop.autoReorder, onchange: (e: Event) => { shop.autoReorder = (e.target as HTMLInputElement).checked; bus.emit('shop:changed', shop.id); } }), `Manager reorders stock${managerOnDuty(s, shop) ? '' : ' (no manager on shift)'}`),
       h('div.section', 'Today'),
       h('div.kv', h('span.k', 'Revenue'), h('span.v', money(shop.today.revenue))),
       h('div.kv', h('span.k', 'Customers served'), h('span.v', `${shop.today.served} of ${shop.today.customers}`)),
@@ -263,9 +276,94 @@ function pricesTab(s: GameState, shop: ShopState): Tab {
   return { el, update };
 }
 
+// ---------- Staff ----------
+
+function staffTab(s: GameState, shop: ShopState): Tab {
+  const type = SHOP_TYPES[shop.type];
+  const body = h('div');
+
+  const hourSelect = (e: Employee, index: 0 | 1): HTMLElement =>
+    h(
+      'select',
+      {
+        onchange: (ev: Event) => {
+          e.shift[index] = +(ev.target as HTMLSelectElement).value;
+          bus.emit('staff:changed');
+        },
+      },
+      ...Array.from({ length: 25 }, (_v, hr) => hr)
+        .filter((hr) => (index === 0 ? hr < 24 : hr > 0))
+        .map((hr) => h('option', { value: hr, selected: e.shift[index] === hr }, formatHour(hr))),
+    );
+
+  const employeeCard = (e: Employee): HTMLElement => {
+    const len = shiftLength(e.shift);
+    const regs = registers(shop);
+    const fair = e.wage / e.fairWage;
+    return h(
+      'div.person',
+      h('div.head', h('span.name', { onclick: () => selectStaff(e.id), tip: 'Show details' }, e.name), roleTag(e.role)),
+      skillBars(e),
+      h('div.line', ...traitTags(e)),
+      h(
+        'div.bars',
+        h('div', `Energy ${Math.round(e.energy)}%`, h('div.meter', h('div', { style: { width: `${e.energy}%`, background: e.energy > 40 ? 'var(--info)' : 'var(--warn)' } }))),
+        h('div', { tip: 'Fair pay, sane hours, a clean shop and a manager keep morale up. Miserable staff work slowly, skip shifts and quit.' }, `Morale ${Math.round(e.morale)}%`, h('div.meter', h('div', { style: { width: `${e.morale}%`, background: e.morale > 40 ? 'var(--accent)' : 'var(--danger)' } }))),
+      ),
+      h('div.line', 'Shift', hourSelect(e, 0), 'to', hourSelect(e, 1), h('span', { class: len > EMPLOYEES.overtimeAfterHours ? 'warn' : 'dim', tip: `Hours past ${EMPLOYEES.overtimeAfterHours} are paid at ${EMPLOYEES.overtimeMult}x and wear people down.` }, `${len} h${len > EMPLOYEES.overtimeAfterHours ? ' (overtime)' : ''}`)),
+      e.role === 'cashier' &&
+        regs.length > 1 &&
+        h(
+          'div.line',
+          'Checkout',
+          h(
+            'select',
+            { onchange: (ev: Event) => { e.stationId = +(ev.target as HTMLSelectElement).value || null; bus.emit('shop:changed', shop.id); } },
+            h('option', { value: 0 }, 'Any free'),
+            ...regs.map((r, i) => h('option', { value: r.id, selected: e.stationId === r.id }, `Checkout ${i + 1}`)),
+          ),
+        ),
+      h(
+        'div.line',
+        h('span', { class: fair < 0.95 ? 'warn' : '', tip: `Someone with these skills usually earns about ${money(Math.round(e.fairWage * 100) / 100)} an hour.` }, `${money(e.wage)}/h · ${money(Math.round(dailyWageBill(e)))}/day`),
+        h('span', { style: { flex: '1' } }),
+        h('button', { onclick: () => giveRaise(e, 0.5), tip: 'Raise their wage by $0.50 an hour. Lifts morale now and for good.' }, 'Raise'),
+        h('button', { disabled: s.money < 50, onclick: () => giveBonus(s, e, 50), tip: 'A one-off $50 bonus for a quick morale boost.' }, 'Bonus'),
+        h('button.danger', { onclick: () => fire(s, e.id) }, 'Fire'),
+      ),
+    );
+  };
+
+  const candidateCard = (c: Employee | (typeof s.candidates)[number]): HTMLElement =>
+    h(
+      'div.person',
+      h('div.head', h('span', { style: { fontWeight: '600' } }, c.name), roleTag(c.role)),
+      skillBars(c),
+      h('div.line', ...traitTags(c), h('span', { style: { flex: '1' } }), h('span', `${money(c.wage)}/h`), h('button.primary', { disabled: s.money < EMPLOYEES.hiringFee, onclick: () => hire(s, c.id, shop.id), tip: `Hiring costs ${money(EMPLOYEES.hiringFee)}. Wages are paid for each hour worked.` }, 'Hire')),
+    );
+
+  const update = (): void => {
+    if ((body.contains(document.activeElement) && document.activeElement?.tagName === 'SELECT') || body.querySelector(':active')) return;
+    const mine = staffOf(s, shop.id);
+    const pool = s.candidates.filter((c) => type.roles.includes(c.role));
+    setChildren(
+      body,
+      h('div.section', `Team (${mine.length})`),
+      mine.length === 0 && h('div.note', { style: { marginTop: '0' } }, 'Nobody works here yet. You can run one checkout yourself; everything else needs staff.'),
+      ...mine.map(employeeCard),
+      h('div.section', 'Looking for work'),
+      pool.length === 0 && h('div.note', { style: { marginTop: '0' } }, 'No suitable candidates today. New people apply every morning.'),
+      ...pool.map(candidateCard),
+      h('div.note', `Roles useful here: ${type.roles.map((r) => EMPLOYEES.roles[r].name).join(', ')}. The pool refreshes daily.`),
+    );
+  };
+  update();
+  return { el: body, update };
+}
+
 // ---------- Panel ----------
 
-const TABS = { overview: 'Overview', build: 'Build', stock: 'Stock', prices: 'Prices' } as const;
+const TABS = { overview: 'Overview', build: 'Build', stock: 'Stock', prices: 'Prices', staff: 'Staff' } as const;
 type TabId = keyof typeof TABS;
 
 export function ShopPanel(): { el: HTMLElement; destroy(): void } {
@@ -285,7 +383,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     }
     const current = shop;
     el.style.display = 'flex';
-    tab = { overview: overviewTab, build: buildTab, stock: stockTab, prices: pricesTab }[tabId](s, current);
+    tab = { overview: overviewTab, build: buildTab, stock: stockTab, prices: pricesTab, staff: staffTab }[tabId](s, current);
     const name = h('input', { type: 'text', value: current.name, maxLength: 28, style: { flex: '1', minWidth: '0', fontWeight: '600' }, tip: 'Rename this business' });
     name.addEventListener('change', () => {
       current.name = name.value.trim() || current.name;
@@ -325,6 +423,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     bus.on('money:changed', refresh),
     bus.on('tool:changed', refresh),
     bus.on('time:hour', refresh),
+    bus.on('staff:changed', refresh),
   ];
   return { el, destroy: () => offs.forEach((off) => off()) };
 }

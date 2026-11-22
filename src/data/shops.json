@@ -41,6 +41,13 @@
       "icecream",
       "pizza"
     ],
-    "demand": 0.16
+    "demand": 0.16,
+    "roles": [
+      "cashier",
+      "stocker",
+      "cleaner",
+      "manager",
+      "security"
+    ]
   }
 }

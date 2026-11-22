@@ -13,12 +13,32 @@ export interface RegisterRuntime {
   progress: number;
 }
 
+export type StaffAgentState = 'arriving' | 'idle' | 'toTask' | 'working' | 'leaving';
+
+/** An employee's body in the world while they are on shift. */
+export interface StaffAgent {
+  id: number;
+  x: number;
+  y: number;
+  path: number[];
+  goal: number;
+  state: StaffAgentState;
+  timer: number;
+  /** Register a cashier is standing at, once they have arrived. */
+  stationObj: number;
+  taskObj: number;
+  taskSlot: number;
+  /** What they are doing, for the info panel. */
+  activity: string;
+}
+
 /** Simulation state that is not saved: it is rebuilt when a game starts or loads. */
 export const rt: {
   grid: Grid;
   customers: Customer[];
   byId: Map<number, Customer>;
   registers: Map<string, RegisterRuntime>;
+  staff: Map<number, StaffAgent>;
   nextCustomerId: number;
   spawnPoints: { tile: number; weight: number; wealth: number }[];
   spawnWeightTotal: number;
@@ -28,6 +48,7 @@ export const rt: {
   customers: [],
   byId: new Map(),
   registers: new Map(),
+  staff: new Map(),
   nextCustomerId: 1,
   spawnPoints: [],
   spawnWeightTotal: 0,

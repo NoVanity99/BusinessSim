@@ -4,20 +4,20 @@ import { SPEEDS, TILE } from '../core/constants';
 import { bus, toast } from '../core/events';
 import { clamp, money } from '../core/format';
 import { session, shopOnLot } from '../core/state';
-import { resetUi, selectLot, selectNpc, selectObject, ui } from '../core/uiState';
+import { resetUi, selectLot, selectNpc, selectObject, selectStaff, ui } from '../core/uiState';
+import { StaffInfoPanel } from '../ui/panels/StaffInfoPanel';
 import { initAi, onShopLayoutChanged, updateAi } from '../systems/ai/customers';
 import { NpcViews } from './city/NpcViews';
 import { NpcPanel } from '../ui/panels/NpcPanel';
 import { inLot, objectAt, footprint } from '../entities/Shop';
-import { driftMarket } from '../systems/economy/market';
-import { expireStock, processDeliveries } from '../systems/economy/stock';
+import { installSim } from '../systems/sim';
+import { updateStaff } from '../systems/staff/agents';
 import { BuildTool } from './city/BuildTool';
 import { DEPTH, ShopViews } from './city/ShopViews';
 import { ShopPanel } from '../ui/panels/ShopPanel';
 import { ObjectPanel } from '../ui/panels/ObjectPanel';
 import { idx, type LotDef } from '../systems/city/generate';
-import { closeDay } from '../systems/economy/finance';
-import { chargeDailyRent, rentOf } from '../systems/economy/property';
+import { rentOf } from '../systems/economy/property';
 import { advanceClock, darkness, hourFloat, setSpeed } from '../systems/time/clock';
 import { clear, h, nightLayer, uiRoot } from '../ui/dom';
 import { TopBar } from '../ui/hud/TopBar';
@@ -85,8 +85,7 @@ export class CityScene extends Phaser.Scene {
         if (this.buildTool.active) this.buildTool.cancel();
         this.drawHover();
       }),
-      bus.on('time:day', (day) => this.onNewDay(day)),
-      bus.on('time:minute', () => processDeliveries(session.state)),
+      installSim(),
       bus.on('shop:changed', (id) => {
         this.shopViews.sync(id);
         const lotId = session.state.shops.find((sh) => sh.id === id)?.lotId;
@@ -148,6 +147,7 @@ export class CityScene extends Phaser.Scene {
     kb.on('keydown-ESC', () => {
       if (this.buildTool.active) this.buildTool.cancel();
       else if (ui.selectedNpc !== null) selectNpc(null);
+      else if (ui.selectedStaff !== null) selectStaff(null);
       else if (ui.selectedObject) selectObject(null);
       else selectLot(null);
     });
@@ -212,7 +212,7 @@ export class CityScene extends Phaser.Scene {
   }
 
   private setupHud(): void {
-    const parts = [TopBar(), LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel()];
+    const parts = [TopBar(), LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel(), StaffInfoPanel()];
     uiRoot().append(...parts.map((p) => p.el), h('div.hint', 'Drag or WASD to move · Scroll to zoom · Space to pause'));
     this.cleanups.push(...parts.map((p) => p.destroy), mountToasts());
   }
@@ -246,12 +246,15 @@ export class CityScene extends Phaser.Scene {
   /** Left click with no tool: select a piece of furniture in your shop, or the lot. */
   private clickWorld(p: Phaser.Input.Pointer): void {
     const w = this.cameras.main.getWorldPoint(p.x, p.y);
-    const npc = this.npcViews.pick(w.x, w.y);
-    if (npc !== null) {
+    const staff = this.npcViews.pickStaff(w.x, w.y);
+    const npc = staff === null ? this.npcViews.pick(w.x, w.y) : null;
+    if (staff !== null || npc !== null) {
       selectObject(null);
-      return selectNpc(npc);
+      selectNpc(npc);
+      return selectStaff(staff);
     }
     if (ui.selectedNpc !== null) selectNpc(null);
+    if (ui.selectedStaff !== null) selectStaff(null);
     const lot = this.lotAtPointer(p);
     if (!lot?.rentable) return selectLot(null);
     const shop = shopOnLot(session.state, lot.id);
@@ -341,15 +344,6 @@ export class CityScene extends Phaser.Scene {
 
   // ---------- Simulation ----------
 
-  private onNewDay(day: number): void {
-    const { state, city } = session;
-    const rent = chargeDailyRent(state, city);
-    closeDay(state, day);
-    driftMarket(state);
-    expireStock(state);
-    if (rent > 0) toast(`Day ${day}. Paid ${money(rent)} in rent.`, 'info');
-  }
-
   override update(_time: number, deltaMs: number): void {
     // Clamp so a long stall (alt-tab) cannot fast-forward the simulation.
     const dt = Math.min(deltaMs, 100) / 1000;
@@ -363,6 +357,7 @@ export class CityScene extends Phaser.Scene {
     if (k.S.isDown || k.DOWN.isDown) cam.scrollY += step;
 
     const gameMinutes = advanceClock(session.state.time, dt);
+    updateStaff(gameMinutes);
     updateAi(gameMinutes);
     this.npcViews.update(dt);
     this.shopViews.flush();

@@ -11,7 +11,8 @@ export const ui: {
   selectedLot: number | null;
   selectedObject: { shopId: number; objectId: number } | null;
   selectedNpc: number | null;
-} = { tool: null, selectedLot: null, selectedObject: null, selectedNpc: null };
+  selectedStaff: number | null;
+} = { tool: null, selectedLot: null, selectedObject: null, selectedNpc: null, selectedStaff: null };
 
 export function setTool(tool: Tool | null): void {
   ui.tool = tool;
@@ -34,7 +35,13 @@ export function selectNpc(id: number | null): void {
   bus.emit('npc:selected', id);
 }
 
+export function selectStaff(id: number | null): void {
+  ui.selectedStaff = id;
+  bus.emit('staff:selected', id);
+}
+
 export function resetUi(): void {
+  ui.selectedStaff = null;
   ui.selectedNpc = null;
   ui.tool = null;
   ui.selectedLot = null;

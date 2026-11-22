@@ -56,6 +56,10 @@ export interface ShopState {
   prices: Record<string, number>;
   /** 0-100. */
   reputation: number;
+  /** 0 (spotless) to 100 (filthy). */
+  dirt: number;
+  /** Let a manager on shift reorder stock. */
+  autoReorder: boolean;
   today: ShopDayStats;
   yesterday: ShopDayStats;
 }

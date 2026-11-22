@@ -73,6 +73,8 @@ export function createShop(s: GameState, lot: LotDef, typeId: string): ShopState
     storage: {},
     prices,
     reputation: 50,
+    dirt: 0,
+    autoReorder: true,
     today: emptyStats(),
     yesterday: emptyStats(),
   };

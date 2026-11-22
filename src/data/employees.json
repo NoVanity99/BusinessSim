@@ -1,0 +1,30 @@
+{
+  "candidatePoolSize": 9,
+  "hiringFee": 40,
+  "overtimeAfterHours": 8,
+  "overtimeMult": 1.5,
+  "roles": {
+    "cashier":  { "name": "Cashier",        "wage": 11, "color": "#5aa9e6", "description": "Runs a checkout. Speed sets how fast the line moves; friendliness lifts customer mood." },
+    "stocker":  { "name": "Stocker",        "wage": 10, "color": "#e58f4f", "description": "Carries stock from the back room to the shelves." },
+    "cleaner":  { "name": "Cleaner",        "wage": 9,  "color": "#7cc576", "description": "Keeps the place clean. Dirty shops put customers in a bad mood." },
+    "cook":     { "name": "Cook",           "wage": 12, "color": "#f2f2f2", "description": "Works cooking stations in food businesses." },
+    "mechanic": { "name": "Mechanic",       "wage": 15, "color": "#8f9bb0", "description": "Repairs broken machines and keeps them from failing." },
+    "security": { "name": "Security Guard", "wage": 13, "color": "#7b8799", "description": "Deters and catches shoplifters." },
+    "manager":  { "name": "Manager",        "wage": 20, "color": "#b07cc6", "description": "Reorders stock automatically and keeps the team's morale up." },
+    "driver":   { "name": "Delivery Driver","wage": 13, "color": "#f2b84b", "description": "Drives your van between warehouses, shops and vending machines." }
+  },
+  "traits": {
+    "hardworker": { "name": "Hard Worker",   "description": "Works faster but tires sooner.",                "speed": 1.5, "energyDrain": 1.25 },
+    "lazy":       { "name": "Lazy",          "description": "Slow, but asks for less pay.",                  "speed": -1.5, "wageMult": 0.85 },
+    "cheerful":   { "name": "Cheerful",      "description": "Customers love them.",                           "friendliness": 2, "moraleBase": 6 },
+    "grumpy":     { "name": "Grumpy",        "description": "Short with customers.",                          "friendliness": -2 },
+    "loyal":      { "name": "Loyal",         "description": "Stays cheerful and never quits over pay.",        "moraleBase": 12, "noQuit": true },
+    "nightowl":   { "name": "Night Owl",     "description": "Does not tire on late shifts.",                  "nightOwl": true },
+    "strong":     { "name": "Strong",        "description": "Carries more stock per trip.",                   "carry": 1.6 },
+    "ambitious":  { "name": "Ambitious",     "description": "Learns quickly, but expects more pay.",          "learn": 2, "wageMult": 1.12 },
+    "tireless":   { "name": "Tireless",      "description": "Barely loses energy during a shift.",            "energyDrain": 0.6 },
+    "flaky":      { "name": "Flaky",         "description": "Calls in sick more than most.",                  "reliability": -2.5, "wageMult": 0.92 },
+    "veteran":    { "name": "Veteran",       "description": "Experienced all-rounder with a wage to match.",  "speed": 1, "reliability": 1, "wageMult": 1.15 },
+    "sticky":     { "name": "Sticky Fingers","description": "Something always goes missing on their shift.",  "theft": 0.03, "wageMult": 0.9, "hidden": true }
+  }
+}

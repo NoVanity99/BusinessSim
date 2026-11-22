@@ -6,6 +6,7 @@ import furnitureJson from './furniture.json';
 import shopsJson from './shops.json';
 import economyJson from './economy.json';
 import populationJson from './population.json';
+import employeesJson from './employees.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -113,6 +114,8 @@ export interface ShopTypeDef {
   defaultFloor: string;
   furniture: string[];
   products: string[];
+  /** Staff roles that are useful here. */
+  roles: string[];
   /** Share of all pedestrians out looking for this kind of business (all types together must stay below 1). */
   demand: number;
 }
@@ -156,3 +159,41 @@ export interface PopulationConfig {
 }
 
 export const POPULATION = populationJson as PopulationConfig;
+
+export interface RoleDef {
+  name: string;
+  /** Base hourly wage for an average worker. */
+  wage: number;
+  color: string;
+  description: string;
+}
+
+/** Numeric modifiers a trait applies; all optional. */
+export interface TraitDef {
+  name: string;
+  description: string;
+  speed?: number;
+  friendliness?: number;
+  reliability?: number;
+  wageMult?: number;
+  energyDrain?: number;
+  moraleBase?: number;
+  carry?: number;
+  learn?: number;
+  theft?: number;
+  nightOwl?: boolean;
+  noQuit?: boolean;
+  /** Not shown on the hiring screen. */
+  hidden?: boolean;
+}
+
+export interface EmployeeConfig {
+  candidatePoolSize: number;
+  hiringFee: number;
+  overtimeAfterHours: number;
+  overtimeMult: number;
+  roles: Record<string, RoleDef>;
+  traits: Record<string, TraitDef>;
+}
+
+export const EMPLOYEES = employeesJson as EmployeeConfig;

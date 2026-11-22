@@ -14,6 +14,8 @@ import { dayOf, hourFloat, isWeekend } from '../time/clock';
 import { buildGrid, rebuildLot, walkable } from './grid';
 import { findPath } from './pathfind';
 import { regKey, rt, type RegisterRuntime } from './runtime';
+import { cashierAt, staffLayoutChanged } from '../staff/agents';
+import { skill } from '../staff/staff';
 
 const MAX_QUEUE_SLOTS = 8;
 const LOOKS = 24;
@@ -26,6 +28,7 @@ export function initAi(): void {
   rt.customers = [];
   rt.byId = new Map();
   rt.registers = new Map();
+  rt.staff = new Map();
   rt.spawnDebt = 0;
   rt.spawnPoints = [];
 
@@ -75,6 +78,7 @@ export function onShopLayoutChanged(shopId: number, lotId: number): void {
   const shop = shopById(state, shopId);
   if (shop) syncRegisters(shop);
   else for (const [key, reg] of rt.registers) if (reg.shopId === shopId) rt.registers.delete(key);
+  staffLayoutChanged(shopId);
 
   for (const c of rt.customers) {
     const inside = c.x >= lot.x && c.y >= lot.y && c.x < lot.x + lot.w && c.y < lot.y + lot.h;
@@ -341,7 +345,11 @@ function enterShop(c: Customer): void {
   }
   c.entered = true;
   shop.today.customers++;
-  c.mood = clamp(c.mood + clamp(decorScore(shop) * 25, -10, 12), 0, 100);
+  // First impressions: decor lifts the mood, dirt drags it down. Every visitor leaves a little mess.
+  c.mood = clamp(c.mood + clamp(decorScore(shop) * 25, -10, 12) - shop.dirt * 0.18, 0, 100);
+  if (shop.dirt > 55) think(c, 'This place is filthy.', 'bad', -4);
+  const bins = shop.objects.filter((o) => defOf(o).kind === 'bin').length;
+  shop.dirt = clamp(shop.dirt + 0.4 * (1 - Math.min(0.45, bins * 0.15)), 0, 100);
   c.state = 'browse';
   c.timer = rand.range(0.2, 0.6);
   bus.emit('door:enter', { shopId: shop.id });
@@ -463,6 +471,13 @@ function completeSale(c: Customer, shop: ShopState, obj: PlacedObject): void {
   c.budget -= total;
   const avgRatio = c.cart.reduce((a, l) => a + (l.price / marketPrice(s, l.product)) * l.qty, 0) / units;
   c.cart = [];
+  // A friendly (or surly) cashier colours the whole visit.
+  const cashier = cashierAt(s, shop.id, obj.id);
+  if (cashier) {
+    const f = skill(cashier, 'friendliness');
+    c.mood = clamp(c.mood + (f - 5) * 1.6, 0, 100);
+    if (f <= 2 && rand.chance(0.5)) think(c, 'The cashier was so rude.', 'bad', -6);
+  }
   if (c.waited < 1.5) think(c, 'Great service!', 'good', 10);
   else if (c.waited > c.patience * 0.6) think(c, 'That took forever.', 'bad', -10);
   else if (avgRatio < 0.97) think(c, 'Good prices here.', 'good', 6);

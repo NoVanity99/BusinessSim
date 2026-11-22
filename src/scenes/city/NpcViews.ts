@@ -4,6 +4,8 @@ import { bus } from '../../core/events';
 import { money } from '../../core/format';
 import { ui } from '../../core/uiState';
 import { rt } from '../../systems/ai/runtime';
+import { session } from '../../core/state';
+import { EMPLOYEES } from '../../data';
 import { DEPTH } from './ShopViews';
 
 const SHIRTS = ['#d9534f', '#5aa9e6', '#f2b84b', '#7cc576', '#b07cc6', '#e8edf5', '#3d4450', '#e58f4f'];
@@ -24,6 +26,7 @@ interface Bubble {
 /** Draws pedestrians, their thought bubbles and sale pop-ups. */
 export class NpcViews {
   private sprites = new Map<number, Phaser.GameObjects.Image>();
+  private staffSprites = new Map<number, Phaser.GameObjects.Image>();
   private bubbles: Bubble[] = [];
   private ring: Phaser.GameObjects.Graphics;
   private offs: (() => void)[];
@@ -35,6 +38,10 @@ export class NpcViews {
       bus.on('npc:removed', (id) => {
         this.sprites.get(id)?.destroy();
         this.sprites.delete(id);
+      }),
+      bus.on('staff:removed', (id) => {
+        this.staffSprites.get(id)?.destroy();
+        this.staffSprites.delete(id);
       }),
       bus.on('npc:thought', ({ id, text, kind }) => {
         if (kind === 'neutral' && id !== ui.selectedNpc) return;
@@ -78,6 +85,36 @@ export class NpcViews {
     }
   }
 
+  /** Staff wear their role colour with a dark cap so they stand out from customers. */
+  private staffTexture(role: string): string {
+    const key = `staff_${role}`;
+    if (this.scene.textures.exists(key)) return key;
+    const tex = this.scene.textures.createCanvas(key, 24, 24)!;
+    const ctx = tex.getContext();
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(13, 14, 9, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(12, 12, 9.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = EMPLOYEES.roles[role]?.color ?? '#4fc3a1';
+    ctx.beginPath();
+    ctx.arc(12, 12, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f1d3b3';
+    ctx.beginPath();
+    ctx.arc(12, 11, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#20262f';
+    ctx.beginPath();
+    ctx.arc(12, 10, 4.5, Math.PI, 0);
+    ctx.fill();
+    tex.refresh();
+    return key;
+  }
+
   private addBubble(anchor: { id: number; x: number; y: number; rise: number }, text: string, color: string, bg: string): void {
     if (this.scene.cameras.main.zoom < 0.55) return;
     // One bubble per person: a new thought replaces the old one.
@@ -88,6 +125,11 @@ export class NpcViews {
       .setOrigin(0.5, 1)
       .setDepth(DEPTH.bubbles);
     this.bubbles.push({ text: obj, ttl: BUBBLE_SECONDS, ...anchor });
+  }
+
+  pickStaff(wx: number, wy: number): number | null {
+    for (const a of rt.staff.values()) if (Math.hypot(a.x - wx / TILE, a.y - wy / TILE) < 0.5) return a.id;
+    return null;
   }
 
   /** The pedestrian under a world position, if any. */
@@ -114,9 +156,21 @@ export class NpcViews {
       img.setPosition((c.x + c.ox) * TILE, (c.y + c.oy) * TILE);
     }
 
+    for (const a of rt.staff.values()) {
+      let img = this.staffSprites.get(a.id);
+      if (!img) {
+        const role = session.state.staff.find((e) => e.id === a.id)?.role ?? 'cashier';
+        img = this.scene.add.image(0, 0, this.staffTexture(role)).setDepth(DEPTH.npcs + 1);
+        this.staffSprites.set(a.id, img);
+      }
+      img.setPosition(a.x * TILE, a.y * TILE);
+    }
+
     this.ring.clear();
     const sel = ui.selectedNpc !== null ? rt.byId.get(ui.selectedNpc) : undefined;
     if (sel) this.ring.lineStyle(2, 0xffffff, 1).strokeCircle((sel.x + sel.ox) * TILE, (sel.y + sel.oy) * TILE, 12);
+    const selStaff = ui.selectedStaff !== null ? rt.staff.get(ui.selectedStaff) : undefined;
+    if (selStaff) this.ring.lineStyle(2, 0xffffff, 1).strokeCircle(selStaff.x * TILE, selStaff.y * TILE, 13);
 
     // Bubbles keep a constant on-screen size so they stay readable at any zoom.
     const scale = 1 / Math.max(0.55, this.scene.cameras.main.zoom);

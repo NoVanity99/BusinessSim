@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 - Milestone 5: employees, wages and shifts
+
+- Daily candidate pool with names, three skills (speed, friendliness, reliability), traits and asking wages (`src/data/employees.json`).
+- Eight roles defined; cashier, stocker, cleaner and manager are active in the convenience store. Security, cook, mechanic and driver come into play with later milestones.
+- Staff walk in at the start of their shift, work their station, and leave at the end. Click one to see what they are doing.
+- Per-employee shifts with overtime pay, checkout assignment, raises, bonuses and firing.
+- Energy drains on shift and recovers off it; morale follows pay fairness, hours, cleanliness and whether a manager is present. Both change work speed. Unhappy staff call in sick or quit.
+- Cashiers set checkout speed and colour customer mood; stockers refill shelves; cleaners remove dirt; managers reorder stock automatically.
+- Shop cleanliness, bins, and a paid deep clean.
+- Daily utilities bill and an end-of-day summary.
+
 ## 0.4.0 - Milestone 4: AI customers
 
 - Pedestrians spawn from buildings, the map edge, parks and the beach, following an hourly activity curve (`src/data/population.json`), with more of them in high-traffic neighbourhoods.

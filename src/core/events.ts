@@ -27,6 +27,9 @@ export interface GameEvents {
   /** A customer paid. Tile coordinates of the checkout for effects. */
   sale: { shopId: number; amount: number; x: number; y: number };
   'door:enter': { shopId: number };
+  'staff:changed': void;
+  'staff:removed': number;
+  'staff:selected': number | null;
   'object:selected': { shopId: number; objectId: number } | null;
 }
 
