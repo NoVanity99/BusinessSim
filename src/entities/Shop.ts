@@ -1,5 +1,6 @@
 import { FURNITURE, SHOP_TYPES, type FurnitureDef } from '../data';
 import type { LotDef } from '../systems/city/generate';
+import type { Review } from '../systems/ai/residents';
 
 /** A quantity of one product that expires together. `expires` is a day number; 0 = never. */
 export interface StockBatch {
@@ -81,6 +82,8 @@ export interface ShopState {
   yesterday: ShopDayStats;
   /** Closed days, oldest first, capped at SHOP_HISTORY_DAYS. */
   history: ShopDayRecord[];
+  /** Customer reviews, newest first. */
+  reviews: Review[];
 }
 
 export interface ShopDayRecord extends ShopDayStats {

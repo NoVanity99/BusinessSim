@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0 (unreleased) - Overhaul phase 3: customer AI
+
+Customers are no longer anonymous dice rolls. The city now has 380 residents who persist from day to day and across saves, plus tourists passing through.
+
+- **Needs and utility choice**: each resident has needs (hunger, thirst, errands, laundry, boredom, collecting) that build over hours and reset when met. What they go out for depends on how pressing each need is, the time of day and the weather. Where they go is a weighed choice between your shops and going elsewhere, scored on reputation, review rating, distance from home, your prices, advertising, and what they remember.
+- **Nine personas** (`src/data/personas.json`): bargain hunter, impulse buyer, loyal regular, picky foodie, collector, student, family, business commuter and tourist, each with their own budget, patience, price sensitivity, loyalty, basket size and favourite products.
+- **Memory**: residents remember every visit to your shops. Good visits build toward becoming a **regular** who keeps coming back; a bad enough one and they avoid you.
+- **Word of mouth**: people with strong feelings pass them on, so residents who have never been in can already have an opinion.
+- **Reviews**: customers post 1 to 5 star reviews with a short comment based on what actually happened. Each shop shows its rating, regular count and latest reviews, and you are told about 1 and 5 star ones.
+- **Groups**: families bring children and students and tourists bring friends, who walk along behind. Children ask for sweets and treats, which get added to the list.
+- **Shopping behaviour**: impulse buys from shelves near the checkout, substitutes from the same category when something is missing, and favourites that depend on persona.
+- **Crowd-aware paths**: pathfinding now adds a cost for busy tiles, so people spread out instead of filing through one spot.
+- Click anyone to see their persona, who they are with, their most pressing needs, what they think of each of your shops, and their plan.
+- Save format 4 (adds residents and reviews). Older saves upgrade automatically and the city is populated on first load.
+
 ## 1.3.0 (unreleased) - Overhaul phase 2: characters and atmosphere
 
 - **72 distinct people** made by recolouring the pack's six characters (five skin tones, seven hair colours, nine tops, six trousers), including children drawn smaller and grey-haired seniors. Each has a walk cycle in four directions and a soft shadow.

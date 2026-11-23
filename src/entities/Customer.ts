@@ -84,7 +84,13 @@ export interface Customer {
   /** Things used this visit, so guests try different attractions. */
   used: number[];
   bought: boolean;
-  collector?: boolean;
+  /** The resident this is, or -1 for a visitor from out of town. */
+  residentId: number;
+  persona: string;
+  /** Looks of the people with them (children, friends). They follow and are not simulated separately. */
+  companions: number[];
+  /** Set when they decided to go somewhere other than the player's shops. */
+  elsewhere: boolean;
 }
 
 export const cartTotal = (c: Customer): number => c.cart.reduce((a, l) => a + l.qty * l.price, 0);

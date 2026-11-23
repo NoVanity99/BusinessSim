@@ -30,7 +30,7 @@ const NX = [1, -1, 0, 0, 1, 1, -1, -1];
 const NY = [0, 0, 1, -1, 1, -1, 1, -1];
 
 /** Returns tile indices from the first step to the goal (start excluded), [] if already there, or null if unreachable. */
-export function findPath(grid: Grid, sx: number, sy: number, gx: number, gy: number): number[] | null {
+export function findPath(grid: Grid, sx: number, sy: number, gx: number, gy: number, crowd?: Uint8Array): number[] | null {
   const { w, h, cost } = grid;
   if (gx < 0 || gy < 0 || gx >= w || gy >= h) return null;
   const start = sy * w + sx;
@@ -99,7 +99,9 @@ export function findPath(grid: Grid, sx: number, sy: number, gx: number, gy: num
       if (c === 0 || closed[n] === generation) continue;
       // Diagonals need both side tiles open.
       if (d >= 4 && (cost[cy * w + nx] === 0 || cost[ny * w + cx] === 0)) continue;
-      const ng = g[cur] + (d >= 4 ? c * 1.414 : c);
+      // A crowded tile costs more, so people fan out instead of filing through the same spot.
+      const step = crowd ? c + Math.min(crowd[n], 4) * 7 : c;
+      const ng = g[cur] + (d >= 4 ? step * 1.414 : step);
       if (stamp[n] === generation && ng >= g[n]) continue;
       g[n] = ng;
       f[n] = ng + heuristic(nx, ny);

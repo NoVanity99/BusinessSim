@@ -10,8 +10,10 @@ import { idx, T } from '../city/generate';
 import { earn } from '../economy/finance';
 import { addToStorage, consumeIngredients, hasIngredients, takeFromSlot } from '../economy/stock';
 import { fairPrice } from '../shop/pricing';
-import { weatherCrowd, weatherDef, weatherDemand, weatherProductBoost } from '../world/weather';
-import { LOOK_COUNT } from '../../art/looks';
+import { weatherCrowd, weatherDef, weatherProductBoost } from '../world/weather';
+import { PERSONAS } from '../../data';
+import { afterVisit, appetite, chooseNeed, chooseShop, generateResidents, metElsewhere, personaOf, pruneMemories, type Resident } from './residents';
+import { ADULT_LOOKS, CHILD_LOOKS } from '../../art/looks';
 import { shopDemandMult } from '../events/events';
 import { kitchenCanMake, openTicket, updateKitchens } from '../shop/kitchen';
 import { onDuty } from '../staff/staff';
@@ -26,7 +28,7 @@ import { cashierAt, staffLayoutChanged } from '../staff/agents';
 import { skill } from '../staff/staff';
 
 const MAX_QUEUE_SLOTS = 8;
-const LOOKS = LOOK_COUNT;
+let crowdClock = 0;
 
 // ---------- Setup ----------
 
@@ -38,6 +40,8 @@ export function initAi(): void {
   rt.registers = new Map();
   rt.staff = new Map();
   rt.stations = new Map();
+  rt.out = new Set();
+  rt.crowd = new Uint8Array(city.w * city.h);
   rt.heat = new Float32Array(city.w * city.h);
   rt.kitchens = new Map();
   rt.spawnDebt = 0;
@@ -66,6 +70,9 @@ export function initAi(): void {
   rt.spawnWeightTotal = rt.spawnPoints.reduce((a, p) => a + p.weight, 0);
 
   for (const shop of session.state.shops) syncRegisters(shop);
+  // A new game, or a save from before residents existed: move people in.
+  if (!session.state.residents.length) generateResidents(session.state, rt.spawnPoints);
+  pruneMemories(session.state);
 
   // Start with the streets already populated, people spread along their routes.
   const target = targetPopulation();
@@ -174,26 +181,18 @@ function pickSpawnPoint(): { tile: number; weight: number; wealth: number } {
   return rt.spawnPoints[rt.spawnPoints.length - 1];
 }
 
-function pickNeed(): string | null {
-  let r = rand.next();
-  for (const [id, t] of Object.entries(SHOP_TYPES)) {
-    r -= t.demand * (rt.demandMult[id] ?? 1) * weatherDemand(session.state, id);
-    if (r < 0) return id;
-  }
-  return null;
-}
-
-function weightedPick(pool: string[]): string {
+/** Pick a product by popularity, weather, and (if given) what this kind of person favours. */
+function weightedPick(pool: string[], likes?: string[]): string {
   // Weather shifts what people fancy: ice cream in a heatwave, tea in the snow.
-  const weight = (p: string): number => PRODUCTS[p].popularity * weatherProductBoost(session.state, p);
+  const weight = (p: string): number => PRODUCTS[p].popularity * weatherProductBoost(session.state, p) * (likes?.includes(p) ? 2.5 : 1);
   let r = rand.next() * pool.reduce((a, p) => a + weight(p), 0);
   return pool.find((p) => (r -= weight(p)) <= 0) ?? pool[0];
 }
 
-function pickSeveral(pool: string[], count: number): string[] {
+function pickSeveral(pool: string[], count: number, likes?: string[]): string[] {
   const left = [...pool];
   const out: string[] = [];
-  while (out.length < count && left.length) out.push(left.splice(left.indexOf(weightedPick(left)), 1)[0]);
+  while (out.length < count && left.length) out.push(left.splice(left.indexOf(weightedPick(left, likes)), 1)[0]);
   return out;
 }
 
@@ -201,17 +200,22 @@ const kindOf = (p: string): string => PRODUCTS[p].kind ?? 'good';
 const isShelfGood = (p: string): boolean => ['good', 'collectible', 'crafted'].includes(kindOf(p));
 
 /** Build the list of things a customer means to do, from the kind of business they are after. */
-function makePlan(typeId: string, c: { collector?: boolean }): Step[] {
+function makePlan(typeId: string, persona: string, kids: number): Step[] {
   const type = SHOP_TYPES[typeId];
+  const P = personaOf(persona);
+  // Bigger spenders set out to buy more things.
+  const count = (options: number[]): number => Math.max(1, Math.round(rand.pick(options) * P.basket));
+  // Children ask for their favourites, if this place sells them.
+  const treats = (P.kidsWant ?? []).filter((p) => type.products.includes(p));
   const goods = type.products.filter(isShelfGood);
   const plan: Step[] = [];
   switch (type.flow) {
     case 'counter':
-      plan.push({ t: 'order', items: pickSeveral(type.products.filter((p) => kindOf(p) === 'menu'), rand.pick([1, 1, 2, 2, 3])) });
+      plan.push({ t: 'order', items: [...new Set([...pickSeveral(type.products.filter((p) => kindOf(p) === 'menu'), count([1, 1, 2, 2, 3]), P.likes), ...(kids ? treats.filter((p) => kindOf(p) === 'menu').slice(0, kids) : [])])] });
       plan.push({ t: 'use', service: 'seat', optional: true });
       break;
     case 'service':
-      if (goods.length && rand.chance(0.3)) plan.push({ t: 'buy', product: weightedPick(goods) });
+      if (goods.length && rand.chance(0.3)) plan.push({ t: 'buy', product: weightedPick(goods, P.likes) });
       for (const svc of type.plan ?? []) plan.push({ t: 'use', service: svc });
       plan.push({ t: 'pay' });
       break;
@@ -226,9 +230,10 @@ function makePlan(typeId: string, c: { collector?: boolean }): Step[] {
       break;
     }
     default: {
-      let wants = pickSeveral(goods, rand.pick([1, 1, 2, 2, 2, 3, 3, 4]));
+      let wants = pickSeveral(goods, count([1, 1, 2, 2, 2, 3, 3, 4]), P.likes);
+      if (kids) wants = [...new Set([...wants, ...treats.filter(isShelfGood).slice(0, kids)])];
       // Collectors come for the valuable singles and little else.
-      if (c.collector) wants = [...new Set([rand.chance(0.35) ? 'single_ultra' : 'single_rare', ...wants.slice(0, 1)])].filter((p) => type.products.includes(p));
+      if (persona === 'collector') wants = [...new Set([rand.chance(0.35) ? 'single_ultra' : 'single_rare', ...wants.slice(0, 1)])].filter((p) => type.products.includes(p));
       for (const product of wants) plan.push({ t: 'buy', product });
       plan.push({ t: 'pay' });
       for (const svc of type.after ?? []) if (rand.chance(0.35)) plan.push({ t: 'use', service: svc, optional: true });
@@ -237,34 +242,56 @@ function makePlan(typeId: string, c: { collector?: boolean }): Step[] {
   return plan;
 }
 
+/** A resident who is at home and could go out now, or null if everyone we tried is already out. */
+function pickResident(): Resident | null {
+  const list = session.state.residents;
+  for (let i = 0; i < 6 && list.length; i++) {
+    const r = rand.pick(list);
+    if (!rt.out.has(r.id)) return r;
+  }
+  return null;
+}
+
 function spawn(): Customer | null {
-  const from = pickSpawnPoint();
+  const s = session.state;
+  // Most people on the street live here; some are visitors with no history in the city.
+  const resident = rand.chance(PERSONAS.touristShare) ? null : pickResident();
+  const persona = resident?.persona ?? 'tourist';
+  const P = personaOf(persona);
+  const from = resident ? { tile: resident.home, weight: 1, wealth: resident.wealth } : pickSpawnPoint();
   let to = pickSpawnPoint();
   for (let i = 0; i < 4 && to.tile === from.tile; i++) to = pickSpawnPoint();
   const g = rt.grid;
-  const need = pickNeed();
-  const collector = need === 'cardshop' && rand.chance(0.18);
+  const need = chooseNeed(s, resident, persona);
+  // Families bring children, students and tourists bring friends.
+  const companions: number[] = [];
+  if (P.group && rand.chance(P.group[0])) {
+    const n = rand.int(P.group[1], P.group[2]);
+    for (let i = 0; i < n; i++) companions.push(P.group[3] === 'child' ? rand.pick(CHILD_LOOKS) : rand.pick(ADULT_LOOKS));
+  }
+  const kids = P.group?.[3] === 'child' ? companions.length : 0;
   const c: Customer = {
     id: rt.nextCustomerId++,
-    name: `${rand.pick(POPULATION.firstNames)} ${rand.pick(POPULATION.lastNames)}`,
+    name: resident?.name ?? `${rand.pick(POPULATION.firstNames)} ${rand.pick(POPULATION.lastNames)}`,
     x: (from.tile % g.w) + 0.5,
     y: Math.floor(from.tile / g.w) + 0.5,
     ox: rand.range(-0.28, 0.28),
     oy: rand.range(-0.28, 0.28),
-    look: rand.int(0, LOOKS - 1),
+    look: resident?.look ?? rand.pick(ADULT_LOOKS),
     state: 'walk',
     path: [],
     goal: to.tile,
     dest: to.tile,
-    speed: POPULATION.walkSpeed * rand.range(0.85, 1.2),
+    speed: POPULATION.walkSpeed * rand.range(0.85, 1.2) * (companions.length ? 0.9 : 1),
     need,
-    plan: need ? makePlan(need, { collector }) : [],
+    plan: need ? makePlan(need, persona, kids) : [],
     step: 0,
     cart: [],
-    budget: Math.round(rand.range(POPULATION.budgetMin, POPULATION.budgetMax) * from.wealth * (collector ? 6 : need === 'funpark' ? 1.6 : 1)),
-    generosity: rand.range(0.3, 1.7),
+    budget: Math.round(rand.range(POPULATION.budgetMin, POPULATION.budgetMax) * from.wealth * P.budget * (need === 'funpark' ? 1.6 : 1) * (1 + companions.length * 0.4)),
+    // Price-conscious personas tolerate less markup.
+    generosity: rand.range(0.5, 1.5) / P.priceSense,
     wealth: from.wealth,
-    patience: rand.range(POPULATION.patienceMin, POPULATION.patienceMax) * DIFFICULTIES[session.state.difficulty].patienceMult,
+    patience: rand.range(POPULATION.patienceMin, POPULATION.patienceMax) * DIFFICULTIES[s.difficulty].patienceMult * P.patience,
     waited: 0,
     mood: rand.int(55, 75),
     thoughts: [],
@@ -280,18 +307,21 @@ function spawn(): Customer | null {
     seatId: -1,
     used: [],
     bought: false,
-    collector,
+    residentId: resident?.id ?? -1,
+    persona,
+    companions,
+    elsewhere: false,
   };
   if (!setPath(c, to.tile)) return null;
   rt.customers.push(c);
   rt.byId.set(c.id, c);
+  if (resident) rt.out.add(resident.id);
 
-  // Some shoppers already know where they are going: reputation brings them from across town.
+  // Decide where to go for it: one of your shops, or somewhere else in town.
   if (need) {
-    const s = session.state;
-    const today = dayOf(s.time);
-    const known = s.shops.filter((sh) => sh.type === need && isOpenNow(s, sh) && rand.chance((sh.reputation / 100) * (POPULATION.wordOfMouth + (SHOP_TYPES[sh.type].destination ?? 0)) * shopDemandMult(s, sh) + (sh.eventDay === today ? 0.5 : 0)));
-    if (known.length) headToShop(c, rand.pick(known));
+    const shop = chooseShop(s, resident, persona, need, from.tile);
+    if (shop) headToShop(c, shop);
+    else c.elsewhere = true;
   }
   return c;
 }
@@ -299,6 +329,9 @@ function spawn(): Customer | null {
 function despawn(c: Customer): void {
   leaveQueue(c);
   releaseStation(c);
+  rt.out.delete(c.residentId);
+  // Whoever went elsewhere got what they were after; their need starts building again.
+  if (c.elsewhere && !c.entered) metElsewhere(session.state, c.residentId, c.need);
   const i = rt.customers.indexOf(c);
   if (i >= 0) {
     rt.customers[i] = rt.customers[rt.customers.length - 1];
@@ -312,7 +345,7 @@ function despawn(c: Customer): void {
 
 function setPath(c: Customer, goal: number): boolean {
   const g = rt.grid;
-  const path = findPath(g, Math.floor(c.x), Math.floor(c.y), goal % g.w, Math.floor(goal / g.w));
+  const path = findPath(g, Math.floor(c.x), Math.floor(c.y), goal % g.w, Math.floor(goal / g.w), rt.crowd.length ? rt.crowd : undefined);
   if (!path) return false;
   // Stored reversed so the next step is a cheap pop().
   c.path = path.reverse();
@@ -388,6 +421,7 @@ function leaveShop(c: Customer): void {
     const delta = ((c.mood - 50) / 50) * (c.bought ? 0.6 : 0.45);
     shop.reputation = clamp(shop.reputation + delta, 0, 100);
     shop.moodAvg = (shop.moodAvg ?? 60) * 0.9 + c.mood * 0.1;
+    afterVisit(s, shop, c);
     bus.emit('visit:ended', { shopId: shop.id, mood: c.mood, bought: c.bought });
   }
   if (shop && c.cart.length) {
@@ -440,9 +474,16 @@ function considerShops(c: Customer): void {
     c.seen.push(shop.id);
     if (!isOpenNow(s, shop)) continue;
     // Reputation decides how tempting the shop looks from the street.
-    if (!rand.chance((0.2 + 0.7 * (shop.reputation / 100)) * shopDemandMult(s, shop))) continue;
+    const resident = c.residentId >= 0 ? s.residents.find((r) => r.id === c.residentId) ?? null : null;
+    const keen = clamp(appetite(s, resident, c.persona, shop.type), 0.4, 1.4);
+    // Someone who has been badly let down here walks straight past.
+    if ((resident?.memory[shop.id]?.score ?? 0) < -0.5) continue;
+    if (!rand.chance((0.2 + 0.7 * (shop.reputation / 100)) * shopDemandMult(s, shop) * keen * (c.elsewhere ? 0.6 : 1))) continue;
     c.seen.pop();
-    if (headToShop(c, shop)) return;
+    if (headToShop(c, shop)) {
+      c.elsewhere = false;
+      return;
+    }
     c.seen.push(shop.id);
   }
 }
@@ -458,7 +499,9 @@ function enterShop(c: Customer): void {
   c.entered = true;
   shop.today.customers++;
   // First impressions: decor lifts the mood, dirt drags it down. Every visitor leaves a little mess.
-  c.mood = clamp(c.mood + clamp(decorScore(shop) * 25, -10, 12) - shop.dirt * 0.18, 0, 100);
+  const fussy = personaOf(c.persona).ambience ?? 1;
+  c.mood = clamp(c.mood + (clamp(decorScore(shop) * 25, -10, 12) - shop.dirt * 0.18) * fussy, 0, 100);
+  if (c.companions.length && personaOf(c.persona).kidsWant && rand.chance(0.4)) think(c, rand.pick(['The kids want sweets.', 'Stay close, you two.', 'One treat each, that is all.']), 'neutral');
   if (shop.dirt > 55) think(c, 'This place is filthy.', 'bad', -4);
   const bins = shop.objects.filter((o) => defOf(o).kind === 'bin').length;
   shop.dirt = clamp(shop.dirt + 0.4 * (1 - Math.min(0.45, bins * 0.15)), 0, 100);
@@ -510,7 +553,9 @@ function goToShelf(c: Customer, shop: ShopState, step: Extract<Step, { t: 'buy' 
       for (const sl of obj.slots ?? []) if (sl.product && batchQty(sl.batches) > 0 && !wanted.has(sl.product)) alternatives.add(sl.product);
     }
     if (alternatives.size && rand.chance(0.4)) {
-      step.product = rand.pick([...alternatives]);
+      // Something similar if there is any, otherwise whatever takes their fancy.
+      const similar = [...alternatives].filter((p) => PRODUCTS[p].category === PRODUCTS[product].category);
+      step.product = rand.pick(similar.length ? similar : [...alternatives]);
       c.timer = 0.3;
       return;
     }
@@ -586,6 +631,28 @@ function checkout(c: Customer, shop: ShopState): void {
   joinQueue(c, shop, "There's nobody at the checkout!");
 }
 
+/** On the way to the till, something within arm's reach may end up in the basket. */
+function impulseBuy(c: Customer, shop: ShopState, registerId: number): void {
+  const P = personaOf(c.persona);
+  const reg = shop.objects.find((o) => o.id === registerId);
+  if (!reg || !c.cart.length || !rand.chance(P.impulse)) return;
+  for (const obj of shop.objects) {
+    if (defOf(obj).kind !== 'shelf' || Math.hypot(obj.x - reg.x, obj.y - reg.y) > 2.6) continue;
+    for (const slot of obj.slots ?? []) {
+      const product = slot.product;
+      if (!product || batchQty(slot.batches) <= 0 || c.cart.some((l) => l.product === product)) continue;
+      const price = shop.prices[product];
+      const spent = c.cart.reduce((a, l) => a + l.qty * l.price, 0);
+      // Impulse buys are small: nothing dear, and only if the money is there.
+      if (price > 8 || price > c.budget - spent || price > fairPrice(session.state, shop, product) * 1.4) continue;
+      if (!takeFromSlot(shop, slot, 1)) continue;
+      c.cart.push({ product, qty: 1, price });
+      think(c, rand.pick(['Ooh, and one of these.', 'Go on then.', 'Why not.']), 'neutral', 2);
+      return;
+    }
+  }
+}
+
 function joinQueue(c: Customer, shop: ShopState, nobody: string): void {
   const s = session.state;
   const open: RegisterRuntime[] = [];
@@ -603,6 +670,7 @@ function joinQueue(c: Customer, shop: ShopState, nobody: string): void {
     think(c, 'That queue is far too long!', 'bad', -20);
     return leaveShop(c);
   }
+  impulseBuy(c, shop, reg.objectId);
   reg.queue.push(c.id);
   c.registerId = reg.objectId;
   c.queueSlot = -1;
@@ -970,6 +1038,17 @@ export function updateAi(dt: number): void {
       spawn();
     }
     rt.spawnDebt = Math.min(rt.spawnDebt, 6);
+  }
+
+  // Refresh the crowd map a few times a game minute; paths planned after this avoid busy tiles.
+  crowdClock -= dt;
+  if (crowdClock <= 0) {
+    crowdClock = 0.3;
+    rt.crowd.fill(0);
+    for (const c of rt.customers) {
+      const i = Math.floor(c.y) * g.w + Math.floor(c.x);
+      if (rt.crowd[i] < 255) rt.crowd[i]++;
+    }
   }
 
   updateRegisters(dt);

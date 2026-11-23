@@ -10,6 +10,7 @@ import employeesJson from './employees.json';
 import upgradesJson from './upgrades.json';
 import eventsJson from './events.json';
 import weatherJson from './weather.json';
+import personasJson from './personas.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -342,3 +343,50 @@ export interface WeatherConfig {
 }
 
 export const WEATHER = weatherJson as WeatherConfig;
+
+export interface NeedDef {
+  name: string;
+  /** Typical hours between satisfying it; sets how fast the need builds. */
+  hours: number;
+  /** Which kinds of business satisfy it, and how well (1 = the obvious choice). */
+  types: Record<string, number>;
+  /** How strongly it is felt at each hour of the day. */
+  curve: number[];
+}
+
+export interface PersonaDef {
+  name: string;
+  /** Share of residents with this persona (tourists are added separately). */
+  share: number;
+  description: string;
+  budget: number;
+  patience: number;
+  /** Above 1 = quick to balk at a markup. */
+  priceSense: number;
+  /** How much past experience steers where they go. */
+  loyalty: number;
+  /** Chance of grabbing something extra near the till. */
+  impulse: number;
+  /** Multiplier on how many things they set out to buy. */
+  basket: number;
+  /** How much decor and cleanliness sway them (default 1). */
+  ambience?: number;
+  /** Company they bring: [chance, min, max, 'adult' | 'child']. */
+  group?: [number, number, number, string];
+  /** Things children in the group ask for. */
+  kidsWant?: string[];
+  /** Multipliers on how fast particular needs build. */
+  needs: Record<string, number>;
+  /** Products they favour. */
+  likes: string[];
+}
+
+export interface PersonaConfig {
+  residents: number;
+  /** Share of people on the street who are visitors with no memory of the city. */
+  touristShare: number;
+  needs: Record<string, NeedDef>;
+  personas: Record<string, PersonaDef>;
+}
+
+export const PERSONAS = personasJson as unknown as PersonaConfig;

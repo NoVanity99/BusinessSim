@@ -52,6 +52,10 @@ export class NpcViews {
   /** Emote shown because of a recent thought: name and seconds left. */
   private flash = new Map<number, { name: string; ttl: number }>();
   private motion = new Map<string, Motion>();
+  /** Sprites for the people walking with a customer, keyed by customer id * 8 + position in the group. */
+  private followers = new Map<number, Phaser.GameObjects.Image>();
+  /** Recent positions of each group leader, newest first, for companions to trail along. */
+  private trails = new Map<number, { x: number; y: number }[]>();
   private bubbles: Bubble[] = [];
   private ring: Phaser.GameObjects.Graphics;
   private offs: (() => void)[];
@@ -65,6 +69,11 @@ export class NpcViews {
       bus.on('npc:removed', (id) => {
         this.release(this.sprites, id);
         this.motion.delete(`c${id}`);
+        for (let i = 0; i < 8; i++) {
+          this.release(this.followers, id * 8 + i);
+          this.motion.delete(`f${id * 8 + i}`);
+        }
+        this.trails.delete(id);
         this.flash.delete(id);
         this.dropEmote(id);
       }),
@@ -206,6 +215,24 @@ export class NpcViews {
       const sitting = c.state === 'using' && (c.seatId >= 0 || this.statusEmote(c) === 'food');
       this.animate(img, `c${c.id}`, c.look, x, y, realDt, visible, sitting);
       if (visible) drawn++;
+
+      // Companions walk a few steps behind, following the path the leader actually took.
+      if (c.companions.length) {
+        let trail = this.trails.get(c.id);
+        if (!trail) this.trails.set(c.id, (trail = [{ x, y }]));
+        if (Math.hypot(trail[0].x - x, trail[0].y - y) > 0.22) {
+          trail.unshift({ x, y });
+          if (trail.length > 16) trail.pop();
+        }
+        c.companions.forEach((look, i) => {
+          const at = trail[Math.min(trail.length - 1, (i + 1) * 3)];
+          // Standing still, the group bunches up beside the leader instead of in a line.
+          const fx = at.x + (trail.length < 3 ? (i + 1) * 0.45 : 0);
+          const key = c.id * 8 + i;
+          this.animate(this.acquire(this.followers, key, charFrame(look, 'down', 0)), `f${key}`, look, fx, at.y, realDt, visible);
+          if (visible) drawn++;
+        });
+      }
 
       // Emote above the head: a recent strong feeling wins over what they are doing.
       const f = this.flash.get(c.id);

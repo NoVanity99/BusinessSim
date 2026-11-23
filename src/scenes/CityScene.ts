@@ -136,6 +136,14 @@ export class CityScene extends Phaser.Scene {
       bus.on('game:won', () => this.showEnding(true)),
       bus.on('game:over', () => this.showEnding(false)),
       bus.on('level:up', () => sfx('good')),
+      bus.on('review:posted', ({ shopId, stars, text }) => {
+        const shop = session.state.shops.find((sh) => sh.id === shopId);
+        if (shop && (stars === 1 || stars === 5)) toast(`${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} review for ${shop.name}: "${text}"`, stars === 5 ? 'good' : 'bad');
+      }),
+      bus.on('regular:gained', ({ shopId, name }) => {
+        const shop = session.state.shops.find((sh) => sh.id === shopId);
+        if (shop) toast(`${name} is now a regular at ${shop.name}.`, 'good');
+      }),
       bus.on('time:hour', () => session.state.shops.forEach((sh) => this.shopViews.markStockDirty(sh.id))),
       bus.on('sale', ({ x, y }) => sfx('register', this.audibility(x, y))),
       bus.on('door:enter', ({ shopId }) => {

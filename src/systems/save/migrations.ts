@@ -67,6 +67,15 @@ export const MIGRATIONS: Migration[] = [
       // Look ids used to run 0-23 over discs; they now index 72 drawn people. Old ids stay valid.
     },
   },
+  {
+    to: 4,
+    name: 'Add residents (people with memory) and shop reviews',
+    up(s) {
+      // Residents are generated when the simulation starts, since they need the city map.
+      s.residents ??= [];
+      for (const shop of s.shops ?? []) shop.reviews ??= [];
+    },
+  },
 ];
 
 export const LATEST_SAVE_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.to), 1);

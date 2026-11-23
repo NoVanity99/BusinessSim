@@ -93,6 +93,12 @@ export const rt: {
   tournamentFee: number;
   /** Footfall per tile, decayed over time, for the foot-traffic overlay. */
   heat: Float32Array;
+  /** Residents currently out on the street. */
+  out: Set<number>;
+  /** People per tile right now, so paths can steer around crowds. */
+  crowd: Uint8Array;
+  /** Extra pull of rival businesses for a shop type; rival companies plug in here. */
+  rivalPull: (type: string) => number;
 } = {
   grid: undefined as unknown as Grid,
   customers: [],
@@ -114,6 +120,9 @@ export const rt: {
   demandMult: {},
   tournamentFee: 8,
   heat: new Float32Array(0),
+  out: new Set(),
+  crowd: new Uint8Array(0),
+  rivalPull: () => 0,
 };
 
 export const regKey = (shopId: number, objectId: number): string => `${shopId}:${objectId}`;

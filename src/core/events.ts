@@ -41,6 +41,8 @@ export interface GameEvents {
   'game:over': void;
   'overlay:changed': string | null;
   'weather:changed': string;
+  'review:posted': { shopId: number; stars: number; text: string };
+  'regular:gained': { shopId: number; name: string };
   'quality:changed': string;
   /** Something visual happened at a tile: dust when building, sparkles at a till. */
   fx: { kind: 'dust' | 'coins' | 'steam' | 'smoke' | 'splash'; x: number; y: number };

@@ -10,6 +10,7 @@ import type { Order } from '../systems/economy/stock';
 import type { Loan } from '../systems/economy/loans';
 import type { ActiveEvent, NewsItem } from '../systems/events/events';
 import { newWeatherState, type WeatherState } from '../systems/world/weather';
+import type { Resident } from '../systems/ai/residents';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
@@ -50,6 +51,8 @@ export interface GameState {
   won: boolean;
   bankrupt: boolean;
   weather: WeatherState;
+  /** Everyone who lives in the city. Filled in when the simulation first starts. */
+  residents: Resident[];
 }
 
 export interface NewGameOptions {
@@ -86,6 +89,7 @@ export function createNewGame(opts: NewGameOptions): GameState {
     won: false,
     bankrupt: false,
     weather: newWeatherState(),
+    residents: [],
   };
 }
 

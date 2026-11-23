@@ -1,5 +1,5 @@
 import { addFrame, U } from './atlas';
-import { LOOK_COUNT } from './looks';
+import { ageOfLook, LOOK_COUNT, type AgeGroup } from './looks';
 
 /**
  * People and vehicles. Characters start from the six sets in the Kenney "RPG Urban Pack"
@@ -36,8 +36,6 @@ const BASES: { hair?: Pair; top: Pair; bottom: Pair; darkSkin?: boolean }[] = [
   { hair: ['#373733', '#50504a'], top: ['#c77b47', '#a9673b'], bottom: ['#aaa8bd', '#aaa8bd'] },
 ];
 
-export type AgeGroup = 'child' | 'adult' | 'senior';
-
 export interface Look {
   base: number;
   age: AgeGroup;
@@ -69,8 +67,7 @@ export function registerActorFrames(): void {
   for (let look = 0; look < LOOK_COUNT; look++) {
     const base = look % BASES.length;
     const src = BASES[base];
-    // One in six is a child, one in seven a senior; the worker set (hard hat) stays adult.
-    const age: AgeGroup = base !== 3 && look % 6 === 4 ? 'child' : look % 7 === 5 ? 'senior' : 'adult';
+    const age: AgeGroup = ageOfLook(look);
     const hair = age === 'senior' ? pick(HAIRS.slice(5), look, 1) : pick(HAIRS.slice(0, 5), look, 1);
     const map: Record<string, string> = {};
     const swap = (from: string[], to: string[]): void => from.forEach((c, i) => c !== to[i] && (map[c] = to[i]));

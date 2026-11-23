@@ -2,7 +2,8 @@ import { bus } from '../../core/events';
 import { money } from '../../core/format';
 import { session } from '../../core/state';
 import { selectNpc, ui } from '../../core/uiState';
-import { PRODUCTS, SHOP_TYPES } from '../../data';
+import { PERSONAS, PRODUCTS, SHOP_TYPES } from '../../data';
+import { isRegular, needLevel, personaOf } from '../../systems/ai/residents';
 import { cartTotal, STATE_LABEL } from '../../entities/Customer';
 import { rt } from '../../systems/ai/runtime';
 import { h, setChildren } from '../dom';
@@ -24,15 +25,33 @@ export function NpcPanel(): { el: HTMLElement; destroy(): void } {
     }
     el.style.display = 'block';
     const [word, cls] = moodWord(c.mood);
+    const P = personaOf(c.persona);
+    const resident = c.residentId >= 0 ? session.state.residents.find((r) => r.id === c.residentId) : undefined;
+    const opinions = resident ? session.state.shops.filter((sh) => resident.memory[sh.id]).map((sh) => [sh, resident.memory[sh.id]] as const) : [];
     const now = session.state.time.minutes;
     setChildren(
       el,
       h('h3', h('span', c.name), h('button.close', { onclick: () => selectNpc(null) }, '×')),
-      h('div.sub', c.need ? `${STATE_LABEL[c.state]} · looking for a ${SHOP_TYPES[c.need].name.toLowerCase()}` : STATE_LABEL[c.state]),
+      h('div.sub', h('span.tag', { style: { background: 'var(--info)' }, tip: P.description }, P.name), c.companions.length ? `  with ${c.companions.length} ${P.group?.[3] === 'child' ? (c.companions.length === 1 ? 'child' : 'children') : c.companions.length === 1 ? 'friend' : 'friends'}` : ''),
+      h('div.sub', c.need ? `${STATE_LABEL[c.state]} · ${c.elsewhere ? 'going elsewhere for' : 'looking for'} a ${SHOP_TYPES[c.need].name.toLowerCase()}` : STATE_LABEL[c.state]),
       h('div.kv', h('span.k', 'Mood'), h('span.v', { class: cls }, word)),
       h('div.meter', h('div', { style: { width: `${c.mood}%`, background: c.mood >= 45 ? 'var(--accent)' : c.mood >= 28 ? 'var(--warn)' : 'var(--danger)' } })),
       h('div.kv', { tip: 'What they can spend on this trip.' }, h('span.k', 'Money'), h('span.v', money(c.budget))),
       h('div.kv', { tip: 'How long they will stand in a queue.' }, h('span.k', 'Patience'), h('span.v', `${Math.round(c.patience)} min`)),
+      resident && h('div.section', 'Needs'),
+      ...(resident
+        ? Object.entries(PERSONAS.needs)
+            .map(([id, d]) => [d.name, needLevel(session.state, resident, id)] as [string, number])
+            .filter(([, v]) => v > 0.6)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([name, v]) => h('div', h('div.kv', h('span.k', name), h('span.v', { class: v > 1.3 ? 'warn' : '' }, v > 1.3 ? 'urgent' : v > 0.9 ? 'yes' : 'a little')), h('div.meter', h('div', { style: { width: `${Math.min(100, v * 50)}%`, background: 'var(--warn)' } }))))
+        : []),
+      opinions.length > 0 && h('div.section', 'What they think of your shops'),
+      ...opinions.map(([shop, m]) =>
+        h('div.kv', { tip: m.visits ? `${m.visits} visit${m.visits === 1 ? '' : 's'}, last on day ${m.lastDay}` : 'Has never been in, but has heard about it.' }, h('span.k', shop.name), h('span.v', { class: m.score > 0.3 ? 'good' : m.score < -0.3 ? 'bad' : '' }, isRegular(m) ? 'Regular' : m.visits === 0 ? (m.score > 0 ? 'Heard good things' : 'Heard bad things') : m.score > 0.3 ? 'Likes it' : m.score < -0.5 ? 'Avoids it' : m.score < -0.2 ? 'Unimpressed' : 'Neutral')),
+      ),
+      !resident && h('div.note', { style: { marginTop: '4px' } }, 'Just visiting the city.'),
       c.plan.length > 0 && h('div.section', 'Plans'),
       ...c.plan
         .filter((st) => st.t !== 'pay')

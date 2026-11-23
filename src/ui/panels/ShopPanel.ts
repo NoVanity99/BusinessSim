@@ -26,6 +26,7 @@ import { fairPrice } from '../../systems/shop/pricing';
 import { openOrders } from '../../systems/shop/kitchen';
 import { defOf } from '../../entities/Shop';
 import { dayOf } from '../../systems/time/clock';
+import { personaOf, regularsOf, shopRating } from '../../systems/ai/residents';
 import { buyUpgrade, upgradeCost, upgradeLevel, upgradesFor } from '../../systems/progress/upgrades';
 import { shopDemandMult } from '../../systems/events/events';
 
@@ -34,6 +35,8 @@ interface Tab {
   /** Refresh numbers in place without rebuilding controls. */
   update(): void;
 }
+
+const stars = (n: number): string => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
 
 const dot = (color: string): HTMLElement => h('span.dot', { style: { background: color } });
 
@@ -97,6 +100,8 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
       h('div.kv', h('span.k', 'Rent'), h('span.v', s.lots[lot.id]?.owner === 'owned' ? 'Owned' : `${money(rentOf(s, lot))} / day`)),
       h('div.kv', { tip: 'Customers remember good and bad visits. Reputation draws people in or keeps them away.' }, h('span.k', 'Reputation'), h('span.v', `${Math.round(shop.reputation)} / 100`)),
       h('div.meter', h('div', { style: { width: `${shop.reputation}%`, background: 'var(--accent)' } })),
+      h('div.kv', { tip: 'Average of the latest customer reviews. People check it before deciding where to go.' }, h('span.k', 'Rating'), h('span.v', shop.reviews.length ? `${stars(shopRating(shop))} ${shopRating(shop).toFixed(1)} (${shop.reviews.length})` : 'No reviews yet')),
+      h('div.kv', { tip: 'Residents who have been in at least three times and like the place. They come back on their own.' }, h('span.k', 'Regulars'), h('span.v', regularsOf(s, shop.id))),
       h('div.kv', { tip: 'Every visitor leaves a little mess. Dirt puts customers in a bad mood. Bins slow it down; a cleaner removes it.' }, h('span.k', 'Cleanliness'), h('span.v', { class: shop.dirt > 55 ? 'bad' : shop.dirt > 30 ? 'warn' : '' }, `${Math.round(100 - shop.dirt)}%`)),
       shop.dirt > 15 && h('div.actions', { style: { margin: '2px 0 8px' } }, h('button', { disabled: s.money < deepCleanCost(shop), onclick: () => { if (tryPay(s, deepCleanCost(shop), 'maintenance')) { shop.dirt = 0; bus.emit('shop:changed', shop.id); } }, tip: 'Pay a cleaning crew for a one-off scrub.' }, `Deep clean (${money(deepCleanCost(shop))})`)),
       shopDemandMult(s, shop) !== 1 && h('div.kv', { tip: 'Advertising, rivals and viral reviews change how many passers-by come in.' }, h('span.k', 'Customer interest'), h('span.v', { class: shopDemandMult(s, shop) < 1 ? 'bad' : 'good' }, `${Math.round(shopDemandMult(s, shop) * 100)}%`)),
@@ -122,6 +127,8 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
         ),
       problems.length > 0 && h('div.section', 'Needs attention'),
       ...problems.map((p) => h('div.warn', { style: { fontSize: '13px', marginBottom: '3px' } }, `• ${p}`)),
+      shop.reviews.length > 0 && h('div.section', 'Latest reviews'),
+      ...shop.reviews.slice(0, 5).map((r) => h('div.review', h('div', h('span', { class: r.stars >= 4 ? 'good' : r.stars <= 2 ? 'bad' : 'warn' }, stars(r.stars)), h('span.dim', `  ${r.author}, ${personaOf(r.persona).name.toLowerCase()} · day ${r.day}`)), h('div', `"${r.text}"`))),
       h('div.actions', h('button.danger', { tip: 'Sells all equipment and liquidates stock at a loss. You keep the lot.', onclick: () => { if (confirm(`Close ${shop.name} for good?`)) closeShop(s, shop); } }, 'Close this business')),
     );
   };
@@ -567,6 +574,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     bus.on('tool:changed', refresh),
     bus.on('time:hour', refresh),
     bus.on('staff:changed', refresh),
+    bus.on('review:posted', refresh),
     bus.on('upgrades:changed', refresh),
   ];
   return { el, destroy: () => offs.forEach((off) => off()) };

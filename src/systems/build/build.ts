@@ -88,6 +88,7 @@ export function createShop(s: GameState, lot: LotDef, typeId: string): ShopState
     today: emptyStats(),
     yesterday: emptyStats(),
     history: [],
+    reviews: [],
   };
   s.shops.push(shop);
   toast(`${shop.name} is set up. Furnish it from the Build tab; the Overview tab lists what is still missing.`, "good");
