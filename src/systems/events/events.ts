@@ -1,4 +1,5 @@
 import { bus, toast } from '../../core/events';
+import { claim } from '../economy/corporate';
 import { dayOfYear, holidaysOn, seasonOnDay } from '../world/seasons';
 import { SEASONS } from '../../data';
 import { adDemand } from '../marketing/marketing';
@@ -109,7 +110,8 @@ function healthInspection(s: GameState): void {
     spend(s, fine, 'fines');
     shop.today.costs += fine;
     shop.reputation = clamp(shop.reputation - 8, 0, 100);
-    news(s, `Health inspection at ${shop.name}: failed. The place was dirty. Fined ${money(fine)}.`, 'bad');
+    const paid = claim(s, 'liability', fine);
+    news(s, `Health inspection at ${shop.name}: failed. The place was dirty. Fined ${money(fine)}.${paid ? ` Your insurer covered ${money(paid)} of it.` : ''}`, 'bad');
   } else {
     shop.reputation = clamp(shop.reputation + 3, 0, 100);
     news(s, `Health inspection at ${shop.name}: passed with a clean bill of health.`, 'good');

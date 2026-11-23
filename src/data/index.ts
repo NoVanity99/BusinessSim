@@ -15,6 +15,7 @@ import rivalsJson from './rivals.json';
 import seasonsJson from './seasons.json';
 import marketingJson from './marketing.json';
 import logisticsJson from './logistics.json';
+import corporateJson from './corporate.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -517,3 +518,6 @@ export interface LogisticsConfig {
 }
 
 export const LOGISTICS = logisticsJson as unknown as LogisticsConfig;
+
+/** Property market, investors, tax, insurance and the owner's life. The JSON is its own type. */
+export const CORPORATE = corporateJson;

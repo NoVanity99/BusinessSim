@@ -1,0 +1,57 @@
+{
+  "_comment": "Property market, investors, tax, insurance and the owner's own life.",
+  "property": {
+    "driftPerDay": 0.012,
+    "reversion": 0.03,
+    "shopBoost": 0.004,
+    "minIndex": 0.6,
+    "maxIndex": 1.9,
+    "saleFee": 0.04,
+    "tenantRentShare": 0.85,
+    "evictFeeDays": 5,
+    "tenantNames": ["Dental Practice", "Law Office", "Hair Salon", "Travel Agency", "Bank Branch", "Estate Agent", "Florist", "Barber Shop", "Insurance Office", "Opticians", "Tailor", "Print Shop", "Yoga Studio", "Accountants", "Nail Bar"]
+  },
+  "investors": {
+    "names": ["Vera Lindqvist", "Marcus Oyelaran", "Greta Halvorsen", "Dev Malhotra", "Ines Carvalho", "Tobias Renner"],
+    "minLevel": 3,
+    "valuationMultiple": 1.4,
+    "stakes": [0.1, 0.2, 0.3],
+    "maxTotalStake": 0.49,
+    "offerChance": 0.2,
+    "offerDays": 3,
+    "buybackPremium": 1.25
+  },
+  "tax": {
+    "everyDays": 7,
+    "profitRate": 0.15,
+    "propertyRatePerDay": 0.0004,
+    "lateFeeRate": 0.1,
+    "exemptIncome": ["loan", "propertySale", "refund", "investment"],
+    "exemptExpense": ["property", "deposit", "loanPayment", "tax", "dividends", "buyback"]
+  },
+  "insurance": {
+    "theft":     { "name": "Theft Cover",        "perShopPerDay": 6,  "covers": 0.8, "description": "Pays back 80% of the value of anything a shoplifter gets away with." },
+    "breakdown": { "name": "Breakdown Cover",    "perShopPerDay": 9,  "covers": 1.0, "description": "Call-out repairs on broken machines cost you nothing." },
+    "liability": { "name": "Liability Cover",    "perShopPerDay": 5,  "covers": 0.75, "description": "Pays 75% of fines from inspections and other mishaps." },
+    "disaster":  { "name": "Fire and Flood Cover", "perShopPerDay": 8, "covers": 0.9, "description": "Pays 90% of the damage when a fire, flood or power cut hits one of your businesses." }
+  },
+  "player": {
+    "drainPerHourAtTill": 5,
+    "tiredBelow": 25,
+    "tiredSpeed": 0.6,
+    "visitMoraleBoost": 6,
+    "visitDirtCut": 15,
+    "homes": {
+      "studio":    { "name": "Rented Room",   "costPerDay": 15,  "deposit": 0,     "restPerHour": 5,  "maxEnergy": 100, "description": "A bed and a kettle. You recover slowly." },
+      "apartment": { "name": "Apartment",     "costPerDay": 55,  "deposit": 400,   "restPerHour": 8,  "maxEnergy": 110, "description": "Your own front door and a proper night's sleep." },
+      "house":     { "name": "Town House",    "costPerDay": 140, "deposit": 2500,  "restPerHour": 12, "maxEnergy": 125, "description": "Room to breathe. You bounce back quickly." },
+      "penthouse": { "name": "Penthouse",     "costPerDay": 380, "deposit": 12000, "restPerHour": 18, "maxEnergy": 150, "description": "The view over the city you are buying up. You are rarely tired." }
+    },
+    "cars": {
+      "none":   { "name": "On Foot",      "price": 0,     "costPerDay": 0,  "visitEnergy": 14, "visitsPerDay": 2, "description": "Getting between your shops takes it out of you." },
+      "used":   { "name": "Used Hatchback", "price": 2800,  "costPerDay": 8,  "visitEnergy": 7,  "visitsPerDay": 4, "description": "Starts most mornings. Halves the effort of getting around." },
+      "sedan":  { "name": "Saloon",       "price": 11000, "costPerDay": 16, "visitEnergy": 4,  "visitsPerDay": 7, "description": "Comfortable and quick. You can call in on most of your shops in a day." },
+      "sports": { "name": "Sports Car",   "price": 42000, "costPerDay": 45, "visitEnergy": 2,  "visitsPerDay": 12, "description": "Everywhere is five minutes away, and everyone sees you arrive." }
+    }
+  }
+}

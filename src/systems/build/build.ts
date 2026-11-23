@@ -35,7 +35,7 @@ export function setupCost(s: GameState, lot: LotDef, typeId: string): number {
 /** Open a new business on a lot the player holds, with a basic walled shell. */
 export function createShop(s: GameState, lot: LotDef, typeId: string): ShopState | null {
   const type = SHOP_TYPES[typeId];
-  if (!s.lots[lot.id] || shopOnLot(s, lot.id)) return null;
+  if (!s.lots[lot.id] || shopOnLot(s, lot.id) || s.lots[lot.id].tenant) return null;
   if (s.level < type.unlockLevel) {
     toast(`${type.name} unlocks at level ${type.unlockLevel}.`, 'bad');
     return null;

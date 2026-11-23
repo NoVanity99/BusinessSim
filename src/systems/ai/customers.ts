@@ -1,4 +1,5 @@
 import { bus } from '../../core/events';
+import { claim } from '../economy/corporate';
 import { couponCut } from '../marketing/marketing';
 import { calendarPriceSense } from '../world/seasons';
 import { clamp } from '../../core/format';
@@ -1160,7 +1161,8 @@ function gotAway(c: Customer): void {
       earn(s, value, 'refund');
       news(s, `A shoplifter took ${lootText(c)} from ${shop.name}, but your cameras identified them and ${money(value)} was recovered.`, 'info');
     } else {
-      news(s, `Shoplifter at ${shop.name}: ${lootText(c)} gone (${money(value)} of stock).${guard ? '' : cameras ? ' A security guard could have caught them.' : ' Cameras or a security guard would help.'}`, 'warn');
+      const paid = claim(s, 'theft', value);
+      news(s, `Shoplifter at ${shop.name}: ${lootText(c)} gone (${money(value)} of stock).${paid ? ` Your insurer paid ${money(paid)}.` : guard ? '' : cameras ? ' A security guard could have caught them.' : ' Cameras or a security guard would help.'}`, paid ? 'info' : 'warn');
     }
   }
   if (c.fleeing) c.speed /= FLEE_SPEED;

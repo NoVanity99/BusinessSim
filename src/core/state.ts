@@ -15,12 +15,16 @@ import type { PoachOffer, RivalCompany } from '../systems/rivals/rivals';
 import type { Campaign } from '../systems/marketing/marketing';
 import type { Contract } from '../systems/logistics/logistics';
 import type { Franchise, FranchiseOffer } from '../systems/logistics/franchise';
+import type { Investor, InvestorOffer } from '../systems/economy/corporate';
+import { newPlayer, type PlayerState } from '../systems/player/player';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
   deposit: number;
   /** Purchase price paid, for resale value. */
   paid?: number;
+  /** Someone renting an owned lot from you. */
+  tenant?: { name: string; rent: number; sinceDay: number };
 }
 
 /** Everything that gets saved. Plain JSON only: no classes, no Phaser objects. */
@@ -75,6 +79,17 @@ export interface GameState {
   franchises: Franchise[];
   franchiseOffers: FranchiseOffer[];
   nextFranchiseId: number;
+  /** Property prices per district against their starting level. */
+  propertyIndex: Record<string, number>;
+  propertyHistory: { day: number; index: Record<string, number> }[];
+  investors: Investor[];
+  investorOffers: InvestorOffer[];
+  nextOfferId: number;
+  /** Insurance policies held. */
+  insurance: Record<string, boolean>;
+  /** Daily worth of every company, for the index chart. */
+  companyIndex: { day: number; values: Record<string, number> }[];
+  player: PlayerState;
 }
 
 export interface NewGameOptions {
@@ -123,6 +138,14 @@ export function createNewGame(opts: NewGameOptions): GameState {
     franchises: [],
     franchiseOffers: [],
     nextFranchiseId: 1,
+    propertyIndex: {},
+    propertyHistory: [],
+    investors: [],
+    investorOffers: [],
+    nextOfferId: 1,
+    insurance: {},
+    companyIndex: [],
+    player: newPlayer(),
   };
 }
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.10.0 (unreleased) - Overhaul phase 9: property, corporate finance and the owner's life
+
+- **Property market**: every district has a price index that drifts from day to day and rises where shops are thriving. Rents and purchase prices follow it. Selling a lot now fetches today's market price less a 4% fee, so property can be bought low and sold high.
+- **Tenants**: an owned lot with no shop on it can be let. The tenant's premises appear on the lot and they pay rent every morning.
+- **Property window** (new sidebar button): every lot in the city with its rent, price, who holds it and what you have gained on it; district indices with trends; buy, rent, let and end tenancies from one table.
+- **Investors**: from level 3, backers offer cash for 10 to 30% of the company. They take that share of each day's trading profit until you buy them out at a premium. Never more than 49% in total.
+- **Tax**: every seventh day you pay 15% of the week's trading profit, plus a small charge on property you own. The Finances window shows the bill building up and when it falls due.
+- **Insurance**: four policies charged per shop per day. Theft cover pays back most of what shoplifters take, breakdown cover makes call-out repairs free, liability cover pays most of a fine, and fire and flood cover is there for the disasters to come.
+- **Company index**: a chart of what your company and each rival are worth, day by day.
+- **You** (new sidebar button, and an energy meter in the top bar): working a till yourself drains your energy; below a quarter you serve slowly, and at nothing you go home. You recover whenever you are away from the till. Four homes from a rented room to a penthouse set how fast you recover and how much energy you can hold; four cars from none to a sports car set how many of your shops you can **visit in person** each day and what it costs you. A visit lifts the staff, tidies the place and nudges its reputation.
+- The cost of living, insurance, tax, investors' share and tenants' rent all have their own lines in the accounts.
+- Save format 9. Older saves upgrade automatically.
+
 ## 1.9.0 (unreleased) - Overhaul phase 8: logistics, production chains and franchising
 
 - **Warehouse** (new business, level 4): a depot with pallet racking for buying in bulk. Orders delivered to a warehouse are 10% cheaper on top of the usual bulk discounts.

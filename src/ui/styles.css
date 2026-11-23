@@ -580,3 +580,30 @@ table.grid th { text-align: right; }
 .offer-card button { padding: 3px 10px; font-size: 12.5px; }
 
 .toasts { left: calc(50% + 70px); }
+
+.topbar .energy { display: flex; align-items: center; gap: 5px; color: var(--info); }
+.topbar .energy .meter { width: 56px; margin: 0; }
+.topbar .energy .meter > div { background: var(--info); }
+.topbar .energy.tired { color: var(--warn); }
+.topbar .energy.tired .meter > div { background: var(--warn); }
+.policy { display: flex; gap: 8px; padding: 3px 0; width: 100%; }
+.policy .name { font-weight: 600; width: 150px; flex: none; }
+.policy .dim { flex: 1; font-size: 12.5px; }
+.policy .cost { font-variant-numeric: tabular-nums; }
+.districts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.district { border: 1px solid var(--border-soft); border-radius: 8px; padding: 7px 9px; background: var(--panel-3); cursor: pointer; font-size: 12.5px; }
+.district.active { border-color: var(--accent); }
+.district .name { font-weight: 600; margin-bottom: 3px; font-size: 13px; }
+.district .row { gap: 8px; }
+.district b { font-size: 16px; }
+.sidebar { gap: 4px; padding: 8px 8px; }
+.sidebar button { width: 40px; height: 40px; }
+.sidebar .gap { height: 6px; }
+
+.topbar { gap: 12px; }
+.topbar > * { white-space: nowrap; flex: none; }
+.topbar .spacer { flex: 1; }
+.topbar .company { max-width: 150px; flex: 0 1 auto; }
+.topbar .level .meter { width: 64px; }
+.topbar .stat .label { display: none; }
+.topbar .date { font-size: 13px; }

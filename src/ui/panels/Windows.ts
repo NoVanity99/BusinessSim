@@ -1,4 +1,5 @@
 import { bus } from '../../core/events';
+import { financeExtras, propertyWindow, youWindow } from './Corporate';
 import { acceptOffer, declineOffer, flagship, franchisable, impression, inspect, royaltyOf } from '../../systems/logistics/franchise';
 import { LOGISTICS, NEIGHBORHOODS } from '../../data';
 import { ACHIEVEMENTS, STAT_LABELS, statValue } from '../../systems/progress/achievements';
@@ -21,11 +22,12 @@ import { DAY_NAMES } from '../../systems/time/clock';
 import { lineChart, SERIES_COLORS } from '../charts';
 import { h, setChildren } from '../dom';
 
-export type WindowId = 'businesses' | 'dashboard' | 'stock' | 'finances' | 'staff' | 'company' | 'news';
+export type WindowId = 'businesses' | 'dashboard' | 'stock' | 'finances' | 'property' | 'staff' | 'company' | 'you' | 'news';
 
 const LABELS: Record<string, string> = {
   sales: 'Sales', royalties: 'Franchise fees and royalties', services: 'Services', wholesale: 'Wholesale', propertySale: 'Property sales', loan: 'Loans taken', refund: 'Refunds', other: 'Other',
   rent: 'Rent', wages: 'Wages', utilities: 'Utilities', stock: 'Stock', construction: 'Construction', property: 'Property', deposit: 'Deposits',
+  rentIncome: 'Rent from tenants', investment: 'Investors', insurance: 'Insurance', tax: 'Tax', dividends: 'Investors\' share', buyback: 'Share buy-backs', living: 'Cost of living',
   loanPayment: 'Loan repayments', interest: 'Interest', fines: 'Fines', maintenance: 'Maintenance', marketing: 'Marketing', licenses: 'Licences',
 };
 
@@ -54,7 +56,7 @@ function ledgerTable(title: string, ledgers: DayLedger[]): HTMLElement {
   );
 }
 
-function finances(): HTMLElement {
+function finances(rerender: () => void): HTMLElement {
   const s = session.state;
   const parts = netWorthParts(s, session.city);
   const worth = netWorth(s, session.city);
@@ -82,6 +84,7 @@ function finances(): HTMLElement {
     h('div.section', `Income and expenses per day, last ${days.length} day${days.length === 1 ? '' : 's'}`),
     chart,
     h('div.row', { style: { alignItems: 'flex-start', gap: '18px', marginTop: '6px' } }, ledgerTable(`Today (${dayLabel(s.finance.today.day)})`, [s.finance.today]), ledgerTable('Yesterday', s.finance.history.slice(-1)), ledgerTable('Last 7 days', lastWeek)),
+    ...financeExtras(s, rerender),
   );
 }
 
@@ -186,9 +189,9 @@ function company(jumpTo: (lotId: number) => void): HTMLElement {
 
 // ---------- Host ----------
 
-const TITLES: Record<WindowId, string> = { businesses: 'Your businesses', dashboard: 'Shop dashboard', stock: 'Stock', finances: 'Finances', staff: 'Staff', company: 'Company', news: 'Notifications' };
+const TITLES: Record<WindowId, string> = { businesses: 'Your businesses', dashboard: 'Shop dashboard', stock: 'Stock', property: 'Property', you: 'You', finances: 'Finances', staff: 'Staff', company: 'Company', news: 'Notifications' };
 /** Windows that hold charts are wider, and are not rebuilt while the pointer is over them. */
-const WIDE: WindowId[] = ['businesses', 'dashboard', 'finances', 'stock', 'staff'];
+const WIDE: WindowId[] = ['businesses', 'dashboard', 'finances', 'stock', 'staff', 'property'];
 
 const OVERLAYS: Record<Overlay, { icon: string; name: string; tip: string; low: string; high: string; ramp: string }> = {
   traffic: { icon: 'feet', name: 'Foot traffic', tip: 'Where people have been walking over the last few hours.', low: 'Quiet', high: 'Busy', ramp: 'linear-gradient(90deg, rgba(57,135,229,0.08), rgba(57,135,229,0.9))' },
@@ -208,6 +211,8 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     dashboard: h('button', { tip: 'Shop dashboard\nCharts for one business: takings, customers, best sellers, busiest hours', onclick: () => toggle('dashboard') }, icon('dashboard')),
     stock: h('button', { tip: 'Stock\nEvery shop\'s stock, what is running out, and reordering', onclick: () => toggle('stock') }, icon('box')),
     finances: h('button', { tip: 'Finances (F)\nIncome, expenses and net worth', onclick: () => toggle('finances') }, icon('chart')),
+    property: h('button', { tip: 'Property\nEvery lot in the city, district prices, and your tenants', onclick: () => toggle('property') }, icon('home')),
+    you: h('button', { tip: 'You\nYour energy, home and car', onclick: () => toggle('you') }, icon('user')),
     staff: h('button', { tip: 'Staff (T)\nEveryone on your payroll', onclick: () => toggle('staff') }, icon('people')),
     company: h('button', { tip: 'Company\nLevel, rivals, achievements, statistics, upgrades and bank loans', onclick: () => toggle('company') }, icon('trophy')),
     news: h('button', { style: { display: 'none' } }),
@@ -236,7 +241,7 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     const scroll = shownId === open ? win.querySelector('.scroll')?.scrollTop ?? 0 : 0;
     shownId = open;
     const again = (): void => render(true);
-    const body = open === 'businesses' ? empireOverview(jump, openDashboard) : open === 'dashboard' ? shopDashboard(again, jump) : open === 'finances' ? finances() : open === 'stock' ? stockScreen(again, jump) : open === 'staff' ? staffScreen(again, jump) : open === 'company' ? company(jump) : notificationsWindow(again);
+    const body = open === 'businesses' ? empireOverview(jump, openDashboard) : open === 'dashboard' ? shopDashboard(again, jump) : open === 'finances' ? finances(again) : open === 'property' ? propertyWindow(again, jump) : open === 'you' ? youWindow(again) : open === 'stock' ? stockScreen(again, jump) : open === 'staff' ? staffScreen(again, jump) : open === 'company' ? company(jump) : notificationsWindow(again);
     setChildren(win, h('h3', h('span', TITLES[open]), h('button.close', { onclick: () => toggle(open!) }, '×')), body);
     body.scrollTop = scroll;
   };
@@ -250,7 +255,7 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
 
   // Live numbers without rebuilding on every sale: refresh twice a second while open.
   const timer = window.setInterval(() => open && open === 'company' && render(), 500);
-  const slow = window.setInterval(() => open && (open === 'businesses' || open === 'dashboard' || open === 'stock' || open === 'staff') && render(), 4000);
+  const slow = window.setInterval(() => open && (open === 'businesses' || open === 'dashboard' || open === 'stock' || open === 'staff' || open === 'property') && render(), 4000);
 
   const legend = h('div.panel.overlay-legend', { style: { display: 'none' } });
   const overlayBtns = (Object.keys(OVERLAYS) as Overlay[]).map((id) => h('button', { tip: `${OVERLAYS[id].name} overlay\n${OVERLAYS[id].tip}`, onclick: () => setOverlay(ui.overlay === id ? null : id) }, icon(OVERLAYS[id].icon)));
@@ -263,12 +268,14 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
   const offs = [bus.on('overlay:changed', renderOverlay), bus.on('notes:changed', () => open === 'news' && render()),
     bus.on('orders:changed', () => open === 'stock' && render()),
     bus.on('logistics:changed', () => open === 'stock' && render()),
+    bus.on('finance:changed', () => (open === 'finances' || open === 'property') && render()),
+    bus.on('player:changed', () => open === 'you' && render()),
     bus.on('window:open', ({ id, shopId }) => {
       if (id === 'dashboard' && shopId !== undefined) return openDashboard(shopId);
       open = id as WindowId;
       render(true);
     }), bus.on('time:hour', () => open === 'finances' && render()), bus.on('lot:selected', (id) => { if (id !== null && open) { open = null; render(true); } })];
-  const el = h('div', h('div.sidebar', buttons.businesses, buttons.dashboard, buttons.stock, buttons.finances, buttons.staff, buttons.company, h('div.gap'), h('button', { tip: 'Controls and help (F1)', onclick: () => bus.emit('help:open') }, icon('help')), h('button', { tip: 'Menu (Esc)\nSave, load, settings', onclick: openMenu }, icon('menu'))), h('div.overlay-bar', { tip: 'Map overlays' }, ...overlayBtns), win, legend);
+  const el = h('div', h('div.sidebar', buttons.businesses, buttons.dashboard, buttons.stock, buttons.staff, buttons.finances, buttons.property, buttons.company, buttons.you, h('div.gap'), h('button', { tip: 'Controls and help (F1)', onclick: () => bus.emit('help:open') }, icon('help')), h('button', { tip: 'Menu (Esc)\nSave, load, settings', onclick: openMenu }, icon('menu'))), h('div.overlay-bar', { tip: 'Map overlays' }, ...overlayBtns), win, legend);
   el.style.pointerEvents = 'none';
   for (const child of Array.from(el.children) as HTMLElement[]) child.style.pointerEvents = 'auto';
   return {

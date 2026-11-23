@@ -1,4 +1,5 @@
 import { SPEEDS } from '../../core/constants';
+import { homeOf, isTired } from '../../systems/player/player';
 import { dayOfSeason, holidaysOn, nextHoliday, seasonOf } from '../../systems/world/seasons';
 import { SEASONS } from '../../data';
 import { dayOf } from '../../systems/time/clock';
@@ -29,6 +30,14 @@ export function TopBar(openNotifications: () => void): { el: HTMLElement; destro
   const repEl = h('div.stat', { tip: 'Average reputation across your businesses that serve customers.' });
   const dateEl = h('div.date');
   const weatherEl = h('div.weather');
+  const energyFill = h('div');
+  const energyEl = h('div.energy', icon('bolt', 16), h('div.meter', energyFill));
+  const refreshEnergy = (): void => {
+    const max = homeOf(s).maxEnergy;
+    energyFill.style.width = `${(s.player.energy / max) * 100}%`;
+    energyEl.classList.toggle('tired', isTired(s));
+    energyEl.dataset.tip = `Your energy: ${Math.round(s.player.energy)} of ${max}.\n${s.ownerAt ? 'You are working a till, which wears you out.' : 'You are resting.'}${isTired(s) ? '\nYou are worn out and serve slowly.' : ''}\nSee the You window for your home and car.`;
+  };
   const seasonEl = h('div.season');
   const refreshWeather = (): void => {
     const w = weatherDef(s);
@@ -121,18 +130,20 @@ export function TopBar(openNotifications: () => void): { el: HTMLElement; destro
     bus.on('shop:created', refreshRep),
     bus.on('weather:changed', refreshWeather),
     bus.on('time:day', refreshSeason),
+    bus.on('player:changed', refreshEnergy),
     bus.on('notes:changed', refreshBell),
   ];
   refreshLevel();
   refreshRep();
   refreshWeather();
   refreshSeason();
+  refreshEnergy();
   paint();
   refreshTime();
   refreshSpeed();
   refreshBell();
 
-  const el = h('div.topbar', h('div.company', { tip: 'Your company' }, s.companyName), moneyEl, levelEl, repEl, h('div.spacer'), seasonEl, weatherEl, h('div.when', dateEl, clockEl), h('div.speed', ...speedBtns), bell);
+  const el = h('div.topbar', h('div.company', { tip: 'Your company' }, s.companyName), moneyEl, levelEl, repEl, energyEl, h('div.spacer'), seasonEl, weatherEl, h('div.when', dateEl, clockEl), h('div.speed', ...speedBtns), bell);
   return {
     el,
     destroy: () => {

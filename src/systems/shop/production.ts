@@ -1,4 +1,5 @@
 import { bus, toast } from '../../core/events';
+import { insured } from '../economy/corporate';
 import { wantedDownstream } from '../logistics/logistics';
 import { recordSale } from '../../entities/Shop';
 import { money } from '../../core/format';
@@ -38,9 +39,10 @@ export function sellWholesale(s: GameState, shop: ShopState, product: string, qt
 
 /** Pay to have a broken machine fixed on the spot. */
 export function repairNow(s: GameState, shop: ShopState, obj: PlacedObject): boolean {
-  const cost = FURNITURE[obj.def].repairCost ?? 50;
+  // Breakdown cover means the call-out is free.
+  const cost = insured(s, 'breakdown') ? 0 : FURNITURE[obj.def].repairCost ?? 50;
   if (!obj.broken) return false;
-  if (!tryPay(s, cost, 'maintenance')) {
+  if (cost > 0 && !tryPay(s, cost, 'maintenance')) {
     toast(`You need ${money(cost)} for the repair.`, 'bad');
     return false;
   }

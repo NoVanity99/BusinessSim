@@ -4,6 +4,7 @@ import { hourFloat } from '../time/clock';
 import { DIFFICULTIES, ECONOMY } from '../../data';
 import { cashierAt } from '../staff/agents';
 import { performance } from '../staff/staff';
+import { ownerSpeed } from '../player/player';
 
 /** Within opening hours and not closed by the player. */
 export function isOpenNow(s: GameState, shop: ShopState): boolean {
@@ -16,7 +17,7 @@ export function isOpenNow(s: GameState, shop: ShopState): boolean {
 /** How fast a station is being worked: 0 = unattended, 1 = an average worker. */
 export function operatorSpeed(s: GameState, shop: ShopState, obj: PlacedObject): number {
   if (defOf(obj).kind !== 'register') return 0;
-  if (s.ownerAt?.shopId === shop.id && s.ownerAt.objectId === obj.id) return 1;
+  if (s.ownerAt?.shopId === shop.id && s.ownerAt.objectId === obj.id) return ownerSpeed(s);
   const cashier = cashierAt(s, shop.id, obj.id);
   if (cashier) return performance(cashier);
   // Self-checkout keeps unattended tills working, slowly.

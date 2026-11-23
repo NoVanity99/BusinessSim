@@ -115,6 +115,20 @@ export const MIGRATIONS: Migration[] = [
       s.nextFranchiseId ??= 1;
     },
   },
+  {
+    to: 9,
+    name: 'Add the property market, investors, insurance, the company index and the owner',
+    up(s) {
+      s.propertyIndex ??= {};
+      s.propertyHistory ??= [];
+      s.investors ??= [];
+      s.investorOffers ??= [];
+      s.nextOfferId ??= 1;
+      s.insurance ??= {};
+      s.companyIndex ??= [];
+      s.player ??= { energy: 100, home: 'studio', car: 'none', visited: [], visitDay: 0 };
+    },
+  },
 ];
 
 export const LATEST_SAVE_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.to), 1);

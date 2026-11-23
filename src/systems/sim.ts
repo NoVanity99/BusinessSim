@@ -11,6 +11,8 @@ import { installAchievements } from './progress/achievements';
 import { marketingDaily } from './marketing/marketing';
 import { contractsDaily, dispatchDeliveries, resetLogistics } from './logistics/logistics';
 import { franchisesDaily } from './logistics/franchise';
+import { corporateDaily } from './economy/corporate';
+import { playerDaily, playerHourly } from './player/player';
 import { sendDeliveryVan } from './ai/vehicles';
 import { initVehicles, syncVending, updateVehicles } from './ai/vehicles';
 import { updateProduction } from './shop/production';
@@ -93,6 +95,7 @@ export function installSim(): () => void {
     bus.on('lot:changed', (lotId) => rebuildLot(rt.grid, session.city, session.city.lots[lotId])),
     bus.on('time:hour', () => {
       staffHourly(s);
+      playerHourly(s);
       managerReorder(s);
       eventsHourly(s);
       weatherHourly(s);
@@ -111,6 +114,8 @@ export function installSim(): () => void {
       spend(s, utilities, 'utilities');
       loansDaily(s);
       const closed = closeDay(s, day);
+      corporateDaily(s, closed);
+      playerDaily(s);
       for (const shop of s.shops) {
         shop.yesterday = shop.today;
         shop.history.push({ day: day - 1, ...shop.today });

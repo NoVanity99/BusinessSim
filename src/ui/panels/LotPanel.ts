@@ -4,7 +4,8 @@ import { session, shopOnLot } from '../../core/state';
 import { selectLot } from '../../core/uiState';
 import { createShop, setupCost } from '../../systems/build/build';
 import { NEIGHBORHOODS, SHOP_TYPES } from '../../data';
-import { buyLot, depositOf, priceOf, releaseLot, rentLot, rentOf, RESALE_SHARE } from '../../systems/economy/property';
+import { buyLot, depositOf, evictFee, evictTenant, letLot, priceOf, releaseLot, rentLot, rentOf, saleValue, tenantRent } from '../../systems/economy/property';
+import { propertyIndex } from '../../systems/economy/corporate';
 import { h, setChildren } from '../dom';
 import { buyOut, buyoutPrice, companyOf, competitorOf, rivalOnLot, rivalOpenNow, rivalPrice } from '../../systems/rivals/rivals';
 import { priceIndex } from '../../systems/ai/residents';
@@ -107,7 +108,7 @@ export function LotPanel(): { el: HTMLElement; destroy(): void } {
           );
         })
       : [];
-    const status = own ? (own.owner === 'owned' ? 'Owned by you' : 'Leased by you') : 'Available';
+    const status = own ? (own.tenant ? 'Yours, let to a tenant' : own.owner === 'owned' ? 'Owned by you' : 'Leased by you') : 'Available';
 
     el.style.display = 'block';
     setChildren(
@@ -122,13 +123,17 @@ export function LotPanel(): { el: HTMLElement; destroy(): void } {
       h('div.kv', h('span.k', 'Rent'), h('span.v', `${money(rent)} / day`)),
       !own && h('div.kv', { tip: 'Paid when you sign. Returned when you end the lease.' }, h('span.k', 'Deposit'), h('span.v', money(deposit))),
       own?.owner !== 'owned' && h('div.kv', { tip: 'Buy the lot outright and never pay rent on it again.' }, h('span.k', 'Purchase price'), h('span.v', money(price))),
-      own && h('div.actions', ...businesses),
+      own?.tenant && h('div.kv', h('span.k', `Let to a ${own.tenant.name.toLowerCase()}`), h('span.v.good', `+${money(own.tenant.rent)} / day`)),
+      h('div.kv', { tip: 'Prices and rents here against where they started. See the Property window for every district.' }, h('span.k', 'Local property market'), h('span.v', `${Math.round(propertyIndex(s, lot.district) * 100)}`)),
+      own && !own.tenant && h('div.actions', ...businesses),
       h(
         'div.actions',
         !own && h('button.primary', { disabled: s.money < deposit, onclick: () => rentLot(s, lot), tip: `Pay a ${money(deposit)} deposit, then ${money(rent)} every midnight.` }, `Rent (${money(deposit)} deposit)`),
         own?.owner !== 'owned' && h('button', { disabled: s.money < price, onclick: () => buyLot(s, lot) }, `Buy for ${money(price)}`),
         own?.owner === 'rented' && h('button.danger', { onclick: () => releaseLot(s, lot), tip: 'Your deposit is returned.' }, 'End lease'),
-        own?.owner === 'owned' && h('button.danger', { onclick: () => releaseLot(s, lot), tip: `You get back ${Math.round(RESALE_SHARE * 100)}% of what you paid.` }, `Sell for ${money(Math.round((own.paid ?? price) * RESALE_SHARE))}`),
+        own?.owner === 'owned' && !own.tenant && h('button', { onclick: () => letLot(s, lot), tip: 'A tenant moves in and pays you rent every morning. You cannot open a shop here while it is let.' }, `Let to a tenant (${money(tenantRent(s, lot))}/day)`),
+        own?.tenant && h('button', { disabled: s.money < evictFee(s, lot), onclick: () => evictTenant(s, lot) }, `End the tenancy (${money(evictFee(s, lot))})`),
+        own?.owner === 'owned' && !own.tenant && h('button.danger', { onclick: () => releaseLot(s, lot), tip: `Today's market price less the agent's fee.${own.paid ? ` You paid ${money(own.paid)}.` : ''}` }, `Sell for ${money(saleValue(s, lot))}`),
       ),
     );
   };
@@ -140,6 +145,7 @@ export function LotPanel(): { el: HTMLElement; destroy(): void } {
     }),
     bus.on('lot:changed', render),
     bus.on('rivals:changed', render),
+    bus.on('finance:changed', render),
     bus.on('shop:removed', render),
     bus.on('level:up', render),
     // Re-render only when cash crosses a threshold, so buttons are not replaced mid-click.

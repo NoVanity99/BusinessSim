@@ -70,7 +70,19 @@ export const rivalById = (s: GameState, id: number): RivalShop | undefined => al
 /** Whatever stands on a lot that the player cannot rent: a rival's shop or one of their own franchises. */
 export const occupantOf = (s: GameState, lotId: number): RivalShop | undefined => rivalOnLot(s, lotId) ?? s.franchises.find((f) => f.lotId === lotId);
 /** Every company with buildings to draw: the rivals, and the player's franchisees under the player's colour. */
-export const brandsOnMap = (s: GameState): { name: string; color: string; roof: string; shops: RivalShop[] }[] => [...s.rivals, { name: s.companyName, color: '#2f9e7f', roof: 'house', shops: s.franchises }];
+export const brandsOnMap = (s: GameState): { name: string; color: string; roof: string; shops: RivalShop[] }[] => [
+  ...s.rivals,
+  { name: s.companyName, color: '#2f9e7f', roof: 'house', shops: s.franchises },
+  // Tenants on lots the player owns: ordinary premises, drawn in a neutral colour.
+  {
+    name: 'Tenants',
+    color: '#6b7688',
+    roof: 'office',
+    shops: Object.entries(s.lots)
+      .filter(([, own]) => own.tenant)
+      .map(([id, own]) => ({ id: 1_000_000 + +id, lotId: +id, type: 'convenience', name: own.tenant!.name, priceIndex: 1, quality: 50, openedDay: own.tenant!.sinceDay, saleUntil: 0, today: 0, yesterday: 0, profitAvg: 0 })),
+  },
+];
 
 export function rivalOpenNow(s: GameState): boolean {
   const h = hourFloat(s.time);

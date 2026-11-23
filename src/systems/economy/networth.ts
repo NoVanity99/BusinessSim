@@ -3,7 +3,7 @@ import { PRODUCTS } from '../../data';
 import { batchQty } from '../../entities/Shop';
 import { sellValue } from '../build/build';
 import type { City } from '../city/generate';
-import { priceOf, RESALE_SHARE } from './property';
+import { saleValue } from './property';
 
 export interface NetWorthParts {
   cash: number;
@@ -18,7 +18,7 @@ export interface NetWorthParts {
 export function netWorthParts(s: GameState, city: City): NetWorthParts {
   const parts: NetWorthParts = { cash: s.money, property: 0, equipment: 0, stock: 0, deposits: 0, debt: 0 };
   for (const [id, own] of Object.entries(s.lots)) {
-    if (own.owner === 'owned') parts.property += (own.paid ?? priceOf(s, city.lots[+id])) * RESALE_SHARE;
+    if (own.owner === 'owned') parts.property += saleValue(s, city.lots[+id]);
     else parts.deposits += own.deposit;
   }
   for (const shop of s.shops) {

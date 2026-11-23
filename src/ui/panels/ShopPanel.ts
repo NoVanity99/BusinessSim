@@ -1,4 +1,5 @@
 import { bus } from '../../core/events';
+import { visitProblem, visitShop } from '../../systems/player/player';
 import { deliveryProblem, driversOnDuty, isSupplier, moveOnRoute, setSupplier, suppliedBy, supplierOf, suppliers, vansAt } from '../../systems/logistics/logistics';
 import { campaignCost, isRunning, startCampaign } from '../../systems/marketing/marketing';
 import { nextHoliday } from '../../systems/world/seasons';
@@ -107,7 +108,12 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
 
     setChildren(
       body,
-      h('div.actions', { style: { margin: '0 0 8px' } }, h('button', { onclick: () => bus.emit('window:open', { id: 'dashboard', shopId: shop.id }), tip: 'Charts for this business: takings, customers, best sellers and busiest hours.' }, 'Open dashboard')),
+      h(
+        'div.row',
+        { style: { margin: '0 0 8px' } },
+        h('button', { style: { flex: '1' }, onclick: () => bus.emit('window:open', { id: 'dashboard', shopId: shop.id }), tip: 'Charts for this business: takings, customers, best sellers and busiest hours.' }, 'Open dashboard'),
+        h('button', { style: { flex: '1' }, disabled: !!visitProblem(s, shop), onclick: () => visitShop(s, shop), tip: `Call in yourself: staff morale goes up, the place gets tidied and its reputation gets a nudge. Costs you energy; a car makes it cheaper and lets you visit more shops a day.${visitProblem(s, shop) ? `\n${visitProblem(s, shop)}.` : ''}` }, 'Visit in person'),
+      ),
       h('div.kv', h('span.k', 'Type'), h('span.v', type.name)),
       // Own supply chain: either this shop is fed by a warehouse or factory, or it is one.
       !isSupplier(shop) &&
@@ -752,6 +758,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     bus.on('build:history', refresh),
     bus.on('marketing:changed', refresh),
     bus.on('logistics:changed', refresh),
+    bus.on('player:changed', refresh),
     bus.on('time:hour', refresh),
     bus.on('staff:changed', refresh),
     bus.on('review:posted', refresh),

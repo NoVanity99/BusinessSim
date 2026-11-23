@@ -1,7 +1,10 @@
 import { bus, toast } from '../../core/events';
 import { money } from '../../core/format';
 import type { GameState } from '../../core/state';
-import { DIFFICULTIES } from '../../data';
+import { CORPORATE, DIFFICULTIES } from '../../data';
+import { rand } from '../../core/rng';
+import { dayOf } from '../time/clock';
+import { shopOnLot } from '../../core/state';
 import type { City, LotDef } from '../city/generate';
 import { earn, spend, tryPay } from './finance';
 import { occupantOf } from '../rivals/rivals';
@@ -11,10 +14,15 @@ export const DEPOSIT_DAYS = 3;
 /** Share of the purchase price you get back when selling a lot. */
 export const RESALE_SHARE = 0.85;
 
+/** The district's price level against where it started. */
+const index = (s: GameState, lot: LotDef): number => s.propertyIndex?.[lot.district] ?? 1;
+
 export const rentOf = (s: GameState, lot: LotDef): number =>
-  Math.round(lot.rent * DIFFICULTIES[s.difficulty].costMult);
+  Math.round((lot.rent * DIFFICULTIES[s.difficulty].costMult * index(s, lot)) / 5) * 5;
 export const priceOf = (s: GameState, lot: LotDef): number =>
-  Math.round((lot.price * DIFFICULTIES[s.difficulty].costMult) / 100) * 100;
+  Math.round((lot.price * DIFFICULTIES[s.difficulty].costMult * index(s, lot)) / 100) * 100;
+/** What an owned lot would fetch today, after the agent's fee. */
+export const saleValue = (s: GameState, lot: LotDef): number => Math.round(priceOf(s, lot) * (1 - CORPORATE.property.saleFee));
 export const depositOf = (s: GameState, lot: LotDef): number => rentOf(s, lot) * DEPOSIT_DAYS;
 
 export function rentLot(s: GameState, lot: LotDef): boolean {
@@ -53,9 +61,11 @@ export function releaseLot(s: GameState, lot: LotDef): boolean {
     earn(s, current.deposit, 'refund');
     toast(`Lease ended. Deposit of ${money(current.deposit)} returned.`, 'info');
   } else {
-    const value = Math.round((current.paid ?? priceOf(s, lot)) * RESALE_SHARE);
+    if (current.tenant) return false;
+    const value = saleValue(s, lot);
+    const gain = value - (current.paid ?? value);
     earn(s, value, 'propertySale');
-    toast(`Lot sold for ${money(value)}.`, 'info');
+    toast(`Lot sold for ${money(value)}${Math.abs(gain) >= 100 ? `, ${gain > 0 ? 'a profit' : 'a loss'} of ${money(Math.abs(gain))} on what you paid` : ''}.`, gain >= 0 ? 'good' : 'info');
   }
   delete s.lots[lot.id];
   bus.emit('lot:changed', lot.id);
@@ -70,4 +80,35 @@ export function chargeDailyRent(s: GameState, city: City): number {
   }
   spend(s, total, 'rent');
   return total;
+}
+
+/** What a tenant would pay per day for a lot at today's prices. */
+export const tenantRent = (s: GameState, lot: LotDef): number => Math.round(lot.rent * index(s, lot) * CORPORATE.property.tenantRentShare);
+
+/** Let an owned, empty lot to a tenant. They pay rent every morning and their premises occupy the lot. */
+export function letLot(s: GameState, lot: LotDef): boolean {
+  const own = s.lots[lot.id];
+  if (own?.owner !== 'owned' || own.tenant || shopOnLot(s, lot.id)) return false;
+  own.tenant = { name: rand.pick(CORPORATE.property.tenantNames), rent: tenantRent(s, lot), sinceDay: dayOf(s.time) };
+  toast(`Lot let to a ${own.tenant.name.toLowerCase()} for ${money(own.tenant.rent)} a day.`, 'good');
+  bus.emit('lot:changed', lot.id);
+  bus.emit('rivals:changed');
+  return true;
+}
+
+export const evictFee = (s: GameState, lot: LotDef): number => (s.lots[lot.id]?.tenant?.rent ?? 0) * CORPORATE.property.evictFeeDays;
+
+/** End a tenancy early, paying the tenant off. */
+export function evictTenant(s: GameState, lot: LotDef): boolean {
+  const own = s.lots[lot.id];
+  if (!own?.tenant) return false;
+  const fee = evictFee(s, lot);
+  if (!tryPay(s, fee, 'other')) {
+    toast(`You need ${money(fee)} to buy the tenant out of their lease.`, 'bad');
+    return false;
+  }
+  delete own.tenant;
+  bus.emit('lot:changed', lot.id);
+  bus.emit('rivals:changed');
+  return true;
 }

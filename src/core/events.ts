@@ -58,6 +58,8 @@ export interface GameEvents {
   achievement: string;
   'marketing:changed': void;
   'logistics:changed': void;
+  'finance:changed': void;
+  'player:changed': void;
   /** One of your vans has set off with a delivery. */
   'delivery:sent': { fromShopId: number; toShopId: number };
   'season:changed': string;
