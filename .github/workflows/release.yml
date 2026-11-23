@@ -1,10 +1,14 @@
 name: Release
 
-# Runs when a version tag is pushed, for example v1.0.1.
 # Builds the Windows installer and portable exe and publishes them as a GitHub release.
+# Two ways to start it:
+#   1. Push a version tag, for example v1.0.1 (this is what `npm run release` does).
+#   2. Press "Run workflow" on the Actions page. It releases the version in package.json
+#      from the chosen branch and creates the matching tag for you.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -25,15 +29,23 @@ jobs:
           node-version: lts/*
           cache: npm
 
-      - name: Check that the tag matches package.json
+      - name: Work out the version and check it
         shell: bash
         run: |
           VERSION="v$(node -p "require('./package.json').version")"
-          if [ "$VERSION" != "$GITHUB_REF_NAME" ]; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$VERSION" != "$GITHUB_REF_NAME" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match the version in package.json ($VERSION). Use 'npm run release' so they are bumped together, or delete the tag and re-tag the right commit."
             exit 1
           fi
-          echo "Releasing $VERSION"
+          # A published release for this version must not exist already. A leftover draft is fine and is replaced.
+          STATE="$(gh release view "$VERSION" --json isDraft --jq '.isDraft' 2>/dev/null || echo none)"
+          if [ "$STATE" = "false" ]; then
+            echo "::error::Release $VERSION is already published. Bump the version in package.json (npm run release) before releasing again."
+            exit 1
+          fi
+          if [ "$STATE" = "true" ]; then gh release delete "$VERSION" --yes; fi
+          echo "TAG=$VERSION" >> "$GITHUB_ENV"
+          echo "Releasing $VERSION from $GITHUB_SHA"
 
       - run: npm ci
 
@@ -42,9 +54,10 @@ jobs:
 
       # Created as a draft so players and the in-game updater never see a release
       # that is still missing its files. Notes are generated from commits since the last tag.
+      # When started by hand, publishing the draft creates the tag at this commit.
       - name: Create draft release with generated notes
         shell: bash
-        run: gh release create "$GITHUB_REF_NAME" --draft --generate-notes --title "BusinessSim $GITHUB_REF_NAME"
+        run: gh release create "$TAG" --draft --generate-notes --target "$GITHUB_SHA" --title "BusinessSim $TAG"
 
       # Uploads the installer, its .blockmap, latest.yml and the portable exe to the draft.
       - name: Build and upload
@@ -58,9 +71,9 @@ jobs:
       - name: Check the release has everything the updater needs
         shell: bash
         run: |
-          ASSETS="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name')"
+          ASSETS="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
           echo "$ASSETS"
-          for NEEDED in latest.yml "Setup-${GITHUB_REF_NAME#v}.exe" "Setup-${GITHUB_REF_NAME#v}.exe.blockmap" "Portable-${GITHUB_REF_NAME#v}.exe"; do
+          for NEEDED in latest.yml "Setup-${TAG#v}.exe" "Setup-${TAG#v}.exe.blockmap" "Portable-${TAG#v}.exe"; do
             if ! echo "$ASSETS" | grep -q "$NEEDED"; then
               echo "::error::The release is missing a file matching '$NEEDED'. It has been left as a draft."
               exit 1
@@ -69,4 +82,4 @@ jobs:
 
       - name: Publish the release
         shell: bash
-        run: gh release edit "$GITHUB_REF_NAME" --draft=false --latest
+        run: gh release edit "$TAG" --draft=false --latest

@@ -103,6 +103,8 @@ For the very first release, tag the version that is already in `package.json` wi
 npm run release -- current
 ```
 
+You can also release without touching git: on GitHub open **Actions > Release > Run workflow**, pick the branch, and run it. It releases whatever version is in `package.json` on that branch and creates the tag itself. It refuses if that version is already published.
+
 What happens next, in about five minutes:
 
 1. The workflow checks the tag against `package.json`, runs `npm ci` and builds the game.
