@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0 (unreleased) - Overhaul phase 5: interface, part one
+
+- **New look**: one theme across every panel (colours, spacing, shadows, focus rings, scrollbars) and a single set of line icons in place of emoji.
+- **Top bar**: the money counter rolls to its new value and each change floats past as a green or red figure; weather has its own icon; a **notification bell** shows how many messages are unread and rings for warnings.
+- **Notifications**: every message is kept in a log (bell, or N) that can be filtered by kind. Messages about a shop, a rival or an employee are **clickable**, both as pop-ups and in the log, and take the camera there and select it.
+- **Minimap** (M to hide): the whole city with your businesses, rival shops, the crowds and the area on screen. Click or drag on it to move the camera.
+- **Shop dashboard** (new sidebar button, or "Open dashboard" in a shop): headline figures against the previous period, a line chart of takings and costs, stacked bars of customers served and lost, a bar chart of the busiest hours, a donut of where the money comes from and the best sellers. Switch between daily, weekly and monthly.
+- **Your businesses** is now an overview of the whole company: totals, share of takings by business, a seven-day trend per shop and a ranking against the rival companies.
+- Shops now record takings per product and customers per hour each day to feed these charts (existing saves start collecting from the first day played).
+- New key bindings: N for notifications, M for the map. Both can be rebound in Settings.
+
 ## 1.5.0 (unreleased) - Overhaul phase 4: staff, rivals and thieves
 
 - **Task priorities**: every role now has an ordered list of jobs and works down it, taking the first one with something waiting. A cashier serves while there are customers, restocks when the shop is quiet and cleans when the shelves are full; stockers and cooks step in elsewhere when their own work is done. Reorder each role's list per shop on the new **Task priorities** board in the Staff tab. Defaults live in `src/data/employees.json`.

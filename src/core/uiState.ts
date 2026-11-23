@@ -15,7 +15,9 @@ export const ui: {
   selectedNpc: number | null;
   selectedStaff: number | null;
   overlay: Overlay | null;
-} = { tool: null, selectedLot: null, selectedObject: null, selectedNpc: null, selectedStaff: null, overlay: null };
+  /** The part of the city on screen, in tiles. Updated by the city scene. */
+  view: { x: number; y: number; w: number; h: number };
+} = { tool: null, selectedLot: null, selectedObject: null, selectedNpc: null, selectedStaff: null, overlay: null, view: { x: 0, y: 0, w: 0, h: 0 } };
 
 export function setTool(tool: Tool | null): void {
   ui.tool = tool;

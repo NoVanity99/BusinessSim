@@ -1,4 +1,5 @@
 import { bus, toast } from '../../core/events';
+import { recordSale } from '../../entities/Shop';
 import { money } from '../../core/format';
 import { rand } from '../../core/rng';
 import type { GameState } from '../../core/state';
@@ -30,6 +31,7 @@ export function sellWholesale(s: GameState, shop: ShopState, product: string, qt
   const value = n * factoryPrice(s, product);
   earn(s, value, 'wholesale');
   shop.today.revenue += value;
+  recordSale(shop, product, value);
   return value;
 }
 

@@ -98,6 +98,7 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
 
     setChildren(
       body,
+      h('div.actions', { style: { margin: '0 0 8px' } }, h('button', { onclick: () => bus.emit('window:open', { id: 'dashboard', shopId: shop.id }), tip: 'Charts for this business: takings, customers, best sellers and busiest hours.' }, 'Open dashboard')),
       h('div.kv', h('span.k', 'Type'), h('span.v', type.name)),
       h('div.kv', h('span.k', 'Location'), h('span.v', `${NEIGHBORHOODS[lot.district].name}, lot #${lot.id}`)),
       h('div.kv', h('span.k', 'Rent'), h('span.v', s.lots[lot.id]?.owner === 'owned' ? 'Owned' : `${money(rentOf(s, lot))} / day`)),

@@ -5,6 +5,7 @@ import { session, shopById } from '../../core/state';
 import { DIFFICULTIES, NEIGHBORHOODS, POPULATION, PRODUCTS, SHOP_TYPES } from '../../data';
 import { breakMult, registerSpeedMult } from '../shop/modifiers';
 import { cartUnits, type Customer, type Step, type ThoughtKind } from '../../entities/Customer';
+import { recordSale } from '../../entities/Shop';
 import { batchQty, decorScore, defOf, DIRS, doors, footprint, frontTiles, registers, type PlacedObject, type ShopState } from '../../entities/Shop';
 import { idx, T } from '../city/generate';
 import { earn } from '../economy/finance';
@@ -535,6 +536,7 @@ function enterShop(c: Customer): void {
     return;
   }
   shop.today.customers++;
+  (shop.today.byHour ??= new Array(24).fill(0))[Math.floor(hourFloat(s.time)) % 24]++;
   // First impressions: decor lifts the mood, dirt drags it down. Every visitor leaves a little mess.
   const fussy = personaOf(c.persona).ambience ?? 1;
   c.mood = clamp(c.mood + (clamp(decorScore(shop) * 25, -10, 12) - shop.dirt * 0.18) * fussy, 0, 100);
@@ -662,6 +664,7 @@ function checkout(c: Customer, shop: ShopState): void {
   if (SHOP_TYPES[shop.type].flow === 'service' && !registers(shop).length) {
     const total = Math.round(c.cart.reduce((a, l) => a + l.qty * l.price, 0) * 100) / 100;
     shop.today.unitsSold += cartUnits(c);
+    for (const l of c.cart) recordSale(shop, l.product, l.qty * l.price);
     c.cart = [];
     charge(c, shop, total, 'sales', { x: Math.floor(c.x), y: Math.floor(c.y) });
     c.step++;
@@ -739,6 +742,7 @@ function completeSale(c: Customer, shop: ShopState, obj: PlacedObject): void {
   const units = cartUnits(c);
   const avgRatio = c.cart.reduce((a, l) => a + (l.price / fairPrice(s, shop, l.product)) * l.qty, 0) / units;
   shop.today.unitsSold += units;
+  for (const l of c.cart) recordSale(shop, l.product, l.qty * l.price);
   c.cart = [];
   charge(c, shop, total, 'sales', obj);
   cashierEffect(c, shop, obj);
@@ -772,6 +776,7 @@ function placeFoodOrder(c: Customer, shop: ShopState, obj: PlacedObject): void {
   if (!lines.length) return leaveShop(c);
   const total = Math.round(lines.reduce((a, l) => a + l.price, 0) * 100) / 100;
   shop.today.unitsSold += lines.length;
+  for (const l of lines) recordSale(shop, l.product, l.price);
   charge(c, shop, total, 'sales', obj);
   cashierEffect(c, shop, obj);
   openTicket(shop.id, c.id, lines.map((l) => l.product));
@@ -965,6 +970,7 @@ function startUsing(c: Customer): void {
       return skip(c);
     }
     charge(c, shop, price, 'services', obj);
+    recordSale(shop, product ? step.service : 'tournament', price);
     if (product && product.wholesale > 0) {
       // Water, power and consumables for the cycle.
       spend(s, product.wholesale, 'utilities');
@@ -1183,6 +1189,7 @@ function passVending(c: Customer, tile: number): void {
     }
     takeFromSlot(shop, slot, 1);
     obj.cash = (obj.cash ?? 0) + price;
+    recordSale(shop, slot.product!, price);
     c.budget -= price;
     shop.today.served++;
     shop.today.unitsSold++;

@@ -1,4 +1,5 @@
 import { bus } from '../../core/events';
+import { recordSale } from '../../entities/Shop';
 import { clamp, money } from '../../core/format';
 import { rand } from '../../core/rng';
 import { session, shopById, type GameState } from '../../core/state';
@@ -176,6 +177,7 @@ function bubble(car: Car, text: string, kind: 'good' | 'bad' | 'neutral'): void 
 function charge(s: GameState, shop: ShopState, amount: number, category: 'sales' | 'services', car: Car): void {
   earn(s, amount, category);
   shop.today.revenue += amount;
+  recordSale(shop, category === 'sales' ? 'fuel' : 'svc_car', amount);
   bus.emit('sale', { shopId: shop.id, amount, x: car.x - 0.5, y: car.y - 0.5 });
 }
 

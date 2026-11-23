@@ -50,6 +50,14 @@ export interface GameEvents {
   /** A guard got hold of a fleeing shoplifter. */
   'thief:caught': { customerId: number; by: number };
   'rivals:changed': void;
+  /** Centre the camera on a lot. */
+  'camera:focus': number;
+  /** Centre the camera on a tile position. */
+  'camera:pan': { x: number; y: number };
+  'notes:changed': void;
+  'minimap:toggle': void;
+  /** Open one of the sidebar windows, optionally on a particular shop. */
+  'window:open': { id: string; shopId?: number };
   'staff:selected': number | null;
   'object:selected': { shopId: number; objectId: number } | null;
 }

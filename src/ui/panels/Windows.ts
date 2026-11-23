@@ -1,4 +1,7 @@
 import { bus } from '../../core/events';
+import { icon } from '../icons';
+import { markAllRead, notificationsWindow } from '../notify';
+import { dash, empireOverview, shopDashboard } from './Dashboards';
 import { companyValue, matchOffer } from '../../systems/rivals/rivals';
 import { money } from '../../core/format';
 import { session, shopById } from '../../core/state';
@@ -7,18 +10,17 @@ import { EVENTS } from '../../data';
 import { canTakeLoan, dailyLoanCost, loanRate, repayLoan, takeLoan } from '../../systems/economy/loans';
 import { levelProgress } from '../../systems/progress/level';
 import { buyUpgrade, COMPANY, upgradeCost, upgradeLevel, upgradesFor } from '../../systems/progress/upgrades';
-import { dayOf } from '../../systems/time/clock';
-import { DIFFICULTIES, EMPLOYEES, NEIGHBORHOODS, SHOP_TYPES } from '../../data';
+import { DIFFICULTIES, EMPLOYEES, SHOP_TYPES } from '../../data';
 import { rt } from '../../systems/ai/runtime';
 import { sum, type DayLedger } from '../../systems/economy/finance';
 import { netWorth, netWorthParts } from '../../systems/economy/networth';
-import { dailyWageBill, onDuty, staffOf } from '../../systems/staff/staff';
+import { dailyWageBill } from '../../systems/staff/staff';
 import { DAY_NAMES } from '../../systems/time/clock';
 import { lineChart, SERIES_COLORS } from '../charts';
 import { h, setChildren } from '../dom';
 import { roleTag } from './staffWidgets';
 
-export type WindowId = 'businesses' | 'finances' | 'staff' | 'company' | 'news';
+export type WindowId = 'businesses' | 'dashboard' | 'finances' | 'staff' | 'company' | 'news';
 
 const LABELS: Record<string, string> = {
   sales: 'Sales', services: 'Services', wholesale: 'Wholesale', propertySale: 'Property sales', loan: 'Loans taken', refund: 'Refunds', other: 'Other',
@@ -27,35 +29,6 @@ const LABELS: Record<string, string> = {
 };
 
 const dayLabel = (day: number): string => `${DAY_NAMES[(day - 1) % 7]} ${day}`;
-
-// ---------- Businesses ----------
-
-function businesses(focus: (lotId: number) => void): HTMLElement {
-  const s = session.state;
-  const rows = s.shops.map((shop) => {
-    const lot = session.city.lots[shop.lotId];
-    const y = shop.yesterday;
-    const profit = y.revenue - y.costs;
-    const staff = staffOf(s, shop.id);
-    return h(
-      'tr.clickable',
-      { onclick: () => focus(shop.lotId), tip: 'Go to this business' },
-      h('td', h('span.dot', { style: { background: SHOP_TYPES[shop.type].color } }), shop.name),
-      h('td', NEIGHBORHOODS[lot.district].name),
-      h('td', { class: shop.reputation < 35 ? 'bad' : shop.reputation > 65 ? 'good' : '' }, Math.round(shop.reputation)),
-      h('td', money(Math.round(shop.today.revenue))),
-      h('td', `${shop.today.served}/${shop.today.customers}`),
-      h('td', { class: profit < 0 ? 'bad' : '' }, money(Math.round(profit))),
-      h('td', `${staff.filter((e) => onDuty(s, e)).length}/${staff.length}`),
-    );
-  });
-  return h(
-    'div.scroll',
-    s.shops.length === 0
-      ? h('div.note', { style: { marginTop: '0' } }, 'You have no businesses yet. Rent a lot with a yellow outline and open one.')
-      : h('table.grid', h('tr', h('th', 'Business'), h('th', 'Area'), h('th', { tip: 'Reputation, 0 to 100' }, 'Rep'), h('th', 'Today'), h('th', { tip: 'Customers served of those who came in today' }, 'Served'), h('th', { tip: 'Yesterday: revenue minus stock orders, wages, rent and utilities' }, 'Profit (yest.)'), h('th', { tip: 'On shift now / total' }, 'Staff')), ...rows),
-  );
-}
 
 // ---------- Finances ----------
 
@@ -197,45 +170,35 @@ function company(): HTMLElement {
   );
 }
 
-// ---------- News ----------
-
-function newsWindow(): HTMLElement {
-  const s = session.state;
-  const today = dayOf(s.time);
-  return h(
-    'div.scroll',
-    h('div.section', 'Happening now'),
-    s.events.length === 0 && h('div.dim', { style: { fontSize: '13px' } }, 'Nothing out of the ordinary.'),
-    ...s.events.map((e) => h('div.kv', h('span.k', e.label), h('span.v', e.untilDay <= today ? 'today' : `${e.untilDay - today} more day${e.untilDay - today === 1 ? '' : 's'}`))),
-    h('div.section', 'Recent news'),
-    s.news.length === 0 && h('div.dim', { style: { fontSize: '13px' } }, 'No news yet.'),
-    ...s.news
-      .slice()
-      .reverse()
-      .map((n) => h(`div.news-item.${n.kind}`, h('span.dim', `Day ${n.day}  `), n.text)),
-  );
-}
-
 // ---------- Host ----------
 
-const TITLES: Record<WindowId, string> = { businesses: 'Businesses', finances: 'Finances', staff: 'Staff', company: 'Company', news: 'News' };
+const TITLES: Record<WindowId, string> = { businesses: 'Your businesses', dashboard: 'Shop dashboard', finances: 'Finances', staff: 'Staff', company: 'Company', news: 'Notifications' };
+/** Windows that hold charts are wider, and are not rebuilt while the pointer is over them. */
+const WIDE: WindowId[] = ['businesses', 'dashboard', 'finances'];
 
 const OVERLAYS: Record<Overlay, { icon: string; name: string; tip: string; low: string; high: string; ramp: string }> = {
-  traffic: { icon: '👣', name: 'Foot traffic', tip: 'Where people have been walking over the last few hours.', low: 'Quiet', high: 'Busy', ramp: 'linear-gradient(90deg, rgba(57,135,229,0.08), rgba(57,135,229,0.9))' },
-  clean: { icon: '🧹', name: 'Cleanliness', tip: 'How clean each of your businesses is.', low: 'Filthy', high: 'Spotless', ramp: 'linear-gradient(90deg, #d95926, #8f9bb0, #3987e5)' },
-  happy: { icon: '🙂', name: 'Customer happiness', tip: 'How recent visitors felt when they left each business.', low: 'Unhappy', high: 'Delighted', ramp: 'linear-gradient(90deg, #d95926, #8f9bb0, #3987e5)' },
+  traffic: { icon: 'feet', name: 'Foot traffic', tip: 'Where people have been walking over the last few hours.', low: 'Quiet', high: 'Busy', ramp: 'linear-gradient(90deg, rgba(57,135,229,0.08), rgba(57,135,229,0.9))' },
+  clean: { icon: 'broom', name: 'Cleanliness', tip: 'How clean each of your businesses is.', low: 'Filthy', high: 'Spotless', ramp: 'linear-gradient(90deg, #d95926, #8f9bb0, #3987e5)' },
+  happy: { icon: 'smile', name: 'Customer happiness', tip: 'How recent visitors felt when they left each business.', low: 'Unhappy', high: 'Delighted', ramp: 'linear-gradient(90deg, #d95926, #8f9bb0, #3987e5)' },
 };
 
 /** The sidebar and the floating window it opens. `focus` moves the camera to a lot. */
 export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): { el: HTMLElement; destroy(): void; toggle(id: WindowId): void } {
   let open: WindowId | null = null;
+  let shownId: WindowId | null = null;
   const win = h('div.panel.float-window', { style: { display: 'none' } });
   const buttons: Record<WindowId, HTMLButtonElement> = {
-    businesses: h('button', { tip: 'Businesses (B)\nEvery shop you own', onclick: () => toggle('businesses') }, '🏪'),
-    finances: h('button', { tip: 'Finances (F)\nIncome, expenses and net worth', onclick: () => toggle('finances') }, '📈'),
-    staff: h('button', { tip: 'Staff (T)\nEveryone on your payroll', onclick: () => toggle('staff') }, '👥'),
-    company: h('button', { tip: 'Company\nLevel, company upgrades and bank loans', onclick: () => toggle('company') }, '🏆'),
-    news: h('button', { tip: 'News\nEvents and what is happening in the city', onclick: () => toggle('news') }, '📰'),
+    businesses: h('button', { tip: 'Your businesses (B)\nEvery shop you own, totals and the company ranking', onclick: () => toggle('businesses') }, icon('shop')),
+    dashboard: h('button', { tip: 'Shop dashboard\nCharts for one business: takings, customers, best sellers, busiest hours', onclick: () => toggle('dashboard') }, icon('dashboard')),
+    finances: h('button', { tip: 'Finances (F)\nIncome, expenses and net worth', onclick: () => toggle('finances') }, icon('chart')),
+    staff: h('button', { tip: 'Staff (T)\nEveryone on your payroll', onclick: () => toggle('staff') }, icon('people')),
+    company: h('button', { tip: 'Company\nLevel, rivals, company upgrades and bank loans', onclick: () => toggle('company') }, icon('trophy')),
+    news: h('button', { style: { display: 'none' } }),
+  };
+  const openDashboard = (shopId: number): void => {
+    dash.shopId = shopId;
+    open = 'dashboard';
+    render(true);
   };
 
   const jump = (lotId: number): void => {
@@ -243,37 +206,50 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     selectLot(lotId);
   };
 
-  const render = (): void => {
+  const render = (force = false): void => {
     for (const id of Object.keys(buttons) as WindowId[]) buttons[id].classList.toggle('active', id === open);
     if (!open) {
       win.style.display = 'none';
       return;
     }
-    if (win.querySelector(':active')) return;
+    // Do not pull the page out from under a click, an open dropdown or a chart being read.
+    if (!force && (win.querySelector(':active') || (WIDE.includes(open) && win.matches(':hover')) || win.contains(document.activeElement) && document.activeElement?.tagName === 'SELECT')) return;
     win.style.display = 'flex';
-    win.classList.toggle('narrow', false);
-    const body = open === 'businesses' ? businesses(jump) : open === 'finances' ? finances() : open === 'staff' ? staff(jump) : open === 'company' ? company() : newsWindow();
+    win.classList.toggle('wide', WIDE.includes(open));
+    const scroll = shownId === open ? win.querySelector('.scroll')?.scrollTop ?? 0 : 0;
+    shownId = open;
+    const again = (): void => render(true);
+    const body = open === 'businesses' ? empireOverview(jump, openDashboard) : open === 'dashboard' ? shopDashboard(again, jump) : open === 'finances' ? finances() : open === 'staff' ? staff(jump) : open === 'company' ? company() : notificationsWindow(again);
     setChildren(win, h('h3', h('span', TITLES[open]), h('button.close', { onclick: () => toggle(open!) }, '×')), body);
+    body.scrollTop = scroll;
   };
 
   function toggle(id: WindowId): void {
     open = open === id ? null : id;
-    render();
+    render(true);
+    // Opening the log is reading it.
+    if (open === 'news') markAllRead();
   }
 
   // Live numbers without rebuilding on every sale: refresh twice a second while open.
-  const timer = window.setInterval(() => open && open !== 'finances' && open !== 'news' && render(), 500);
+  const timer = window.setInterval(() => open && (open === 'staff' || open === 'company') && render(), 500);
+  const slow = window.setInterval(() => open && (open === 'businesses' || open === 'dashboard') && render(), 4000);
 
   const legend = h('div.panel.overlay-legend', { style: { display: 'none' } });
-  const overlayBtns = (Object.keys(OVERLAYS) as Overlay[]).map((id) => h('button', { tip: `${OVERLAYS[id].name} overlay\n${OVERLAYS[id].tip}`, onclick: () => setOverlay(ui.overlay === id ? null : id) }, OVERLAYS[id].icon));
+  const overlayBtns = (Object.keys(OVERLAYS) as Overlay[]).map((id) => h('button', { tip: `${OVERLAYS[id].name} overlay\n${OVERLAYS[id].tip}`, onclick: () => setOverlay(ui.overlay === id ? null : id) }, icon(OVERLAYS[id].icon)));
   const renderOverlay = (): void => {
     (Object.keys(OVERLAYS) as Overlay[]).forEach((id, i) => overlayBtns[i].classList.toggle('active', ui.overlay === id));
     const o = ui.overlay ? OVERLAYS[ui.overlay] : null;
     legend.style.display = o ? 'block' : 'none';
     if (o) setChildren(legend, h('b', o.name), h('div.ramp', { style: { background: o.ramp } }), h('div.ends', h('span', o.low), h('span', o.high)));
   };
-  const offs = [bus.on('overlay:changed', renderOverlay), bus.on('news:changed', () => open === 'news' && render()), bus.on('time:hour', () => open === 'finances' && render()), bus.on('lot:selected', (id) => { if (id !== null && open) { open = null; render(); } })];
-  const el = h('div', h('div.sidebar', buttons.businesses, buttons.finances, buttons.staff, buttons.company, buttons.news, h('div.gap'), ...overlayBtns, h('div.gap'), h('button', { tip: 'Menu (Esc)\nSave, load, settings', onclick: openMenu }, '☰')), win, legend);
+  const offs = [bus.on('overlay:changed', renderOverlay), bus.on('notes:changed', () => open === 'news' && render()),
+    bus.on('window:open', ({ id, shopId }) => {
+      if (id === 'dashboard' && shopId !== undefined) return openDashboard(shopId);
+      open = id as WindowId;
+      render(true);
+    }), bus.on('time:hour', () => open === 'finances' && render()), bus.on('lot:selected', (id) => { if (id !== null && open) { open = null; render(true); } })];
+  const el = h('div', h('div.sidebar', buttons.businesses, buttons.dashboard, buttons.finances, buttons.staff, buttons.company, h('div.gap'), ...overlayBtns, h('div.gap'), h('button', { tip: 'Menu (Esc)\nSave, load, settings', onclick: openMenu }, icon('menu'))), win, legend);
   el.style.pointerEvents = 'none';
   for (const child of Array.from(el.children) as HTMLElement[]) child.style.pointerEvents = 'auto';
   return {
@@ -281,6 +257,7 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     toggle,
     destroy: () => {
       clearInterval(timer);
+      clearInterval(slow);
       offs.forEach((off) => off());
     },
   };

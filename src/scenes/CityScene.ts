@@ -35,7 +35,8 @@ import { Effects } from './city/Effects';
 import { clear, h, nightLayer, uiRoot } from '../ui/dom';
 import { TopBar } from '../ui/hud/TopBar';
 import { LotPanel } from '../ui/panels/LotPanel';
-import { mountToasts } from '../ui/toasts';
+import { mountNotifications } from '../ui/notify';
+import { Minimap } from '../ui/hud/Minimap';
 import { hideTip, showTip } from '../ui/tooltip';
 import { NEIGHBORHOODS } from '../data';
 
@@ -225,6 +226,8 @@ export class CityScene extends Phaser.Scene {
       onAction('businesses', act(() => this.sidebar.toggle('businesses'))),
       onAction('finances', act(() => this.sidebar.toggle('finances'))),
       onAction('staff', act(() => this.sidebar.toggle('staff'))),
+      onAction('notifications', act(() => this.sidebar.toggle('news'))),
+      onAction('minimap', act(() => bus.emit('minimap:toggle'))),
       // The menu key backs out of whatever is open, one layer at a time, then pauses.
       onAction('menu', () => {
         if (paused()) this.closePauseMenu();
@@ -296,9 +299,17 @@ export class CityScene extends Phaser.Scene {
       const lot = session.city.lots[lotId];
       this.cameras.main.centerOn((lot.x + lot.w / 2) * TILE, (lot.y + lot.h / 2) * TILE);
     }, () => this.openPauseMenu());
-    const parts = [TopBar(), this.sidebar, LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel(), StaffInfoPanel(), Guide()];
+    const parts = [TopBar(() => this.sidebar.toggle('news')), this.sidebar, LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel(), StaffInfoPanel(), Guide(), Minimap()];
     uiRoot().append(...parts.map((p) => p.el), h('div.hint', 'Drag or WASD to move · Scroll to zoom · Space to pause'));
-    this.cleanups.push(...parts.map((p) => p.destroy), mountToasts());
+    this.cleanups.push(
+      ...parts.map((p) => p.destroy),
+      mountNotifications(),
+      bus.on('camera:focus', (lotId) => {
+        const lot = session.city.lots[lotId];
+        if (lot) this.cameras.main.centerOn((lot.x + lot.w / 2) * TILE, (lot.y + lot.h / 2) * TILE);
+      }),
+      bus.on('camera:pan', ({ x, y }) => this.cameras.main.centerOn(x * TILE, y * TILE)),
+    );
   }
 
   /** 0-1: how loud something at a tile should be, based on whether it is on screen and how far out we are zoomed. */
@@ -572,6 +583,11 @@ export class CityScene extends Phaser.Scene {
     this.frame = (this.frame + 1) % 30;
     if (this.frame === 0) for (const shop of session.state.shops) if (shop.objects.some((o) => defOf(o).kind === 'producer' && (o.progress ?? 0) > 0)) this.shopViews.markStockDirty(shop.id);
     this.easeZoom(dt);
+    const wv = cam.worldView;
+    ui.view.x = wv.x / TILE;
+    ui.view.y = wv.y / TILE;
+    ui.view.w = wv.width / TILE;
+    ui.view.h = wv.height / TILE;
     this.npcViews.update(dt);
     this.shopViews.flush(dt);
     // Props add their lamps to the lighting first; then the atmosphere draws night and weather.

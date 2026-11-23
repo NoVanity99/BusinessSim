@@ -18,6 +18,8 @@ export const ACTIONS = {
   businesses: 'Businesses panel',
   finances: 'Finances panel',
   staff: 'Staff panel',
+  notifications: 'Notifications',
+  minimap: 'Show or hide the map',
 } as const;
 
 export type Action = keyof typeof ACTIONS;
@@ -40,6 +42,8 @@ export const DEFAULT_KEYS: Record<Action, string> = {
   businesses: 'KeyB',
   finances: 'KeyF',
   staff: 'KeyT',
+  notifications: 'KeyN',
+  minimap: 'KeyM',
 };
 
 export type Quality = 'low' | 'medium' | 'high';

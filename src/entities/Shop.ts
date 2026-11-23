@@ -43,6 +43,10 @@ export interface ShopDayStats {
   unitsSold: number;
   /** Stock orders, wages, rent and utilities attributed to this shop. */
   costs: number;
+  /** Takings per product or service (absent in records from before 1.6). */
+  byProduct?: Record<string, number>;
+  /** Customers through the door in each hour of the day. */
+  byHour?: number[];
 }
 
 export interface ShopState {
@@ -94,7 +98,13 @@ export interface ShopDayRecord extends ShopDayStats {
 
 export const SHOP_HISTORY_DAYS = 120;
 
-export const emptyStats = (): ShopDayStats => ({ customers: 0, served: 0, walkouts: 0, revenue: 0, unitsSold: 0, costs: 0 });
+export const emptyStats = (): ShopDayStats => ({ customers: 0, served: 0, walkouts: 0, revenue: 0, unitsSold: 0, costs: 0, byProduct: {}, byHour: new Array(24).fill(0) });
+
+/** Note what a sale was for, so the dashboard can break takings down. */
+export function recordSale(shop: ShopState, product: string, amount: number): void {
+  const by = (shop.today.byProduct ??= {});
+  by[product] = Math.round(((by[product] ?? 0) + amount) * 100) / 100;
+}
 
 export const DIRS = [
   { x: 0, y: 1 },
