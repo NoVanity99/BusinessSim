@@ -20,6 +20,8 @@ export interface Order {
   /** Absolute game minute of arrival. */
   arriveAt: number;
   express: boolean;
+  /** Set when it is one of your own vans bringing it from this site. */
+  fromShopId?: number;
 }
 
 export interface Quote {
@@ -40,7 +42,7 @@ export function bulkDiscount(cases: number): number {
   return d;
 }
 
-export function quoteOrder(s: GameState, lines: OrderLine[], express: boolean): Quote {
+export function quoteOrder(s: GameState, lines: OrderLine[], express: boolean, shop?: ShopState): Quote {
   const w = ECONOMY.wholesale;
   let subtotal = 0;
   let units = 0;
@@ -51,7 +53,8 @@ export function quoteOrder(s: GameState, lines: OrderLine[], express: boolean): 
     cases += l.cases;
     subtotal += n * wholesalePrice(s, l.product);
   }
-  const discount = bulkDiscount(cases);
+  // Warehouses buy by the pallet, which is cheaper again.
+  const discount = bulkDiscount(cases) + (shop?.type === 'warehouse' ? w.warehouseDiscount : 0);
   const discountAmount = subtotal * discount;
   const surcharge = express ? (subtotal - discountAmount) * w.expressSurcharge : 0;
   const deliveryFee = cases > 0 ? w.deliveryFee : 0;
@@ -77,7 +80,7 @@ export function freeStorage(s: GameState, shop: ShopState): number {
 export function placeOrder(s: GameState, shop: ShopState, lines: OrderLine[], express: boolean): boolean {
   lines = lines.filter((l) => l.cases > 0);
   if (!lines.length) return false;
-  const q = quoteOrder(s, lines, express);
+  const q = quoteOrder(s, lines, express, shop);
   if (q.units > freeStorage(s, shop)) {
     toast('Not enough back-room storage for that order. Add storage racks or order less.', 'bad');
     return false;

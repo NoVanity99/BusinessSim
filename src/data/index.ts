@@ -14,6 +14,7 @@ import personasJson from './personas.json';
 import rivalsJson from './rivals.json';
 import seasonsJson from './seasons.json';
 import marketingJson from './marketing.json';
+import logisticsJson from './logistics.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -103,6 +104,8 @@ export interface ProductDef {
 export type FurnitureKind = 'floor' | 'wall' | 'door' | 'shelf' | 'register' | 'storage' | 'decor' | 'bin' | 'service' | 'seat' | 'cookstation' | 'producer' | 'vending';
 
 export interface FurnitureDef {
+  /** Delivery vans this piece provides. */
+  vans?: number;
   name: string;
   category: string;
   kind: FurnitureKind;
@@ -193,6 +196,8 @@ export interface ShopTypeDef {
 
 export interface EconomyConfig {
   wholesale: {
+    /** Extra share off orders delivered to a warehouse. */
+    warehouseDiscount: number;
     deliveryFee: number;
     standardHours: number;
     expressHours: number;
@@ -490,3 +495,25 @@ export interface CampaignDef {
 }
 
 export const MARKETING = marketingJson as unknown as { campaigns: Record<string, CampaignDef> };
+
+export interface SupplierDef {
+  name: string;
+  /** Share off the wholesale price, locked for the length of the contract. */
+  discount: number;
+  days: number;
+  minCases: number;
+  /** Share of a delivery's price still charged when you have no room for it. */
+  missedShare: number;
+  description: string;
+}
+
+export interface LogisticsConfig {
+  vanCapacity: number;
+  loadMinutes: number;
+  minutesPerTile: number;
+  coverDays: number;
+  suppliers: Record<string, SupplierDef>;
+  franchise: { minReputation: number; minDays: number; fee: number; royalty: number; offerChance: number; maxPerShopType: number; inspectionCost: number; baseVisits: number; reputationDrag: number };
+}
+
+export const LOGISTICS = logisticsJson as unknown as LogisticsConfig;

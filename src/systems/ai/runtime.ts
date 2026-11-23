@@ -67,7 +67,7 @@ export interface Car {
   /** Where to rejoin the road. */
   roadTile: number;
   /** Vending van: machines still to visit, as object ids. */
-  van?: { shopId: number; stops: number[]; driverId: number };
+  van?: { shopId: number; stops: number[]; driverId: number; /** Road tile a delivery is headed for; cleared once it has arrived. */ deliverTo?: number };
 }
 
 /** Simulation state that is not saved: it is rebuilt when a game starts or loads. */

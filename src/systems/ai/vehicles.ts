@@ -364,6 +364,25 @@ function dispatchVans(s: GameState): void {
   }
 }
 
+/** Put one of the player's vans on the road from a supplier to a shop it is delivering to. It drives there, unloads and returns. */
+export function sendDeliveryVan(fromShopId: number, toShopId: number): void {
+  const s = session.state;
+  const from = shopById(s, fromShopId);
+  const to = shopById(s, toShopId);
+  if (!from || !to || !rt.roadEdges.length) return;
+  const kerb = (shop: ShopState): number => {
+    const lot = session.city.lots[shop.lotId];
+    return nearestRoad(lot.x + lot.w / 2, lot.front === 'n' ? lot.y - 2 : lot.y + lot.h + 1);
+  };
+  const car = spawnCar({ shopId: from.id, stops: [], driverId: -1, deliverTo: kerb(to) });
+  if (!car) return;
+  const home = kerb(from);
+  car.x = (home % rt.roadGrid.w) + 0.5;
+  car.y = Math.floor(home / rt.roadGrid.w) + 0.5;
+  car.roadTile = home;
+  if (!route(car, car.van!.deliverTo!)) removeCar(car);
+}
+
 function nextVanStop(s: GameState, car: Car): void {
   const shop = shopById(s, car.van!.shopId);
   const obj = shop?.objects.find((o) => o.id === car.van!.stops[0]);
@@ -510,7 +529,13 @@ export function updateVehicles(dt: number): void {
     }
     if (car.path.length || car.state !== 'drive') continue;
 
-    if (car.van) {
+    if (car.van?.deliverTo !== undefined) {
+      // Arrived with a delivery: unload for a few minutes, then drive home.
+      car.van.deliverTo = undefined;
+      car.state = 'service';
+      car.timer = 4;
+      bus.emit('world:bubble', { x: car.x, y: car.y - 0.6, text: 'Delivery', kind: 'good' });
+    } else if (car.van) {
       const depot = shopById(s, car.van.shopId);
       const stop = depot?.objects.find((o) => o.id === car.van!.stops[0]);
       if (depot && stop) {

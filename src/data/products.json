@@ -174,7 +174,13 @@
   "shelfLife": 4,
   "popularity": 1.0,
   "color": "#d9a05b",
-  "kind": "ingredient"
+  "kind": "ingredient",
+  "recipe": {
+   "flour": 1
+  },
+  "station": "bake",
+  "prepMinutes": 25,
+  "batch": 20
  },
  "patty": {
   "name": "Beef Patties",
@@ -234,7 +240,14 @@
   "shelfLife": 0,
   "popularity": 1.0,
   "color": "#7a3b2e",
-  "kind": "ingredient"
+  "kind": "ingredient",
+  "recipe": {
+   "colabase": 1,
+   "sugar": 1
+  },
+  "station": "bottle",
+  "prepMinutes": 25,
+  "batch": 60
  },
  "milkmix": {
   "name": "Shake Mix",
@@ -405,7 +418,14 @@
   "shelfLife": 5,
   "popularity": 1.0,
   "color": "#ead7b4",
-  "kind": "ingredient"
+  "kind": "ingredient",
+  "recipe": {
+   "flour": 1,
+   "sugar": 1
+  },
+  "station": "bake",
+  "prepMinutes": 25,
+  "batch": 48
  },
  "croissant": {
   "name": "Fresh Croissants",
@@ -946,7 +966,13 @@
   "caseSize": 12,
   "shelfLife": 0,
   "popularity": 1.5,
-  "color": "#5aa9e6"
+  "color": "#5aa9e6",
+  "recipe": {
+   "fabric": 1
+  },
+  "station": "sew",
+  "prepMinutes": 35,
+  "batch": 6
  },
  "jeans": {
   "name": "Jeans",
@@ -957,7 +983,13 @@
   "caseSize": 8,
   "shelfLife": 0,
   "popularity": 1.2,
-  "color": "#3a5f9e"
+  "color": "#3a5f9e",
+  "recipe": {
+   "fabric": 2
+  },
+  "station": "sew",
+  "prepMinutes": 45,
+  "batch": 4
  },
  "jacket": {
   "name": "Jacket",
@@ -1001,7 +1033,13 @@
   "caseSize": 24,
   "shelfLife": 0,
   "popularity": 1.3,
-  "color": "#c9c9c9"
+  "color": "#c9c9c9",
+  "recipe": {
+   "fabric": 1
+  },
+  "station": "sew",
+  "prepMinutes": 25,
+  "batch": 24
  },
  "scarf": {
   "name": "Scarf",
@@ -1012,7 +1050,13 @@
   "caseSize": 12,
   "shelfLife": 0,
   "popularity": 0.6,
-  "color": "#b07cc6"
+  "color": "#b07cc6",
+  "recipe": {
+   "fabric": 1
+  },
+  "station": "sew",
+  "prepMinutes": 25,
+  "batch": 8
  },
  "sunglasses": {
   "name": "Sunglasses",
@@ -1354,7 +1398,13 @@
   "shelfLife": 4,
   "popularity": 1.0,
   "color": "#e8d6a8",
-  "kind": "ingredient"
+  "kind": "ingredient",
+  "recipe": {
+   "flour": 1
+  },
+  "station": "bake",
+  "prepMinutes": 25,
+  "batch": 20
  },
  "tomatosauce": {
   "name": "Tomato Sauce",
@@ -1366,7 +1416,13 @@
   "shelfLife": 0,
   "popularity": 1.0,
   "color": "#c2504d",
-  "kind": "ingredient"
+  "kind": "ingredient",
+  "recipe": {
+   "tomato": 1
+  },
+  "station": "mix",
+  "prepMinutes": 25,
+  "batch": 24
  },
  "mozzarella": {
   "name": "Mozzarella",
@@ -1505,5 +1561,41 @@
   "color": "#59b6d8",
   "kind": "service",
   "duration": 6
+ },
+ "tomato": {
+  "name": "Tomatoes",
+  "category": "ingredient",
+  "storage": "ambient",
+  "wholesale": 2.2,
+  "market": 0,
+  "caseSize": 10,
+  "shelfLife": 5,
+  "popularity": 1.0,
+  "color": "#d9483b",
+  "kind": "ingredient"
+ },
+ "fabric": {
+  "name": "Fabric Roll",
+  "category": "ingredient",
+  "storage": "ambient",
+  "wholesale": 14,
+  "market": 0,
+  "caseSize": 6,
+  "shelfLife": 0,
+  "popularity": 1.0,
+  "color": "#b9c4d6",
+  "kind": "ingredient"
+ },
+ "colabase": {
+  "name": "Cola Concentrate",
+  "category": "ingredient",
+  "storage": "ambient",
+  "wholesale": 4.5,
+  "market": 0,
+  "caseSize": 8,
+  "shelfLife": 0,
+  "popularity": 1.0,
+  "color": "#5a3825",
+  "kind": "ingredient"
  }
 }

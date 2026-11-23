@@ -1,4 +1,5 @@
 import { bus, toast } from '../../core/events';
+import { wantedDownstream } from '../logistics/logistics';
 import { recordSale } from '../../entities/Shop';
 import { money } from '../../core/format';
 import { rand } from '../../core/rng';
@@ -88,7 +89,8 @@ export function updateProduction(s: GameState, dt: number): void {
       obj.progress = 0;
       const made = p.batch ?? 1;
       addToStorage(shop, obj.recipe!, made, p.shelfLife ? dayOf(s.time) + p.shelfLife : 0);
-      if (shop.autoSell && p.kind === 'crafted') sellWholesale(s, shop, obj.recipe!, made);
+      // Sell the batch unless a shop this factory supplies has a use for it.
+      if (shop.autoSell && !wantedDownstream(s, shop, obj.recipe!)) sellWholesale(s, shop, obj.recipe!, made);
       bus.emit('stock:changed', shop.id);
       if (d.breakChance && rand.chance(d.breakChance * breakMult(s, shop))) {
         obj.broken = true;

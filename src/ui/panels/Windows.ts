@@ -1,4 +1,6 @@
 import { bus } from '../../core/events';
+import { acceptOffer, declineOffer, flagship, franchisable, impression, inspect, royaltyOf } from '../../systems/logistics/franchise';
+import { LOGISTICS, NEIGHBORHOODS } from '../../data';
 import { ACHIEVEMENTS, STAT_LABELS, statValue } from '../../systems/progress/achievements';
 import { staffScreen, stockScreen } from './Screens';
 import { icon } from '../icons';
@@ -22,7 +24,7 @@ import { h, setChildren } from '../dom';
 export type WindowId = 'businesses' | 'dashboard' | 'stock' | 'finances' | 'staff' | 'company' | 'news';
 
 const LABELS: Record<string, string> = {
-  sales: 'Sales', services: 'Services', wholesale: 'Wholesale', propertySale: 'Property sales', loan: 'Loans taken', refund: 'Refunds', other: 'Other',
+  sales: 'Sales', royalties: 'Franchise fees and royalties', services: 'Services', wholesale: 'Wholesale', propertySale: 'Property sales', loan: 'Loans taken', refund: 'Refunds', other: 'Other',
   rent: 'Rent', wages: 'Wages', utilities: 'Utilities', stock: 'Stock', construction: 'Construction', property: 'Property', deposit: 'Deposits',
   loanPayment: 'Loan repayments', interest: 'Interest', fines: 'Fines', maintenance: 'Maintenance', marketing: 'Marketing', licenses: 'Licences',
 };
@@ -85,7 +87,7 @@ function finances(): HTMLElement {
 
 // ---------- Company ----------
 
-function company(): HTMLElement {
+function company(jumpTo: (lotId: number) => void): HTMLElement {
   const s = session.state;
   const worth = netWorth(s, session.city);
   const goal = DIFFICULTIES[s.difficulty].netWorthGoal;
@@ -99,6 +101,32 @@ function company(): HTMLElement {
       h('div', h('div.label', `Goal ${money(goal)}`), h('div.value', s.won ? 'Reached!' : `${Math.max(0, Math.round((worth / goal) * 100))}%`)),
     ),
     next.length > 0 && h('div.note', { style: { marginTop: '0' } }, `Coming up: ${next.map((t) => `${t.name} (level ${t.unlockLevel})`).join(', ')}.`),
+    ...s.franchiseOffers.map((o) => {
+      const lot = session.city.lots[o.lotId];
+      return h(
+        'div.offer-card',
+        h('div', h('b', `${o.applicant}`), ` wants to open a ${SHOP_TYPES[o.type].name.toLowerCase()} under your brand in ${NEIGHBORHOODS[lot.district].name}.`),
+        h('div.dim', `${impression(o.quality)}. Pays ${money(o.fee)} now and ${Math.round(LOGISTICS.franchise.royalty * 100)}% of takings every day. How they run it reflects on your own shops.`),
+        h('div.row', h('button', { onclick: () => jumpTo(o.lotId), tip: 'Show the lot they have in mind' }, 'Show lot'), h('button', { onclick: () => declineOffer(s, o.id) }, 'Decline'), h('button.primary', { onclick: () => acceptOffer(s, o.id) }, `Accept (${money(o.fee)})`)),
+      );
+    }),
+    (s.franchises.length > 0 || s.shops.some((sh) => franchisable(sh.type))) && h('div.section', { tip: 'Once a shop of yours has a reputation of 65 or more and has been profitable for a few days, people apply to open their own under its name.' }, `Franchises (${s.franchises.length})`),
+    s.franchises.length === 0 && s.shops.some((sh) => franchisable(sh.type)) && h('div.dim', { style: { fontSize: '13px' } }, s.shops.some((sh) => flagship(s, sh.type)) ? 'Your brand is strong enough to franchise. Applications will arrive.' : `Get a shop to a reputation of ${LOGISTICS.franchise.minReputation} and keep it profitable, and people will apply to open franchises.`),
+    s.franchises.length > 0 &&
+      h(
+        'table.grid',
+        h('tr', h('th', 'Franchise'), h('th', { tip: 'How well it is run. Poor ones hurt the reputation of your own shops of that kind.' }, 'Standards'), h('th', 'Royalty/day'), h('th', '')),
+        ...s.franchises.map((f) =>
+          h(
+            'tr.clickable',
+            { onclick: () => jumpTo(f.lotId) },
+            h('td', f.name),
+            h('td', { class: f.quality < 38 ? 'bad' : f.quality > 72 ? 'good' : '' }, f.quality < 38 ? 'Poor' : f.quality > 72 ? 'Excellent' : 'Acceptable'),
+            h('td', money(Math.round(royaltyOf(f)))),
+            h('td', h('button', { disabled: s.money < LOGISTICS.franchise.inspectionCost, onclick: (ev: Event) => { ev.stopPropagation(); inspect(s, f); }, tip: 'Send someone from head office to raise standards.' }, `Inspect (${money(LOGISTICS.franchise.inspectionCost)})`)),
+          ),
+        ),
+      ),
     h('div.section', 'Rival companies'),
     h(
       'table.grid',
@@ -208,7 +236,7 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     const scroll = shownId === open ? win.querySelector('.scroll')?.scrollTop ?? 0 : 0;
     shownId = open;
     const again = (): void => render(true);
-    const body = open === 'businesses' ? empireOverview(jump, openDashboard) : open === 'dashboard' ? shopDashboard(again, jump) : open === 'finances' ? finances() : open === 'stock' ? stockScreen(again, jump) : open === 'staff' ? staffScreen(again, jump) : open === 'company' ? company() : notificationsWindow(again);
+    const body = open === 'businesses' ? empireOverview(jump, openDashboard) : open === 'dashboard' ? shopDashboard(again, jump) : open === 'finances' ? finances() : open === 'stock' ? stockScreen(again, jump) : open === 'staff' ? staffScreen(again, jump) : open === 'company' ? company(jump) : notificationsWindow(again);
     setChildren(win, h('h3', h('span', TITLES[open]), h('button.close', { onclick: () => toggle(open!) }, '×')), body);
     body.scrollTop = scroll;
   };
@@ -234,6 +262,7 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
   };
   const offs = [bus.on('overlay:changed', renderOverlay), bus.on('notes:changed', () => open === 'news' && render()),
     bus.on('orders:changed', () => open === 'stock' && render()),
+    bus.on('logistics:changed', () => open === 'stock' && render()),
     bus.on('window:open', ({ id, shopId }) => {
       if (id === 'dashboard' && shopId !== undefined) return openDashboard(shopId);
       open = id as WindowId;

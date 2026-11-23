@@ -9,6 +9,9 @@ import { onCrook } from './events/events';
 import { clearHistory } from './build/history';
 import { installAchievements } from './progress/achievements';
 import { marketingDaily } from './marketing/marketing';
+import { contractsDaily, dispatchDeliveries, resetLogistics } from './logistics/logistics';
+import { franchisesDaily } from './logistics/franchise';
+import { sendDeliveryVan } from './ai/vehicles';
 import { initVehicles, syncVending, updateVehicles } from './ai/vehicles';
 import { updateProduction } from './shop/production';
 import { updateStaff } from './staff/agents';
@@ -54,6 +57,7 @@ export function installSim(): () => void {
   ensureRivals(s);
   // Undo history belongs to the session that made it.
   clearHistory();
+  resetLogistics();
   onCrook((shop, kind) => sendCrook(shop, kind));
   initAi();
   initVehicles();
@@ -78,7 +82,12 @@ export function installSim(): () => void {
       shopLots.delete(id);
       syncVending();
     }),
-    bus.on('time:minute', () => processDeliveries(s)),
+    bus.on('time:minute', (minute) => {
+      processDeliveries(s);
+      // Vans are sent out every twenty minutes if anything is running short.
+      if (minute % 20 === 0) dispatchDeliveries(s);
+    }),
+    bus.on('delivery:sent', ({ fromShopId, toShopId }) => sendDeliveryVan(fromShopId, toShopId)),
     bus.on('thief:caught', ({ customerId, by }) => thiefCaught(customerId, by)),
     // A rival moving in or out changes where people can walk.
     bus.on('lot:changed', (lotId) => rebuildLot(rt.grid, session.city, session.city.lots[lotId])),
@@ -114,6 +123,8 @@ export function installSim(): () => void {
       eventsDaily(s);
       rivalsDaily(s);
       marketingDaily(s);
+      contractsDaily(s);
+      franchisesDaily(s);
       const income = Object.values(closed.income).reduce((a, b) => a + (b ?? 0), 0);
       const expense = Object.values(closed.expense).reduce((a, b) => a + (b ?? 0), 0);
       if (rent + utilities > 0 || income > 0) {

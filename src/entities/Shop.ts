@@ -90,6 +90,10 @@ export interface ShopState {
   reviews: Review[];
   /** Task order per staff role, where the player has changed it from the default. */
   priorities?: Record<string, string[]>;
+  /** The warehouse or factory that keeps this shop stocked with its own vans, if any. */
+  supplierId?: number;
+  /** Supplier sites: the order in which the shops they supply are served. */
+  route?: number[];
 }
 
 export interface ShopDayRecord extends ShopDayStats {

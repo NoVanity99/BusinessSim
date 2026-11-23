@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.9.0 (unreleased) - Overhaul phase 8: logistics, production chains and franchising
+
+- **Warehouse** (new business, level 4): a depot with pallet racking for buying in bulk. Orders delivered to a warehouse are 10% cheaper on top of the usual bulk discounts.
+- **Your own deliveries**: build a **Delivery Van Bay** in a warehouse or factory, hire a driver, and choose that site under "Supplied by" in a shop. Vans you can watch on the road then carry what each shop is short of, sharing the load between products, and the shop's manager stops ordering those products from the wholesaler. Each bay is one van; the supplier's panel lists the shops on its round and lets you reorder them.
+- A warehouse manager orders for the shops the warehouse supplies, based on what they are selling.
+- **Supplier contracts** (bottom of the Stock screen): three suppliers offer a discount for a standing order delivered every morning at a locked price, from a short flexible deal to two weeks at 18% off. Shortages and price swings do not touch a contract; missing a delivery for lack of room, or ending early, can cost you.
+- **Production chains**: a factory can now make buns, pizza dough, pastry dough, tomato sauce and cola syrup for your restaurants and cafés, and with the new **Sewing Line** turn fabric into T-shirts, jeans, socks and scarves for your clothing shops. Its Prices tab compares the cost of making each thing with buying it. Output is kept for any shop the factory supplies and sold wholesale otherwise.
+- **Franchising**: once one of your shops has a strong reputation and steady profits, people apply to open their own under its name (Company window). They pay a fee and 7% of takings every day and appear on the map in your colours. Their standards slip if left alone; poor ones hurt the reputation of your own shops of that kind, and good ones help. Send an inspector or withdraw the franchise from its lot.
+- Fixed a rare error when leaving a game during a season with a colour wash.
+- Save format 8 (adds contracts and franchises). Older saves upgrade automatically.
+
 ## 1.8.0 (unreleased) - Overhaul phase 7: seasons, marketing and seven new businesses
 
 - **Seven new kinds of business**, each with its own products, furniture, sprites and a starter layout:

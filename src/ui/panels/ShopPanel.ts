@@ -1,4 +1,5 @@
 import { bus } from '../../core/events';
+import { deliveryProblem, driversOnDuty, isSupplier, moveOnRoute, setSupplier, suppliedBy, supplierOf, suppliers, vansAt } from '../../systems/logistics/logistics';
 import { campaignCost, isRunning, startCampaign } from '../../systems/marketing/marketing';
 import { nextHoliday } from '../../systems/world/seasons';
 import { MARKETING } from '../../data';
@@ -108,6 +109,35 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
       body,
       h('div.actions', { style: { margin: '0 0 8px' } }, h('button', { onclick: () => bus.emit('window:open', { id: 'dashboard', shopId: shop.id }), tip: 'Charts for this business: takings, customers, best sellers and busiest hours.' }, 'Open dashboard')),
       h('div.kv', h('span.k', 'Type'), h('span.v', type.name)),
+      // Own supply chain: either this shop is fed by a warehouse or factory, or it is one.
+      !isSupplier(shop) &&
+        suppliers(s).length > 0 &&
+        h(
+          'div.kv',
+          { tip: 'A warehouse or factory with a van bay and a driver keeps this shop stocked from its own stores, so the manager stops ordering those products from the wholesaler.' },
+          h('span.k', 'Supplied by'),
+          h(
+            'select',
+            { onchange: (e: Event) => setSupplier(s, shop, +(e.target as HTMLSelectElement).value || null) },
+            h('option', { value: 0 }, 'Wholesaler deliveries'),
+            ...suppliers(s).map((w) => h('option', { value: w.id, selected: shop.supplierId === w.id }, w.name)),
+          ),
+        ),
+      supplierOf(s, shop) && deliveryProblem(s, supplierOf(s, shop)!) && h('div.warn', { style: { fontSize: '12.5px', marginBottom: '4px' } }, `${supplierOf(s, shop)!.name} is not delivering: ${deliveryProblem(s, supplierOf(s, shop)!)!.toLowerCase()}.`),
+      isSupplier(shop) && h('div.section', 'Deliveries'),
+      isSupplier(shop) && h('div.kv', { tip: 'Each van bay is one van, and each van out needs a driver on shift.' }, h('span.k', 'Vans and drivers'), h('span.v', { class: deliveryProblem(s, shop) ? 'warn' : '' }, deliveryProblem(s, shop) ?? `${vansAt(shop)} van${vansAt(shop) === 1 ? '' : 's'}, ${driversOnDuty(s, shop)} driver${driversOnDuty(s, shop) === 1 ? '' : 's'} on shift`)),
+      isSupplier(shop) && suppliedBy(s, shop).length === 0 && h('div.note', { style: { margin: '0 0 6px' } }, 'No shops are supplied from here yet. Open a shop and choose this site under "Supplied by".'),
+      ...(isSupplier(shop)
+        ? suppliedBy(s, shop).map((c, i, list) =>
+            h(
+              'div.task',
+              h('span.n', `${i + 1}`),
+              h('span.label', c.name),
+              h('button', { disabled: i === 0, tip: 'Serve this shop sooner', onclick: () => moveOnRoute(s, shop, c.id, -1) }, '▲'),
+              h('button', { disabled: i === list.length - 1, tip: 'Serve this shop later', onclick: () => moveOnRoute(s, shop, c.id, 1) }, '▼'),
+            ),
+          )
+        : []),
       h('div.kv', h('span.k', 'Location'), h('span.v', `${NEIGHBORHOODS[lot.district].name}, lot #${lot.id}`)),
       h('div.kv', h('span.k', 'Rent'), h('span.v', s.lots[lot.id]?.owner === 'owned' ? 'Owned' : `${money(rentOf(s, lot))} / day`)),
       h('div.kv', { tip: 'Customers remember good and bad visits. Reputation draws people in or keeps them away.' }, h('span.k', 'Reputation'), h('span.v', `${Math.round(shop.reputation)} / 100`)),
@@ -410,6 +440,14 @@ function unitCost(s: GameState, p: string): number {
   return cost;
 }
 
+/** Raw materials that go into one unit of something a factory makes. */
+function makeCost(s: GameState, p: string): number {
+  const d = PRODUCTS[p];
+  let inputs = 0;
+  for (const [i, n] of Object.entries(d.recipe ?? {})) inputs += wholesalePrice(s, i) * n;
+  return inputs / (d.batch ?? 1);
+}
+
 function pricesTab(s: GameState, shop: ShopState): Tab {
   const type = SHOP_TYPES[shop.type];
   if (type.flow === 'factory') {
@@ -417,8 +455,18 @@ function pricesTab(s: GameState, shop: ShopState): Tab {
     const update = (): void =>
       setChildren(
         body,
-        h('table.grid', h('tr', h('th', 'Product'), h('th', { tip: 'Ingredients per unit' }, 'Cost'), h('th', { tip: 'What the wholesale market pays you per unit today' }, 'Wholesale'), h('th', { tip: 'What it retails for in your own shops' }, 'Retail')), ...type.products.filter((p) => PRODUCTS[p].recipe).map((p) => h('tr', h('td', dot(PRODUCTS[p].color), PRODUCTS[p].name), h('td', money(Math.round(unitCost(s, p) * 100) / 100)), h('td', money(Math.round(factoryPrice(s, p) * 100) / 100)), h('td', PRODUCTS[p].market ? money(Math.round(marketPrice(s, p) * 100) / 100) : 'ingredient')))),
-        h('div.note', 'A factory has no customers of its own. Sell what it makes to the wholesale market from the Stock tab, or ship it to your shops and set the retail price there.'),
+        h(
+          'table.grid',
+          h('tr', h('th', 'Product'), h('th', { tip: 'Raw materials per unit made' }, 'To make'), h('th', { tip: 'What your shops would pay a wholesaler for it today' }, 'To buy'), h('th', { tip: 'How much cheaper it is to make than to buy' }, 'Saving'), h('th', { tip: 'What it retails for in your own shops' }, 'Retail')),
+          ...type.products
+            .filter((p) => PRODUCTS[p].recipe)
+            .map((p) => {
+              const make = makeCost(s, p);
+              const buy = wholesalePrice(s, p);
+              return h('tr', h('td', dot(PRODUCTS[p].color), PRODUCTS[p].name), h('td', money(Math.round(make * 100) / 100)), h('td', money(Math.round(buy * 100) / 100)), h('td', { class: buy > make ? 'good' : 'bad' }, `${Math.round((1 - make / buy) * 100)}%`), h('td', PRODUCTS[p].market ? money(Math.round(marketPrice(s, p) * 100) / 100) : h('span.dim', 'ingredient')));
+            }),
+        ),
+        h('div.note', 'A factory has no customers of its own. Everything it makes costs far less than buying it. Add a van bay and a driver and set your shops to be supplied from here, or sell the output to the wholesale market from the Stock tab.'),
       );
     update();
     return { el: body, update };
@@ -703,6 +751,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     bus.on('tool:changed', refresh),
     bus.on('build:history', refresh),
     bus.on('marketing:changed', refresh),
+    bus.on('logistics:changed', refresh),
     bus.on('time:hour', refresh),
     bus.on('staff:changed', refresh),
     bus.on('review:posted', refresh),

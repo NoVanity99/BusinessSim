@@ -69,6 +69,7 @@ export function Minimap(): { el: HTMLElement; destroy(): void } {
       ctx.strokeRect(lot.x * scale + 0.5, lot.y * scale + 0.5, lot.w * scale - 1, lot.h * scale - 1);
     };
     for (const c of s.rivals) for (const sh of c.shops) box(sh.lotId, c.color, '#10141c');
+    for (const f of s.franchises) box(f.lotId, '#2f9e7f', '#ffffff');
     for (const id of Object.keys(s.lots)) {
       const shop = s.shops.find((sh) => sh.lotId === +id);
       box(+id, shop ? SHOP_TYPES[shop.type].color : 'rgba(79,195,161,0.35)', +id === ui.selectedLot ? '#ffffff' : '#4fc3a1');

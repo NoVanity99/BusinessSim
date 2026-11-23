@@ -95,7 +95,7 @@ describe('new business types', () => {
       const t = SHOP_TYPES[type];
       expect(t, type).toBeDefined();
       for (const f of t.furniture) expect(FURNITURE[f], `${type} ${f}`).toBeDefined();
-      for (const p of t.products) if (PRODUCTS[p].recipe) for (const input of Object.keys(PRODUCTS[p].recipe!)) expect(t.supplies, `${type} supplies ${input}`).toContain(input);
+      for (const p of t.products) if (PRODUCTS[p].recipe && ['menu', 'service'].includes(PRODUCTS[p].kind ?? 'good')) for (const input of Object.keys(PRODUCTS[p].recipe!)) expect(t.supplies, `${type} supplies ${input}`).toContain(input);
     }
   });
 

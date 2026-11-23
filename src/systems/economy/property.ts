@@ -4,7 +4,7 @@ import type { GameState } from '../../core/state';
 import { DIFFICULTIES } from '../../data';
 import type { City, LotDef } from '../city/generate';
 import { earn, spend, tryPay } from './finance';
-import { rivalOnLot } from '../rivals/rivals';
+import { occupantOf } from '../rivals/rivals';
 
 /** Deposit when signing a lease, in days of rent. Returned when the lease ends. */
 export const DEPOSIT_DAYS = 3;
@@ -18,7 +18,7 @@ export const priceOf = (s: GameState, lot: LotDef): number =>
 export const depositOf = (s: GameState, lot: LotDef): number => rentOf(s, lot) * DEPOSIT_DAYS;
 
 export function rentLot(s: GameState, lot: LotDef): boolean {
-  if (!lot.rentable || s.lots[lot.id] || rivalOnLot(s, lot.id)) return false;
+  if (!lot.rentable || s.lots[lot.id] || occupantOf(s, lot.id)) return false;
   const deposit = depositOf(s, lot);
   if (!tryPay(s, deposit, 'deposit')) {
     toast(`You need ${money(deposit)} for the deposit.`, 'bad');
@@ -32,7 +32,7 @@ export function rentLot(s: GameState, lot: LotDef): boolean {
 
 export function buyLot(s: GameState, lot: LotDef): boolean {
   const current = s.lots[lot.id];
-  if (!lot.rentable || current?.owner === 'owned' || rivalOnLot(s, lot.id)) return false;
+  if (!lot.rentable || current?.owner === 'owned' || occupantOf(s, lot.id)) return false;
   const price = priceOf(s, lot);
   if (!tryPay(s, price, 'property')) {
     toast(`You need ${money(price)} to buy this lot.`, 'bad');

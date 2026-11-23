@@ -1,7 +1,7 @@
 import { session, shopOnLot } from '../../core/state';
 import { defOf, objectTiles, WALL_SOLID } from '../../entities/Shop';
 import { idx, T, type City, type LotDef } from '../city/generate';
-import { allRivalShops, rivalOnLot } from '../rivals/rivals';
+import { allRivalShops, occupantOf } from '../rivals/rivals';
 
 /** Walk cost per tile for pedestrians. 0 = blocked. */
 export interface Grid {
@@ -24,14 +24,14 @@ export function buildGrid(city: City): Grid {
   const grid: Grid = { w: city.w, h: city.h, cost: new Uint8Array(city.w * city.h) };
   for (let i = 0; i < grid.cost.length; i++) grid.cost[i] = GROUND_COST[city.tiles[i]] ?? 0;
   for (const shop of session.state.shops) rebuildLot(grid, city, city.lots[shop.lotId]);
-  for (const r of allRivalShops(session.state)) rebuildLot(grid, city, city.lots[r.lotId]);
+  for (const r of [...allRivalShops(session.state), ...session.state.franchises]) rebuildLot(grid, city, city.lots[r.lotId]);
   return grid;
 }
 
 /** Recompute walkability for one lot after its shop layout changed. */
 export function rebuildLot(grid: Grid, city: City, lot: LotDef): void {
   const shop = shopOnLot(session.state, lot.id);
-  const rival = !shop && !!rivalOnLot(session.state, lot.id);
+  const rival = !shop && !!occupantOf(session.state, lot.id);
   for (let y = 0; y < lot.h; y++) {
     for (let x = 0; x < lot.w; x++) {
       const gi = idx(city, lot.x + x, lot.y + y);

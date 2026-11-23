@@ -1,7 +1,7 @@
 import { bus } from '../../core/events';
 import type { GameState } from '../../core/state';
 
-export type IncomeCategory = 'sales' | 'services' | 'wholesale' | 'propertySale' | 'loan' | 'refund' | 'other';
+export type IncomeCategory = 'sales' | 'services' | 'wholesale' | 'royalties' | 'propertySale' | 'loan' | 'refund' | 'other';
 export type ExpenseCategory =
   | 'rent' | 'wages' | 'utilities' | 'stock' | 'construction' | 'property' | 'deposit'
   | 'loanPayment' | 'interest' | 'fines' | 'maintenance' | 'marketing' | 'licenses' | 'other';

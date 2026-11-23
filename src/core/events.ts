@@ -57,6 +57,9 @@ export interface GameEvents {
   'notes:changed': void;
   achievement: string;
   'marketing:changed': void;
+  'logistics:changed': void;
+  /** One of your vans has set off with a delivery. */
+  'delivery:sent': { fromShopId: number; toShopId: number };
   'season:changed': string;
   /** Add to a lifetime counter. */
   stat: { stat: string; by?: number };

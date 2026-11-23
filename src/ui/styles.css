@@ -567,3 +567,16 @@ table.grid th { text-align: right; }
 .toasts { left: 50%; bottom: 14px; transform: translateX(-50%); align-items: center; }
 .toast { max-width: 460px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+.shop-panel .task { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 13px; }
+.shop-panel .task .n { width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.1); font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+.shop-panel .task .label { flex: 1; }
+.shop-panel .task button { padding: 0 6px; font-size: 11px; line-height: 18px; }
+.kv select { max-width: 190px; padding: 2px 6px; font-size: 13px; }
+.contract-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+.contract-form select { font-size: 13px; padding: 3px 6px; max-width: 180px; }
+.offer-card { border: 1px solid var(--warn); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: rgba(242, 184, 75, 0.08); font-size: 13px; }
+.offer-card .row { margin-top: 6px; justify-content: flex-end; }
+.offer-card button { padding: 3px 10px; font-size: 12.5px; }
+
+.toasts { left: calc(50% + 70px); }

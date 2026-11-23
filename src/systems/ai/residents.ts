@@ -181,7 +181,8 @@ export const isRegular = (m: ShopMemory | undefined): boolean => !!m && m.visits
  */
 export function chooseShop(s: GameState, r: Resident | null, persona: string, type: string, fromTile: number): { shop?: ShopState; rival?: RivalShop } {
   const mine = s.shops.filter((sh) => sh.type === type && isOpenNow(s, sh));
-  const theirs = rivalOpenNow(s) ? allRivalShops(s).filter((sh) => sh.type === type) : [];
+  // Franchises of the player's brands are places to go too; custom there earns a royalty.
+  const theirs = rivalOpenNow(s) ? [...allRivalShops(s), ...s.franchises].filter((sh) => sh.type === type) : [];
   if (!mine.length && !theirs.length) return {};
   const TEMPERATURE = 0.6;
   const sense = personaOf(persona).priceSense;

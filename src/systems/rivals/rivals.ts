@@ -65,7 +65,12 @@ export function ensureRivals(s: GameState): void {
 export const allRivalShops = (s: GameState): RivalShop[] => s.rivals.flatMap((c) => c.shops);
 export const rivalOnLot = (s: GameState, lotId: number): RivalShop | undefined => allRivalShops(s).find((r) => r.lotId === lotId);
 export const companyOf = (s: GameState, shop: RivalShop): RivalCompany => s.rivals.find((c) => c.shops.includes(shop))!;
-export const rivalById = (s: GameState, id: number): RivalShop | undefined => allRivalShops(s).find((r) => r.id === id);
+/** Any shop on the map that is not the player's own: a rival's or a franchise. */
+export const rivalById = (s: GameState, id: number): RivalShop | undefined => allRivalShops(s).find((r) => r.id === id) ?? s.franchises.find((f) => f.id === id);
+/** Whatever stands on a lot that the player cannot rent: a rival's shop or one of their own franchises. */
+export const occupantOf = (s: GameState, lotId: number): RivalShop | undefined => rivalOnLot(s, lotId) ?? s.franchises.find((f) => f.lotId === lotId);
+/** Every company with buildings to draw: the rivals, and the player's franchisees under the player's colour. */
+export const brandsOnMap = (s: GameState): { name: string; color: string; roof: string; shops: RivalShop[] }[] => [...s.rivals, { name: s.companyName, color: '#2f9e7f', roof: 'house', shops: s.franchises }];
 
 export function rivalOpenNow(s: GameState): boolean {
   const h = hourFloat(s.time);
@@ -112,7 +117,7 @@ export function competitorOf(s: GameState, shop: RivalShop): ShopState | undefin
 /** Rival shops of a kind that compete with one of the player's shops. */
 export const rivalsNear = (s: GameState, shop: ShopState): RivalShop[] => allRivalShops(s).filter((r) => r.type === shop.type && lotDistance(session.city.lots[r.lotId], session.city.lots[shop.lotId]) <= R.competeRadius);
 
-const freeLots = (s: GameState, city: City): LotDef[] => city.lots.filter((l) => l.rentable && !s.lots[l.id] && !rivalOnLot(s, l.id));
+const freeLots = (s: GameState, city: City): LotDef[] => city.lots.filter((l) => l.rentable && !s.lots[l.id] && !occupantOf(s, l.id));
 
 function openShop(s: GameState, company: RivalCompany): void {
   const { city } = session;

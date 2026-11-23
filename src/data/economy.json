@@ -5,10 +5,20 @@
     "expressHours": 2,
     "expressSurcharge": 0.2,
     "bulkDiscounts": [
-      { "cases": 5, "discount": 0.05 },
-      { "cases": 10, "discount": 0.1 },
-      { "cases": 20, "discount": 0.15 }
-    ]
+      {
+        "cases": 5,
+        "discount": 0.05
+      },
+      {
+        "cases": 10,
+        "discount": 0.1
+      },
+      {
+        "cases": 20,
+        "discount": 0.15
+      }
+    ],
+    "warehouseDiscount": 0.1
   },
   "market": {
     "driftPerDay": 0.04,

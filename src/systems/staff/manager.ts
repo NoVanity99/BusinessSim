@@ -1,4 +1,5 @@
 import { toast } from '../../core/events';
+import { deliveryProblem, stockTargets, suppliedBy, supplierOf, suppliesProduct } from '../logistics/logistics';
 import type { GameState } from '../../core/state';
 import { PRODUCTS, SHOP_TYPES } from '../../data';
 import { batchQty, defOf, shelfQty, type ShopState } from '../../entities/Shop';
@@ -28,9 +29,18 @@ export function managerReorder(s: GameState): void {
       if (used) capacity[p] = Math.max(capacity[p] ?? 0, d.caseSize);
     }
 
+    // A warehouse orders for the shops it supplies: enough of everything they are getting through.
+    if (shop.type === 'warehouse') {
+      for (const client of suppliedBy(s, shop)) for (const [p, target] of Object.entries(stockTargets(client))) if (PRODUCTS[p].wholesale > 0 && !PRODUCTS[p].recipe) capacity[p] = (capacity[p] ?? 0) + target;
+    }
+    const supplier = supplierOf(s, shop);
+    const delivering = supplier && !deliveryProblem(s, supplier);
+
     let free = freeStorage(s, shop);
     const lines: OrderLine[] = [];
     for (const [product, cap] of Object.entries(capacity)) {
+      // Its own supplier brings this; leave it to the vans.
+      if (delivering && suppliesProduct(supplier, product)) continue;
       const have = shelfQty(shop, product) + batchQty(shop.storage[product]) + incomingUnits(s, shop.id, product);
       if (have >= cap) continue;
       const size = PRODUCTS[product].caseSize;
@@ -40,7 +50,7 @@ export function managerReorder(s: GameState): void {
       free -= cases * size;
     }
     if (!lines.length) continue;
-    if (quoteOrder(s, lines, false).total > s.money - CASH_RESERVE) {
+    if (quoteOrder(s, lines, false, shop).total > s.money - CASH_RESERVE) {
       toast(`${shop.name}: the manager wants to reorder stock but cash is too low.`, 'warn');
       continue;
     }

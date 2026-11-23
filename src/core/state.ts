@@ -13,6 +13,8 @@ import { newWeatherState, type WeatherState } from '../systems/world/weather';
 import type { Resident } from '../systems/ai/residents';
 import type { PoachOffer, RivalCompany } from '../systems/rivals/rivals';
 import type { Campaign } from '../systems/marketing/marketing';
+import type { Contract } from '../systems/logistics/logistics';
+import type { Franchise, FranchiseOffer } from '../systems/logistics/franchise';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
@@ -66,6 +68,13 @@ export interface GameState {
   achievements: Record<string, number>;
   /** Advertising campaigns that are running. */
   campaigns: Campaign[];
+  /** Standing orders with suppliers. */
+  contracts: Contract[];
+  nextContractId: number;
+  /** Shops other people run under your brands. */
+  franchises: Franchise[];
+  franchiseOffers: FranchiseOffer[];
+  nextFranchiseId: number;
 }
 
 export interface NewGameOptions {
@@ -109,6 +118,11 @@ export function createNewGame(opts: NewGameOptions): GameState {
     stats: {},
     achievements: {},
     campaigns: [],
+    contracts: [],
+    nextContractId: 1,
+    franchises: [],
+    franchiseOffers: [],
+    nextFranchiseId: 1,
   };
 }
 

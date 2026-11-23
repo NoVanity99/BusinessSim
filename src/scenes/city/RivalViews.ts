@@ -3,7 +3,7 @@ import { drawBuilding } from '../../art/cityArt';
 import { TILE } from '../../core/constants';
 import { bus } from '../../core/events';
 import { session } from '../../core/state';
-import { rivalOpenNow, type RivalCompany, type RivalShop } from '../../systems/rivals/rivals';
+import { brandsOnMap, rivalById, rivalOpenNow, type RivalShop } from '../../systems/rivals/rivals';
 import { dayOf } from '../../systems/time/clock';
 import { DEPTH } from './ShopViews';
 
@@ -27,7 +27,7 @@ export class RivalViews {
     this.sync();
   }
 
-  private make(company: RivalCompany, shop: RivalShop): View {
+  private make(company: { color: string; roof: string }, shop: RivalShop): View {
     const lot = session.city.lots[shop.lotId];
     const key = `rival_${shop.id}`;
     if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
@@ -57,7 +57,7 @@ export class RivalViews {
   /** Add views for new rival shops and drop those that have closed. */
   private sync(): void {
     const live = new Set<number>();
-    for (const company of session.state.rivals) {
+    for (const company of brandsOnMap(session.state)) {
       for (const shop of company.shops) {
         live.add(shop.id);
         if (!this.views.has(shop.id)) this.views.set(shop.id, this.make(company, shop));
@@ -78,7 +78,7 @@ export class RivalViews {
   private refresh(): void {
     const s = session.state;
     const open = rivalOpenNow(s);
-    for (const company of s.rivals) {
+    for (const company of brandsOnMap(s)) {
       for (const shop of company.shops) {
         const v = this.views.get(shop.id);
         if (!v) continue;
@@ -92,7 +92,7 @@ export class RivalViews {
   lights(): { x: number; y: number; radius: number }[] {
     if (!rivalOpenNow(session.state)) return [];
     return [...this.views.keys()].flatMap((id) => {
-      const shop = session.state.rivals.flatMap((c) => c.shops).find((sh) => sh.id === id);
+      const shop = rivalById(session.state, id);
       if (!shop) return [];
       const lot = session.city.lots[shop.lotId];
       return [{ x: (lot.x + lot.w / 2) * TILE, y: (lot.front === 'n' ? lot.y : lot.y + lot.h) * TILE, radius: 90 }];

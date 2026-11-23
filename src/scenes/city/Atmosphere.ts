@@ -75,7 +75,6 @@ export class Atmosphere {
     const h = Math.max(64, Math.ceil(cam.height * q.lightRes));
     if (!this.dark || this.res !== q.lightRes || this.dark.width !== w || this.dark.height !== h) {
       this.dark?.destroy();
-    this.wash.destroy();
       this.dark = this.scene.add.renderTexture(0, 0, w, h).setOrigin(0).setDepth(DEPTH.ghost + 1);
       this.res = q.lightRes;
     }

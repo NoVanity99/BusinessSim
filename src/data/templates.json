@@ -554,5 +554,28 @@
     "rot": 3
    }
   ]
+ },
+ "warehouse": {
+  "name": "Starter depot",
+  "items": [
+   {
+    "def": "pallet_rack",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "pallet_rack",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "van_bay",
+    "dx": 1,
+    "dy": 3,
+    "rot": 0
+   }
+  ]
  }
 }

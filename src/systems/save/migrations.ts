@@ -104,6 +104,17 @@ export const MIGRATIONS: Migration[] = [
       s.events = (s.events ?? []).filter((e: { type: string }) => e.type !== 'holiday');
     },
   },
+  {
+    to: 8,
+    name: 'Add supplier contracts and franchises',
+    up(s) {
+      s.contracts ??= [];
+      s.nextContractId ??= 1;
+      s.franchises ??= [];
+      s.franchiseOffers ??= [];
+      s.nextFranchiseId ??= 1;
+    },
+  },
 ];
 
 export const LATEST_SAVE_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.to), 1);

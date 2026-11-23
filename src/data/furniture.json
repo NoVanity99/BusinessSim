@@ -949,5 +949,34 @@
   "breakChance": 0.008,
   "repairCost": 50,
   "power": 2
+ },
+ "sewing_line": {
+  "name": "Sewing Line",
+  "category": "production",
+  "kind": "producer",
+  "w": 3,
+  "h": 1,
+  "cost": 2600,
+  "sprite": "sewing",
+  "color": "#b07cc6",
+  "decor": 0,
+  "description": "Cuts and sews fabric into clothes for your shops. Needs staff on shift.",
+  "station": "sew",
+  "power": 8,
+  "breakChance": 0.012,
+  "repairCost": 150
+ },
+ "van_bay": {
+  "name": "Delivery Van Bay",
+  "category": "logistics",
+  "kind": "decor",
+  "w": 2,
+  "h": 3,
+  "cost": 3200,
+  "sprite": "vanbay",
+  "color": "#f2b84b",
+  "decor": 0,
+  "vans": 1,
+  "description": "A parking bay with a delivery van. With a driver on shift, the van carries stock from here to the shops this site supplies. Each bay is one van."
  }
 }

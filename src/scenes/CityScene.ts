@@ -35,7 +35,7 @@ import { Atmosphere } from './city/Atmosphere';
 import { CityProps } from './city/CityProps';
 import { RivalViews } from './city/RivalViews';
 import { clearHistory, redo, undo } from '../systems/build/history';
-import { companyOf, rivalOnLot } from '../systems/rivals/rivals';
+import { companyOf, occupantOf, rivalOnLot } from '../systems/rivals/rivals';
 import { Effects } from './city/Effects';
 import { clear, h, nightLayer, uiRoot } from '../ui/dom';
 import { TopBar } from '../ui/hud/TopBar';
@@ -590,7 +590,8 @@ export class CityScene extends Phaser.Scene {
       const own = s.lots[lot.id];
       const n = NEIGHBORHOODS[lot.district];
       const rival = rivalOnLot(s, lot.id);
-      const line = rival ? `${rival.name}\nRun by ${companyOf(s, rival).name}` : own ? (own.owner === 'owned' ? 'Owned by you' : `Leased · ${money(rentOf(s, lot))}/day`) : `For rent · ${money(rentOf(s, lot))}/day`;
+      const mine = s.franchises.find((f) => f.lotId === lot.id);
+      const line = mine ? `${mine.name}\nYour franchise` : rival ? `${rival.name}\nRun by ${companyOf(s, rival).name}` : own ? (own.owner === 'owned' ? 'Owned by you' : `Leased · ${money(rentOf(s, lot))}/day`) : `For rent · ${money(rentOf(s, lot))}/day`;
       const ev = p.event as MouseEvent;
       showTip(`Lot #${lot.id} · ${n.name}\n${lot.w} × ${lot.h} tiles\n${line}`, ev.clientX, ev.clientY);
     } else hideTip();
@@ -602,7 +603,7 @@ export class CityScene extends Phaser.Scene {
     const g = this.lotGfx;
     g.clear();
     for (const lot of city.lots) {
-      if (!lot.rentable || rivalOnLot(state, lot.id)) continue;
+      if (!lot.rentable || occupantOf(state, lot.id)) continue;
       const own = state.lots[lot.id];
       const color = own ? signal().mine : signal().free;
       const x = lot.x * TILE;

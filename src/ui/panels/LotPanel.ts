@@ -9,7 +9,8 @@ import { h, setChildren } from '../dom';
 import { buyOut, buyoutPrice, companyOf, competitorOf, rivalOnLot, rivalOpenNow, rivalPrice } from '../../systems/rivals/rivals';
 import { priceIndex } from '../../systems/ai/residents';
 import { dayOf } from '../../systems/time/clock';
-import { RIVALS } from '../../data';
+import { LOGISTICS, RIVALS } from '../../data';
+import { franchiseOnLot, inspect, revoke, royaltyOf } from '../../systems/logistics/franchise';
 
 const meter = (value: number, max: number, color: string): HTMLElement =>
   h('div.meter', h('div', { style: { width: `${Math.min(100, (value / max) * 100)}%`, background: color } }));
@@ -24,6 +25,7 @@ export function LotPanel(): { el: HTMLElement; destroy(): void } {
     if (lotId === null) return '';
     const s = session.state;
     const lot = session.city.lots[lotId];
+    if (franchiseOnLot(s, lot.id)) return `f${s.money >= LOGISTICS.franchise.inspectionCost}`;
     const rival = rivalOnLot(s, lot.id);
     if (rival) return `r${s.money >= buyoutPrice(s, rival)}`;
     return `${s.money >= depositOf(s, lot)}|${s.money >= priceOf(s, lot)}|${Object.keys(SHOP_TYPES).map((id) => s.money >= setupCost(s, lot, id)).join()}`;
@@ -39,6 +41,26 @@ export function LotPanel(): { el: HTMLElement; destroy(): void } {
     const s = session.state;
     const lot = session.city.lots[lotId];
     const n = NEIGHBORHOODS[lot.district];
+    const franchise = franchiseOnLot(s, lot.id);
+    if (franchise) {
+      el.style.display = 'block';
+      setChildren(
+        el,
+        h('h3', h('span', franchise.name), h('button.close', { onclick: () => selectLot(null), tip: 'Close (Esc)' }, '×')),
+        h('div.sub', h('span.tag', { style: { background: 'var(--accent)' } }, 'Your franchise'), `  ${SHOP_TYPES[franchise.type].name} · ${n.name}`),
+        h('div.sub', `Run by ${franchise.owner} since day ${franchise.openedDay}.`),
+        h('div.kv', { tip: 'How well it is run. Standards slip if left alone; poor ones hurt the reputation of your own shops of this kind.' }, h('span.k', 'Standards'), h('span.v', { class: franchise.quality < 38 ? 'bad' : franchise.quality > 72 ? 'good' : '' }, `${Math.round(franchise.quality)}%`)),
+        meter(franchise.quality, 100, 'var(--accent)'),
+        h('div.kv', h('span.k', 'Customers yesterday'), h('span.v', `${franchise.yesterday}`)),
+        h('div.kv', { tip: `${Math.round(LOGISTICS.franchise.royalty * 100)}% of its takings, paid to you every morning.` }, h('span.k', 'Royalty'), h('span.v', `${money(Math.round(royaltyOf(franchise)))} / day`)),
+        h(
+          'div.actions',
+          h('button', { disabled: s.money < LOGISTICS.franchise.inspectionCost, onclick: () => inspect(s, franchise), tip: 'Send someone from head office to raise standards.' }, `Send an inspector (${money(LOGISTICS.franchise.inspectionCost)})`),
+          h('button.danger', { onclick: () => { if (confirm(`Withdraw the franchise from ${franchise.owner}? The shop closes and the royalties stop.`)) revoke(s, franchise); } }, 'Withdraw the franchise'),
+        ),
+      );
+      return;
+    }
     const rival = rivalOnLot(s, lot.id);
     if (rival) {
       const company = companyOf(s, rival);

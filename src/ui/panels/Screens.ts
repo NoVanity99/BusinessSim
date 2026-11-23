@@ -8,6 +8,9 @@ import { batchQty, shelfQty, storageCapacity, storageUsed, type ShopState } from
 import { charFrame } from '../../art/actorArt';
 import { rt } from '../../systems/ai/runtime';
 import { freeStorage, incomingUnits, placeOrder, quoteOrder, type OrderLine } from '../../systems/economy/stock';
+import { cancelContract, cancelFee, contractDailyCost, contractUnitPrice, dailyUse, signContract, supplierOf } from '../../systems/logistics/logistics';
+import { ECONOMY, LOGISTICS } from '../../data';
+import { dayOf } from '../../systems/time/clock';
 import { matchOffer } from '../../systems/rivals/rivals';
 import { prioritiesOf } from '../../systems/staff/agents';
 import { dailyWageBill } from '../../systems/staff/staff';
@@ -25,29 +28,6 @@ const COVER_DAYS = 3;
 
 /** What the stock screen is showing; kept between refreshes. */
 const stockView: { problemsOnly: boolean; cart: Record<number, Record<string, number>> } = { problemsOnly: false, cart: {} };
-
-/**
- * Units of each product a shop gets through per day, from its recent takings.
- * Ingredients are counted through the recipes of what was sold.
- */
-export function dailyUse(shop: ShopState): Record<string, number> {
-  const days = [...shop.history.slice(-3), shop.today];
-  const use: Record<string, number> = {};
-  for (const d of days) {
-    for (const [p, revenue] of Object.entries(d.byProduct ?? {})) {
-      const price = shop.prices[p];
-      if (!price || !PRODUCTS[p]) continue;
-      const units = revenue / price;
-      const recipe = PRODUCTS[p].recipe;
-      if (recipe) for (const [input, qty] of Object.entries(recipe)) use[input] = (use[input] ?? 0) + units * qty;
-      else use[p] = (use[p] ?? 0) + units;
-    }
-  }
-  // Today is only part of a day; count it for what it is worth so far.
-  const span = Math.max(0.5, days.length - 1 + ((session.state.time.minutes % 1440) / 1440));
-  for (const p of Object.keys(use)) use[p] /= span;
-  return use;
-}
 
 interface StockRow {
   product: string;
@@ -94,7 +74,7 @@ export function stockScreen(rerender: () => void, focus: (lotId: number) => void
     const rows = stockRows(s, shop);
     const cart = (stockView.cart[shop.id] ??= {});
     const lines: OrderLine[] = Object.entries(cart).filter(([, c]) => c > 0).map(([product, cases]) => ({ product, cases }));
-    const quote = quoteOrder(s, lines, false);
+    const quote = quoteOrder(s, lines, false, shop);
     const free = freeStorage(s, shop);
     const bad = rows.filter((r) => r.status === 'out' || r.status === 'low');
     problems += bad.length;
@@ -108,6 +88,8 @@ export function stockScreen(rerender: () => void, focus: (lotId: number) => void
         h('b.clickable', { onclick: () => focus(shop.lotId), tip: 'Go to this business' }, shop.name),
         h('span.dim', { tip: 'Back-room space used, including what is on order.' }, `storage ${storageUsed(shop) + incomingUnits(s, shop.id)}/${storageCapacity(shop)}`),
         bad.length > 0 && h('span.tag', { style: { background: 'var(--warn)' } }, `${bad.length} running out`),
+        supplierOf(s, shop) && h('span.dim', { tip: 'Stocked by your own vans. Orders placed here still come from the wholesaler.' }, `supplied by ${supplierOf(s, shop)!.name}`),
+        shop.type === 'warehouse' && h('span.dim', { tip: 'Orders delivered to a warehouse are cheaper.' }, `${Math.round(ECONOMY.wholesale.warehouseDiscount * 100)}% off orders`),
         h('span', { style: { flex: '1' } }),
         h('label.check', { tip: 'With a manager on shift, stock for everything on the shelves is reordered automatically.' }, h('input', { type: 'checkbox', checked: shop.autoReorder, onchange: (e: Event) => { shop.autoReorder = (e.target as HTMLInputElement).checked; } }), 'Manager reorders'),
         h('button', { disabled: !suggested.length, tip: `Put enough in the order for about ${COVER_DAYS} days at the current rate of sale.`, onclick: () => { for (const r of suggested) cart[r.product] = r.suggest; rerender(); } }, 'Top up'),
@@ -159,6 +141,52 @@ export function stockScreen(rerender: () => void, focus: (lotId: number) => void
       h('button', { tip: `Add a ${COVER_DAYS}-day top-up to every shop's order.`, onclick: () => { for (const shop of shops) for (const r of stockRows(s, shop)) if (r.suggest > 0) (stockView.cart[shop.id] ??= {})[r.product] = r.suggest; rerender(); } }, 'Top up everywhere'),
     ),
     ...sections,
+    contractsSection(s, rerender),
+  );
+}
+
+// ---------- Supplier contracts ----------
+
+const draft: { supplier: string; shopId: number; product: string; cases: number } = { supplier: 'steady', shopId: 0, product: '', cases: 2 };
+
+function contractsSection(s: GameState, rerender: () => void): HTMLElement {
+  const shops = s.shops.filter((sh) => stockRows(s, sh).some((r) => orderable(r.product)));
+  const shop = shops.find((sh) => sh.id === draft.shopId) ?? shops[0];
+  const products = shop ? stockRows(s, shop).map((r) => r.product).filter(orderable) : [];
+  if (shop) draft.shopId = shop.id;
+  if (!products.includes(draft.product)) draft.product = products[0] ?? '';
+  const def = LOGISTICS.suppliers[draft.supplier];
+  draft.cases = Math.max(def.minCases, draft.cases);
+  const unit = draft.product ? contractUnitPrice(s, draft.supplier, draft.product) : 0;
+  const perDay = draft.product ? draft.cases * PRODUCTS[draft.product].caseSize * unit : 0;
+  const pick = <K extends keyof typeof draft>(key: K) => (e: Event): void => {
+    (draft[key] as unknown) = key === 'shopId' ? +(e.target as HTMLSelectElement).value : (e.target as HTMLSelectElement).value;
+    rerender();
+  };
+  const today = dayOf(s.time);
+  return h(
+    'div.stock-shop',
+    h('div.stock-head', h('b', 'Supplier contracts'), h('span.dim', 'A fixed delivery every morning at a locked price, whatever the market does.')),
+    ...s.contracts.map((c) => {
+      const to = s.shops.find((sh) => sh.id === c.shopId);
+      const sup = LOGISTICS.suppliers[c.supplier];
+      return h(
+        'div.kv',
+        h('span.k', `${sup.name}: ${c.cases} case${c.cases === 1 ? '' : 's'} of ${PRODUCTS[c.product].name.toLowerCase()} to ${to?.name ?? 'a closed shop'}`),
+        h('span.v', `${money(contractDailyCost(c))}/day · ${Math.max(0, c.untilDay - today + 1)} d left `, h('button', { style: { padding: '1px 8px', fontSize: '12px' }, tip: cancelFee(c) ? `Ending it early costs ${money(cancelFee(c))}.` : 'No charge for ending this one early.', onclick: () => { cancelContract(s, c.id); rerender(); } }, 'End')),
+      );
+    }),
+    shop && draft.product
+      ? h(
+          'div.contract-form',
+          h('select', { onchange: pick('supplier'), tip: def.description }, ...Object.entries(LOGISTICS.suppliers).map(([id, d]) => h('option', { value: id, selected: id === draft.supplier }, `${d.name} (${Math.round(d.discount * 100)}% off, ${d.days} days)`))),
+          h('select', { onchange: pick('shopId') }, ...shops.map((sh) => h('option', { value: sh.id, selected: sh.id === shop.id }, sh.name))),
+          h('select', { onchange: pick('product') }, ...products.map((p) => h('option', { value: p, selected: p === draft.product }, PRODUCTS[p].name))),
+          h('span.stepper', h('button', { disabled: draft.cases <= def.minCases, onclick: () => { draft.cases--; rerender(); } }, '−'), h('span', { tip: `At least ${def.minCases} a day with this supplier` }, `${draft.cases}`), h('button', { onclick: () => { draft.cases++; rerender(); } }, '+')),
+          h('span.dim', `cases a day · ${money(unit)} each · ${money(Math.round(perDay))}/day`),
+          h('button.primary', { style: { padding: '4px 12px', fontSize: '13px' }, onclick: () => { signContract(s, draft.supplier, shop, draft.product, draft.cases); rerender(); }, tip: `${def.description}${def.missedShare ? `\nIf you have no room for a delivery you still pay ${Math.round(def.missedShare * 100)}% of it.` : ''}` }, 'Sign'),
+        )
+      : h('div.dim', { style: { fontSize: '13px' } }, 'Open a shop that buys stock to sign a contract.'),
   );
 }
 

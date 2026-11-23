@@ -254,6 +254,29 @@ const PAINTERS: Record<string, Painter> = {
     p.r(4, Math.floor(h / 2) - 1, 2, 2, C.red).r(w - 6, Math.floor(h / 2) - 2, 2, 2, C.water).r(Math.floor(w / 2) + 3, Math.floor(h / 2), 1, 1, C.black);
     p.r(2, h - 3, 2, 2, C.steelDark).r(w - 4, h - 3, 2, 2, C.steelDark);
   },
+  vanbay(p, w, h) {
+    // A marked parking bay with the van standing in it.
+    p.r(0, 0, w, h, '#8d919b').r(0, 0, w, 1, C.yellow).r(0, 0, 1, h, C.yellow).r(w - 1, 0, 1, h, C.yellow);
+    for (let y = 3; y < h; y += 6) p.r(1, y, 1, 3, '#6f737d').r(w - 2, y, 1, 3, '#6f737d');
+    const vw = Math.min(w, h) - 8;
+    const long = Math.max(w, h) - 8;
+    const along = h >= w;
+    const bx = Math.floor((w - (along ? vw : long)) / 2);
+    const by = Math.floor((h - (along ? long : vw)) / 2);
+    p.rbox(bx, by, along ? vw : long, along ? long : vw, C.white, C.steelDark);
+    if (along) p.r(bx + 2, by + 2, vw - 4, 5, C.glass).r(bx + 1, by + 9, vw - 2, 2, C.yellow).r(bx + 1, by + long - 3, 2, 1, C.red).r(bx + vw - 3, by + long - 3, 2, 1, C.red);
+    else p.r(bx + 2, by + 2, 5, vw - 4, C.glass).r(bx + 9, by + 1, 2, vw - 2, C.yellow);
+  },
+  sewing(p, w, h, rot) {
+    const t = cab(p, 0, 0, w, h, C.steel, C.steelMid, C.steelDark, rot);
+    // Three machines along a bench with cloth feeding through.
+    const n = Math.max(1, Math.floor(Math.max(t.w, t.h) / 14));
+    for (let i = 0; i < n; i++) {
+      const cx = t.w >= t.h ? t.x + 3 + i * Math.floor(t.w / n) : t.x + 1;
+      const cy = t.w >= t.h ? t.y + 1 : t.y + 3 + i * Math.floor(t.h / n);
+      p.rbox(cx, cy, 8, 5, C.white, C.line).r(cx + 6, cy + 1, 1, 3, C.ironDark).r(cx + 1, cy + 3, 4, 1, '#b07cc6');
+    }
+  },
   playtable(p, w, h) {
     shadow(p, w, h);
     for (const [sx, sy] of [[5, 1], [w - 10, 1], [5, h - 6], [w - 10, h - 6]]) p.rbox(sx, sy, 5, 5, C.woodMid, C.woodDark);
@@ -402,7 +425,7 @@ const PAINTERS: Record<string, Painter> = {
 /** How many animation frames each sprite has. Unlisted sprites have one. */
 const FRAMES: Record<string, number> = { pinball: 2, washer: 4, dryer: 4, oven: 2, mixer: 2, bottler: 2, carwash: 2, pool: 2, carousel: 2, bumper: 2, arcade: 2, fountain: 2 };
 /** Sprites that look the same from every side, so one facing is painted and shared. */
-const SYMMETRIC = new Set(['mannequin', 'fitting', 'airhockey', 'plant', 'lamp', 'bin', 'vending', 'tank', 'playtable', 'fountain', 'carousel', 'pool', 'bumper', 'gate', 'mixer']);
+const SYMMETRIC = new Set(['vanbay', 'mannequin', 'fitting', 'airhockey', 'plant', 'lamp', 'bin', 'vending', 'tank', 'playtable', 'fountain', 'carousel', 'pool', 'bumper', 'gate', 'mixer']);
 
 const spriteOf = (defId: string): string => {
   const d = FURNITURE[defId];
