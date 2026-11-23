@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.0 - Milestone 7: eight more business types
+
+Customers now follow a visit plan (buy from shelves, order at a counter, use a machine or attraction, pay), so every business shares one AI.
+
+- **Coffee shop & bakery**: made-to-order drinks from an espresso machine, an oven that bakes dough into fresh pastries in batches, and decor that raises the prices people accept.
+- **Laundromat**: washers and dryers with cycle times, paid at the machine with no checkout needed; benches for waiting; machines break down and need repair.
+- **Fast food restaurant**: order counter, grill, fryer and drinks machine; orders go to a kitchen queue worked by cooks; customers wait for their food and walk out if it is slow; seating.
+- **Card & collectibles shop**: sealed packs and accessories, a display case for singles in three rarities with volatile prices, pack opening, collector customers, play tables and bookable tournaments with entry fees.
+- **Gas station**: an open forecourt with pumps and a fuel tank, cars that pull in from the road, an attached mini-mart, a car wash, and a repair bay that needs a mechanic and spare parts.
+- **Vending machine business**: a depot plus machines placed on any pavement in the city; passers-by buy on impulse; cash sits in the machine until a driver's van round (or a paid call-out) restocks and collects.
+- **Workshop / factory**: machines with recipes turn ingredients into house brands (including a two-step sauce chain); sell wholesale or ship to your own shops by courier or your own driver.
+- **Fun park**: ticket gate with a fair price that rises with your attractions, rides with capacity and fun ratings, arcade machines, snack stall, picnic tables, and guest happiness driving reputation.
+- Road traffic: cars drive the street grid, keeping to their lane.
+- Cooks and mechanics now have jobs; mechanics repair breakdowns for free and make them rarer. Managers reorder ingredients and fuel as well as shelf stock.
+- Stock and price tabs adapt to each business; the overview lists what each one is missing.
+
 ## 0.6.0 - Milestone 6: finances, save/load, menus, audio
 
 - Finances window: cash, net worth breakdown, progress to the net-worth goal, a 28-day income vs expenses chart with hover values, and ledgers for today, yesterday and the last 7 days.

@@ -18,6 +18,14 @@ import { managerOnDuty } from '../../systems/staff/manager';
 import { dailyWageBill, fire, giveBonus, giveRaise, hire, onDuty, staffOf } from '../../systems/staff/staff';
 import { selectStaff } from '../../core/uiState';
 import { roleTag, skillBars, traitTags } from './staffWidgets';
+import { inStorage } from '../../systems/economy/stock';
+import { openPacks, PACK_ODDS, scheduleTournament, TOURNAMENT_COST } from '../../systems/shop/cards';
+import { FACTORY_SALE_SHARE, factoryPrice, sellWholesale } from '../../systems/shop/production';
+import { COURIER_FEE, destinationsFor, transferStock } from '../../systems/economy/transfer';
+import { fairPrice } from '../../systems/shop/pricing';
+import { openOrders } from '../../systems/shop/kitchen';
+import { defOf } from '../../entities/Shop';
+import { dayOf } from '../../systems/time/clock';
 
 interface Tab {
   el: HTMLElement;
@@ -52,12 +60,28 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
     const regs = registers(shop);
     const staffed = regs.some((r) => s.ownerAt?.shopId === shop.id && s.ownerAt.objectId === r.id) || staffOf(s, shop.id).some((e) => e.role === 'cashier' && onDuty(s, e));
     const stocked = shop.objects.some((o) => o.slots?.some((sl) => batchQty(sl.batches) > 0));
+    const flow = type.flow;
+    const needsCheckout = flow === 'retail' || flow === 'counter';
+    const has = (pred: (o: (typeof shop.objects)[number]) => boolean): boolean => shop.objects.some(pred);
+    const broken = shop.objects.filter((o) => o.broken).length;
+    const menu = type.products.filter((p) => PRODUCTS[p].kind === 'menu');
     const problems = [
-      !regs.length && 'No checkout. Customers cannot pay.',
-      regs.length > 0 && !staffed && 'Nobody is working the checkout.',
-      !stocked && 'Nothing on the shelves.',
+      needsCheckout && !regs.length && (flow === 'counter' ? 'No order counter. Customers cannot order.' : 'No checkout. Customers cannot pay.'),
+      needsCheckout && regs.length > 0 && !staffed && 'Nobody is working the counter.',
+      flow === 'retail' && shop.type !== 'gas' && !stocked && 'Nothing on the shelves.',
+      flow === 'counter' && !menu.some((p) => !PRODUCTS[p].station || has((o) => defOf(o).station === PRODUCTS[p].station)) && 'No cooking equipment. Nothing on the menu can be made.',
+      flow === 'counter' && !menu.some((p) => Object.keys(PRODUCTS[p].recipe ?? {}).every((i) => inStorage(shop, i) > 0)) && 'No ingredients in the back room.',
+      flow === 'service' && !(type.plan ?? []).every((svc) => has((o) => defOf(o).service === svc)) && 'Missing machines. Customers need a washer and a dryer.',
+      flow === 'park' && !has((o) => defOf(o).service === 'svc_ticket') && 'No ticket gate. Guests cannot get in.',
+      flow === 'park' && !has((o) => defOf(o).service === 'ride') && 'No attractions.',
+      flow === 'factory' && !has((o) => defOf(o).kind === 'producer' && !!o.recipe) && 'No machine has a recipe set.',
+      flow === 'depot' && !has((o) => defOf(o).kind === 'vending') && 'No vending machines placed yet. Pick one in Build and click any pavement.',
+      shop.type === 'gas' && !has((o) => defOf(o).service === 'fuel') && 'No fuel pumps.',
+      shop.type === 'gas' && has((o) => defOf(o).service === 'fuel') && inStorage(shop, 'fuel') <= 0 && 'The fuel tanks are empty.',
+      broken > 0 && `${broken} machine${broken === 1 ? ' is' : 's are'} broken. Click one to repair it.`,
       shop.closed && 'Closed by you.',
     ].filter(Boolean) as string[];
+    const today = dayOf(s.time);
 
     setChildren(
       body,
@@ -79,6 +103,15 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
       h('div.kv', h('span.k', 'Revenue'), h('span.v', money(shop.today.revenue))),
       h('div.kv', h('span.k', 'Customers served'), h('span.v', `${shop.today.served} of ${shop.today.customers}`)),
       h('div.kv', h('span.k', 'Left unhappy'), h('span.v', { class: shop.today.walkouts ? 'warn' : '' }, shop.today.walkouts)),
+      flow === 'counter' && h('div.kv', h('span.k', 'Orders in the kitchen'), h('span.v', openOrders(shop.id))),
+      shop.type === 'cardshop' &&
+        h(
+          'div.actions',
+          { style: { margin: '6px 0' } },
+          (shop.eventDay ?? 0) >= today
+            ? h('div.good', { style: { fontSize: '13px' } }, shop.eventDay === today ? 'Tournament day! Players pay an entry fee at the tables.' : 'Tournament booked for tomorrow.')
+            : h('button', { disabled: s.money < TOURNAMENT_COST || !has((o) => defOf(o).service === 'play'), onclick: () => scheduleTournament(s, shop), tip: 'Players flood in tomorrow, pay an entry fee at each play table and buy packs. Needs at least one play table.' }, `Host a tournament tomorrow (${money(TOURNAMENT_COST)})`),
+        ),
       problems.length > 0 && h('div.section', 'Needs attention'),
       ...problems.map((p) => h('div.warn', { style: { fontSize: '13px', marginBottom: '3px' } }, `• ${p}`)),
       h('div.actions', h('button.danger', { tip: 'Sells all equipment and liquidates stock at a loss. You keep the lot.', onclick: () => { if (confirm(`Close ${shop.name} for good?`)) closeShop(s, shop); } }, 'Close this business')),
@@ -136,17 +169,27 @@ function buildTab(s: GameState, shop: ShopState): Tab {
 
 // ---------- Stock ----------
 
+const kindOf = (p: string): string => PRODUCTS[p].kind ?? 'good';
+/** Things that sit in the back room: everything except made-to-order items and services. */
+const stockItems = (shop: ShopState): string[] => {
+  const type = SHOP_TYPES[shop.type];
+  return [...new Set([...type.products, ...type.supplies])].filter((p) => !['menu', 'service'].includes(kindOf(p)));
+};
+const orderable = (p: string): boolean => PRODUCTS[p].wholesale > 0 && ['good', 'ingredient', 'fuel'].includes(kindOf(p));
+
 function stockTab(s: GameState, shop: ShopState): Tab {
   const type = SHOP_TYPES[shop.type];
+  const items = stockItems(shop);
   const cart: Record<string, number> = {};
   let express = false;
   const cells = new Map<string, { store: HTMLElement; shelf: HTMLElement; incoming: HTMLElement; qty: HTMLElement; cost: HTMLElement }>();
   const totals = h('div.totals');
   const deliveries = h('div');
   const capacity = h('div.kv');
+  const extras = h('div');
   const orderBtn = h('button.primary', { onclick: () => order() }, 'Place order');
 
-  const rows = type.products.map((p) => {
+  const rows = items.map((p) => {
     const d = PRODUCTS[p];
     const c = { store: h('td'), shelf: h('td'), incoming: h('td'), qty: h('span', '0'), cost: h('td') };
     cells.set(p, c);
@@ -154,13 +197,14 @@ function stockTab(s: GameState, shop: ShopState): Tab {
       cart[p] = Math.max(0, (cart[p] ?? 0) + n * (e.shiftKey ? 5 : 1));
       update();
     };
+    const note = d.recipe ? `\nMade from ${Object.entries(d.recipe).map(([i, n]) => `${n}× ${PRODUCTS[i].name}`).join(' + ')}` : '';
     return h(
       'tr',
-      h('td', { tip: `${d.caseSize} per case · ${d.storage}${d.shelfLife ? ` · keeps ${d.shelfLife} days` : ''}` }, dot(d.color), d.name),
+      h('td', { tip: `${orderable(p) ? `${d.caseSize} per case` : kindOf(p) === 'collectible' ? 'Comes from opening booster packs' : 'Made in your factory'}${d.shelfLife ? ` · keeps ${d.shelfLife} day${d.shelfLife === 1 ? '' : 's'}` : ''}${note}` }, dot(d.color), d.name),
       c.store,
       c.shelf,
       c.incoming,
-      h('td', h('span.stepper', h('button', { onclick: step(-1) }, '−'), c.qty, h('button', { onclick: step(1), tip: 'Add a case. Hold Shift for five.' }, '+'))),
+      h('td', orderable(p) ? h('span.stepper', h('button', { onclick: step(-1) }, '−'), c.qty, h('button', { onclick: step(1), tip: 'Add a case. Hold Shift for five.' }, '+')) : ''),
       c.cost,
     );
   });
@@ -174,21 +218,56 @@ function stockTab(s: GameState, shop: ShopState): Tab {
     }
   }
 
+  /** Per-business extras: cracking packs, selling and shipping what a factory makes. */
+  function renderExtras(): void {
+    if (extras.querySelector(':active') || (extras.contains(document.activeElement) && document.activeElement?.tagName === 'SELECT')) return;
+    const parts: (HTMLElement | false)[] = [];
+    if (items.includes('booster') && items.includes('single_rare')) {
+      const packs = inStorage(shop, 'booster');
+      parts.push(
+        h('div.section', 'Open packs'),
+        h('div.row', h('button', { disabled: packs < 1, onclick: () => openPacks(s, shop, 1) }, 'Open 1'), h('button', { disabled: packs < 10, onclick: () => openPacks(s, shop, 10) }, 'Open 10'), h('span.dim', `${packs} sealed in storage`)),
+        h('div.note', `Each pack holds ${PACK_ODDS.commons} commons, a ${Math.round(PACK_ODDS.rareChance * 100)}% chance of a rare and a ${Math.round(PACK_ODDS.ultraChance * 100)}% chance of an ultra rare. Singles go in a display case; collectors pay well for them, but their prices swing from day to day.`),
+      );
+    }
+    const made = items.filter((p) => PRODUCTS[p].recipe && inStorage(shop, p) > 0 && type.flow === 'factory');
+    if (type.flow === 'factory') {
+      parts.push(
+        h('div.section', 'Finished goods'),
+        h('label.check', { tip: `Sell each batch to the wholesale market the moment it is made, at ${Math.round(FACTORY_SALE_SHARE * 100)}% of the wholesale price.` }, h('input', { type: 'checkbox', checked: !!shop.autoSell, onchange: (e: Event) => { shop.autoSell = (e.target as HTMLInputElement).checked; } }), 'Sell everything wholesale automatically'),
+        made.length === 0 && h('div.note', 'Nothing made yet. Click a machine, choose a recipe, and keep its ingredients in stock.'),
+        ...made.map((p) => {
+          const qty = inStorage(shop, p);
+          const dests = destinationsFor(s, shop, p);
+          const select = h('select', h('option', { value: 0 }, dests.length ? 'Ship to…' : 'No shop stocks this'), ...dests.map((d) => h('option', { value: d.id }, d.name)));
+          select.onchange = () => {
+            const dest = dests.find((d) => d.id === +select.value);
+            if (dest) transferStock(s, shop, dest, p, qty);
+            select.value = '0';
+          };
+          return h('div.kv', { style: { alignItems: 'center' } }, h('span.k', dot(PRODUCTS[p].color), `${qty} ${PRODUCTS[p].name}`), h('span.row', h('button', { onclick: () => sellWholesale(s, shop, p, qty), tip: 'Sell the lot to the wholesale market now.' }, `Sell ${money(Math.round(qty * factoryPrice(s, p)))}`), select));
+        }),
+        h('div.note', `Shipping to your own shops lets you sell at full retail price. A courier costs ${money(COURIER_FEE)} a trip; a driver on shift here does it free.`),
+      );
+    }
+    setChildren(extras, ...parts);
+  }
+
   function update(): void {
-    for (const p of type.products) {
+    for (const p of items) {
       const c = cells.get(p)!;
-      const inStore = batchQty(shop.storage[p]);
-      c.store.textContent = String(inStore);
-      c.shelf.textContent = String(shelfQty(shop, p));
+      c.store.textContent = String(inStorage(shop, p));
+      c.shelf.textContent = String(shelfQty(shop, p) || '');
       const inc = incomingUnits(s, shop.id, p);
-      c.incoming.textContent = inc ? `+${inc}` : '';
+      c.incoming.textContent = inc ? `+${Math.round(inc)}` : '';
       c.qty.textContent = String(cart[p] ?? 0);
-      c.cost.textContent = cart[p] ? money(cart[p] * PRODUCTS[p].caseSize * wholesalePrice(s, p)) : money(wholesalePrice(s, p) * PRODUCTS[p].caseSize);
+      if (!orderable(p)) c.cost.textContent = '';
+      else c.cost.textContent = money(Math.round((cart[p] || 1) * PRODUCTS[p].caseSize * wholesalePrice(s, p) * 100) / 100);
       c.cost.className = cart[p] ? '' : 'dim';
     }
     const q = quoteOrder(s, lines(), express);
     const free = freeStorage(s, shop);
-    setChildren(capacity, h('span.k', 'Storage free (after deliveries)'), h('span.v', { class: free < q.units ? 'bad' : '' }, `${free} units`));
+    setChildren(capacity, h('span.k', 'Storage free (after deliveries)'), h('span.v', { class: free < q.units ? 'bad' : '' }, `${Math.round(free)} units`));
     setChildren(
       totals,
       h('div.kv', h('span.k', `${q.cases} cases, ${q.units} units`), h('span.v', money(q.subtotal))),
@@ -204,21 +283,25 @@ function stockTab(s: GameState, shop: ShopState): Tab {
       deliveries,
       mine.length > 0 && h('div.section', 'On the way'),
       ...mine.map((o) =>
-        h('div.kv', h('span.k', o.lines.map((l) => `${l.cases}× ${PRODUCTS[l.product].name}`).join(', ').slice(0, 44)), h('span.v', `${hoursUntil(s, o).toFixed(1)} h`)),
+        h('div.kv', h('span.k', o.lines.map((l) => `${Math.round(l.cases * PRODUCTS[l.product].caseSize)} ${PRODUCTS[l.product].name}`).join(', ').slice(0, 44)), h('span.v', `${hoursUntil(s, o).toFixed(1)} h`)),
       ),
     );
+    renderExtras();
   }
 
   const tiers = ECONOMY.wholesale.bulkDiscounts.map((t) => `${t.cases}+ cases: ${Math.round(t.discount * 100)}% off`).join('\n');
+  const usesShelves = type.furniture.some((f) => FURNITURE[f].kind === 'shelf' || FURNITURE[f].kind === 'vending');
   const el = h(
     'div',
     capacity,
-    h('table.grid', h('tr', h('th', 'Product'), h('th', { tip: 'Units in the back room' }, 'Store'), h('th', { tip: 'Units on display' }, 'Shelf'), h('th', { tip: 'Units on the way' }, 'Due'), h('th', 'Cases'), h('th', { tip: 'Price per case, or the cost of the cases you picked' }, 'Cost')), ...rows),
+    h('table.grid', h('tr', h('th', 'Product'), h('th', { tip: 'Units in the back room' }, 'Store'), h('th', { tip: 'Units on display' }, usesShelves ? 'Shelf' : ''), h('th', { tip: 'Units on the way' }, 'Due'), h('th', 'Cases'), h('th', { tip: 'Price per case, or the cost of the cases you picked' }, 'Cost')), ...rows),
     totals,
     h('label.check', { style: { margin: '8px 0' }, tip: `Standard delivery takes ${ECONOMY.wholesale.standardHours} hours. Express takes ${ECONOMY.wholesale.expressHours} and costs ${Math.round(ECONOMY.wholesale.expressSurcharge * 100)}% more.` }, h('input', { type: 'checkbox', onchange: (e: Event) => { express = (e.target as HTMLInputElement).checked; update(); } }), 'Express delivery'),
     h('div.actions', { tip: `Bulk discounts\n${tiers}` }, orderBtn),
     deliveries,
-    h('div.note', 'Deliveries go to the back room. Click a shelf in the shop to choose what it displays and fill it.'),
+    extras,
+    usesShelves && h('div.note', 'Deliveries go to the back room. Click a shelf or machine to choose what it holds and fill it.'),
+    type.flow === 'counter' && h('div.note', 'Ingredients are used straight from the back room as orders are cooked.'),
   );
   update();
   return { el, update };
@@ -226,8 +309,32 @@ function stockTab(s: GameState, shop: ShopState): Tab {
 
 // ---------- Prices ----------
 
+/** What one unit costs you: its wholesale price, or the ingredients that go into it. */
+function unitCost(s: GameState, p: string): number {
+  const d = PRODUCTS[p];
+  let cost = d.kind === 'crafted' || !d.wholesale || d.kind === 'menu' ? 0 : wholesalePrice(s, p);
+  if (d.recipe && (d.kind === 'menu' || d.kind === 'service' || d.kind === 'crafted')) {
+    let inputs = 0;
+    for (const [i, n] of Object.entries(d.recipe)) inputs += unitCost(s, i) * n;
+    cost += inputs / (d.kind === 'crafted' ? d.batch ?? 1 : 1);
+  }
+  return cost;
+}
+
 function pricesTab(s: GameState, shop: ShopState): Tab {
   const type = SHOP_TYPES[shop.type];
+  if (type.flow === 'factory') {
+    const body = h('div');
+    const update = (): void =>
+      setChildren(
+        body,
+        h('table.grid', h('tr', h('th', 'Product'), h('th', { tip: 'Ingredients per unit' }, 'Cost'), h('th', { tip: 'What the wholesale market pays you per unit today' }, 'Wholesale'), h('th', { tip: 'What it retails for in your own shops' }, 'Retail')), ...type.products.filter((p) => PRODUCTS[p].recipe).map((p) => h('tr', h('td', dot(PRODUCTS[p].color), PRODUCTS[p].name), h('td', money(Math.round(unitCost(s, p) * 100) / 100)), h('td', money(Math.round(factoryPrice(s, p) * 100) / 100)), h('td', PRODUCTS[p].market ? money(Math.round(marketPrice(s, p) * 100) / 100) : 'ingredient')))),
+        h('div.note', 'A factory has no customers of its own. Sell what it makes to the wholesale market from the Stock tab, or ship it to your shops and set the retail price there.'),
+      );
+    update();
+    return { el: body, update };
+  }
+  const priced = type.products.filter((p) => PRODUCTS[p].market > 0);
   const cells = new Map<string, { cost: HTMLElement; market: HTMLElement; price: HTMLElement; margin: HTMLElement }>();
 
   const setPrice = (p: string, value: number): void => {
@@ -235,22 +342,23 @@ function pricesTab(s: GameState, shop: ShopState): Tab {
     bus.emit('prices:changed', shop.id);
   };
 
-  const rows = type.products.map((p) => {
+  const rows = priced.map((p) => {
     const d = PRODUCTS[p];
     const c = { cost: h('td'), market: h('td'), price: h('span'), margin: h('td') };
     cells.set(p, c);
-    const step = (dir: number) => (e: MouseEvent) => setPrice(p, shop.prices[p] + dir * (e.shiftKey ? 0.5 : 0.05));
-    return h('tr', h('td', dot(d.color), d.name), c.cost, c.market, h('td', h('span.stepper', h('button', { onclick: step(-1) }, '−'), c.price, h('button', { onclick: step(1), tip: 'Hold Shift to change by $0.50.' }, '+'))), c.margin);
+    const big = d.market >= 20;
+    const step = (dir: number) => (e: MouseEvent) => setPrice(p, shop.prices[p] + dir * (e.shiftKey ? (big ? 5 : 0.5) : big ? 0.5 : 0.05));
+    return h('tr', h('td', dot(d.color), d.name), c.cost, c.market, h('td', h('span.stepper', h('button', { onclick: step(-1) }, '−'), c.price, h('button', { onclick: step(1), tip: 'Hold Shift for bigger steps.' }, '+'))), c.margin);
   });
 
   function update(): void {
-    for (const p of type.products) {
+    for (const p of priced) {
       const c = cells.get(p)!;
-      const cost = wholesalePrice(s, p);
-      const market = marketPrice(s, p);
-      const price = shop.prices[p];
+      const cost = unitCost(s, p);
+      const market = fairPrice(s, shop, p);
+      const price = (shop.prices[p] ??= roundPrice(market));
       const trend = trendOf(s, p);
-      c.cost.textContent = money(Math.round(cost * 100) / 100);
+      c.cost.textContent = cost ? money(Math.round(cost * 100) / 100) : '';
       c.market.textContent = `${money(Math.round(market * 100) / 100)}${trend > 0.005 ? ' ▲' : trend < -0.005 ? ' ▼' : ''}`;
       c.price.textContent = price.toFixed(2);
       const ratio = price / market;
@@ -262,15 +370,15 @@ function pricesTab(s: GameState, shop: ShopState): Tab {
   }
 
   const setAll = (factor: number) => () => {
-    for (const p of type.products) shop.prices[p] = roundPrice(marketPrice(s, p) * factor);
+    for (const p of priced) shop.prices[p] = roundPrice(fairPrice(s, shop, p) * factor);
     bus.emit('prices:changed', shop.id);
   };
 
   const el = h(
     'div',
-    h('div.row', { style: { marginBottom: '8px' } }, h('button', { onclick: setAll(0.92), tip: 'Undercut the market to pull in bargain hunters.' }, 'All −8%'), h('button', { onclick: setAll(1) }, 'All at market'), h('button', { onclick: setAll(1.1), tip: 'More profit per sale, but fewer people buy.' }, 'All +10%')),
-    h('table.grid', h('tr', h('th', 'Product'), h('th', { tip: 'What a unit costs you today' }, 'Cost'), h('th', { tip: 'What customers expect to pay today. Arrows show the trend since yesterday.' }, 'Market'), h('th', 'Your price'), h('th', { tip: 'Share of the price that is profit' }, 'Margin')), ...rows),
-    h('div.note', 'Green is at or below market, yellow is a little high, red will drive customers away and hurt your reputation. Wealthier neighbourhoods tolerate more markup.'),
+    h('div.row', { style: { marginBottom: '8px' } }, h('button', { onclick: setAll(0.92), tip: 'Undercut the market to pull in bargain hunters.' }, 'All −8%'), h('button', { onclick: setAll(1) }, 'All at fair price'), h('button', { onclick: setAll(1.1), tip: 'More profit per sale, but fewer people buy.' }, 'All +10%')),
+    h('table.grid', h('tr', h('th', 'Product'), h('th', { tip: 'What one costs you today: wholesale price, ingredients, or running costs' }, 'Cost'), h('th', { tip: 'What customers here expect to pay today. Arrows show the market trend since yesterday.' }, 'Fair'), h('th', 'Your price'), h('th', { tip: 'Share of the price that is profit' }, 'Margin')), ...rows),
+    h('div.note', `Green is at or below the fair price, yellow is a little high, red drives customers away and hurts your reputation. Wealthier neighbourhoods tolerate more markup.${type.decorWeight ? ' Here, good decor raises what people will pay.' : ''}${type.flow === 'park' ? ' The fair ticket price rises with every working attraction.' : ''}`),
   );
   update();
   return { el, update };

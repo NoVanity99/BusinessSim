@@ -124,6 +124,18 @@ export class ShopViews {
           else g.fillStyle(0xe5605a, 1).fillRect(x + 1, y + 1, barW - 2, 3);
         });
       }
+      const { w: fw, h: fh } = footprint(o.def, o.rot);
+      if (o.broken) {
+        // Out-of-order marker: a red disc with a cross.
+        const cx = (o.x + fw / 2) * TILE;
+        const cy = (o.y + fh / 2) * TILE;
+        g.fillStyle(0xe5605a, 0.95).fillCircle(cx, cy, 9);
+        g.lineStyle(3, 0xffffff, 1).lineBetween(cx - 4, cy - 4, cx + 4, cy + 4).lineBetween(cx + 4, cy - 4, cx - 4, cy + 4);
+      } else if (def.kind === 'producer' && o.recipe && (o.progress ?? 0) > 0) {
+        const frac = Math.min(1, (o.progress ?? 0) / (PRODUCTS[o.recipe].prepMinutes ?? 30));
+        g.fillStyle(0x10141c, 0.75).fillRect(o.x * TILE + 4, o.y * TILE + 3, fw * TILE - 8, 5);
+        g.fillStyle(0x4fc3a1, 1).fillRect(o.x * TILE + 5, o.y * TILE + 4, (fw * TILE - 10) * frac, 3);
+      }
       if (def.kind === 'register') {
         const own = session.state.ownerAt;
         if (own && own.shopId === shop.id && own.objectId === o.id) {

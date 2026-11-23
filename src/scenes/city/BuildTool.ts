@@ -88,7 +88,7 @@ export class BuildTool {
       return;
     }
 
-    const obj = inLot(lot, tx, ty) ? objectAt(shop, tx, ty) : undefined;
+    const obj = objectAt(shop, tx, ty);
     if (t.type === 'move') {
       if (obj) setTool({ type: 'place', def: obj.def, rot: obj.rot, movingId: obj.id });
       return;
@@ -171,7 +171,7 @@ export class BuildTool {
       return;
     }
 
-    const obj = inLot(lot, tx, ty) ? objectAt(shop, tx, ty) : undefined;
+    const obj = objectAt(shop, tx, ty);
     const color = t.type === 'sell' ? 0xe5605a : 0x5aa9e6;
     if (obj) {
       const { w, h } = footprint(obj.def, obj.rot);

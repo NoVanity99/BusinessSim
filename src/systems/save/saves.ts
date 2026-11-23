@@ -83,6 +83,7 @@ function migrate(s: GameState): GameState {
   s.staff ??= [];
   s.candidates ??= [];
   s.nextPersonId ??= 1;
+  s.upgrades ??= {};
   for (const shop of s.shops) {
     shop.dirt ??= 0;
     shop.autoReorder ??= true;

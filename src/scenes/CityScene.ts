@@ -12,10 +12,14 @@ import { session, shopOnLot } from '../core/state';
 import { resetUi, selectLot, selectNpc, selectObject, selectStaff, ui } from '../core/uiState';
 import { StaffInfoPanel } from '../ui/panels/StaffInfoPanel';
 import { initAi, onShopLayoutChanged, updateAi } from '../systems/ai/customers';
+import { initVehicles, syncVending, updateVehicles } from '../systems/ai/vehicles';
+import { rt } from '../systems/ai/runtime';
+import { defOf } from '../entities/Shop';
 import { NpcViews } from './city/NpcViews';
 import { NpcPanel } from '../ui/panels/NpcPanel';
 import { inLot, objectAt, footprint } from '../entities/Shop';
 import { installSim } from '../systems/sim';
+import { updateProduction } from '../systems/shop/production';
 import { updateStaff } from '../systems/staff/agents';
 import { BuildTool } from './city/BuildTool';
 import { DEPTH, ShopViews } from './city/ShopViews';
@@ -53,6 +57,7 @@ export class CityScene extends Phaser.Scene {
   private buildTool!: BuildTool;
   private selGfx!: Phaser.GameObjects.Graphics;
   private npcViews!: NpcViews;
+  private frame = 0;
   /** Remembers where each shop stood so its tiles can be freed when it is removed. */
   private shopLots = new Map<number, number>();
 
@@ -80,6 +85,7 @@ export class CityScene extends Phaser.Scene {
     for (const shop of state.shops) this.shopViews.sync(shop.id);
     this.shopLots = new Map(state.shops.map((sh) => [sh.id, sh.lotId]));
     initAi();
+    initVehicles();
     this.npcViews = new NpcViews(this);
     this.drawLots();
 
@@ -110,12 +116,14 @@ export class CityScene extends Phaser.Scene {
         if (lotId === undefined) return;
         this.shopLots.set(id, lotId);
         onShopLayoutChanged(id, lotId);
+        syncVending();
       }),
       bus.on('shop:removed', (id) => {
         this.shopViews.remove(id);
         const lotId = this.shopLots.get(id);
         if (lotId !== undefined) onShopLayoutChanged(id, lotId);
         this.shopLots.delete(id);
+        syncVending();
       }),
       () => this.npcViews.destroy(),
       bus.on('stock:changed', (id) => this.shopViews.markStockDirty(id)),
@@ -326,10 +334,19 @@ export class CityScene extends Phaser.Scene {
     }
     if (ui.selectedNpc !== null) selectNpc(null);
     if (ui.selectedStaff !== null) selectStaff(null);
+    const t = this.tileAt(p);
+    // Vending machines stand on the street, outside any lot.
+    const machine = rt.vendingAt.get(t.y * session.city.w + t.x);
+    if (machine) {
+      const owner = session.state.shops.find((sh) => sh.id === machine.shopId);
+      if (owner) {
+        if (ui.selectedLot !== owner.lotId) selectLot(owner.lotId);
+        return selectObject({ shopId: owner.id, objectId: machine.objId });
+      }
+    }
     const lot = this.lotAtPointer(p);
     if (!lot?.rentable) return selectLot(null);
     const shop = shopOnLot(session.state, lot.id);
-    const t = this.tileAt(p);
     const obj = shop && inLot(lot, t.x, t.y) ? objectAt(shop, t.x, t.y) : undefined;
     if (ui.selectedLot !== lot.id) selectLot(lot.id);
     selectObject(shop && obj ? { shopId: shop.id, objectId: obj.id } : null);
@@ -429,8 +446,13 @@ export class CityScene extends Phaser.Scene {
     }
 
     const gameMinutes = advanceClock(session.state.time, dt);
+    updateProduction(session.state, gameMinutes);
     updateStaff(gameMinutes);
     updateAi(gameMinutes);
+    updateVehicles(gameMinutes);
+    // Production progress bars creep forward without any stock event; refresh them now and then.
+    this.frame = (this.frame + 1) % 30;
+    if (this.frame === 0) for (const shop of session.state.shops) if (shop.objects.some((o) => defOf(o).kind === 'producer' && (o.progress ?? 0) > 0)) this.shopViews.markStockDirty(shop.id);
     this.npcViews.update(dt);
     this.shopViews.flush();
     this.night.style.opacity = (darkness(hourFloat(session.state.time)) * 0.55).toFixed(3);

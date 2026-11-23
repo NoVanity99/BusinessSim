@@ -25,6 +25,13 @@ export interface PlacedObject {
   /** 0 = faces south, 1 = west, 2 = north, 3 = east. */
   rot: number;
   slots?: ShelfSlot[];
+  /** Out of order until repaired. */
+  broken?: boolean;
+  /** Producer: what it is set to make, and minutes of progress on the current batch. */
+  recipe?: string | null;
+  progress?: number;
+  /** Vending machine: takings waiting to be collected. */
+  cash?: number;
 }
 
 export interface ShopDayStats {
@@ -62,6 +69,10 @@ export interface ShopState {
   dirt: number;
   /** Let a manager on shift reorder stock. */
   autoReorder: boolean;
+  /** Day number of a scheduled tournament or promotion, if any. */
+  eventDay?: number;
+  /** Factory: sell finished goods to the wholesale market as they are made. */
+  autoSell?: boolean;
   today: ShopDayStats;
   yesterday: ShopDayStats;
 }

@@ -42,7 +42,8 @@ export function driftMarket(s: GameState): void {
   for (const id of Object.keys(PRODUCTS)) {
     const cur = multOf(s, id);
     const pull = (1 - cur) * 0.08;
-    s.market.mult[id] = clamp(cur + rand.range(-driftPerDay, driftPerDay) + pull, minMult, maxMult);
+    const v = PRODUCTS[id].volatility ?? 1;
+    s.market.mult[id] = clamp(cur + rand.range(-driftPerDay, driftPerDay) * v + pull, minMult / Math.sqrt(v), maxMult * Math.sqrt(v));
   }
   bus.emit('market:changed');
 }

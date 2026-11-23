@@ -107,5 +107,13 @@
     "Dunn",
     "Ford",
     "Gray"
-  ]
+  ],
+  "traffic": {
+    "cars": 26,
+    "speed": 9,
+    "fuelStopChance": 0.14,
+    "washChance": 0.3,
+    "martChance": 0.35,
+    "repairPerHour": 0.5
+  }
 }

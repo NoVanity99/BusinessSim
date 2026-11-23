@@ -134,7 +134,7 @@ export function processDeliveries(s: GameState): void {
     const today = dayOf(s.time);
     for (const l of o.lines) {
       const def = PRODUCTS[l.product];
-      addToStorage(shop, l.product, l.cases * def.caseSize, def.shelfLife ? today + def.shelfLife : 0);
+      addToStorage(shop, l.product, Math.round(l.cases * def.caseSize), def.shelfLife ? today + def.shelfLife : 0);
     }
     toast(`Delivery arrived at ${shop.name}.`, 'good');
     bus.emit('stock:changed', shop.id);
@@ -150,7 +150,7 @@ export function hoursUntil(s: GameState, o: Order): number {
 
 export function newSlots(defId: string): ShelfSlot[] | undefined {
   const d = FURNITURE[defId];
-  if (d.kind !== 'shelf') return undefined;
+  if (d.kind !== 'shelf' && d.kind !== 'vending') return undefined;
   return Array.from({ length: d.slots ?? 1 }, () => ({ product: null, batches: [] }));
 }
 
@@ -233,3 +233,30 @@ export function freshnessDays(s: GameState, batches: StockBatch[]): number | nul
   return first ? first.expires - dayOf(s.time) : null;
 }
 
+
+/** Units of a product in the back room. */
+export const inStorage = (shop: ShopState, product: string): number => batchQty(shop.storage[product]);
+
+/** Whether the back room holds everything a recipe needs, `times` over. */
+export function hasIngredients(shop: ShopState, recipe: Record<string, number> | undefined, times = 1): boolean {
+  if (!recipe) return true;
+  return Object.entries(recipe).every(([p, n]) => inStorage(shop, p) >= n * times);
+}
+
+/** Remove a recipe's inputs from the back room. Returns false (and takes nothing) if any are short. */
+export function consumeIngredients(shop: ShopState, recipe: Record<string, number> | undefined, times = 1): boolean {
+  if (!recipe) return true;
+  if (!hasIngredients(shop, recipe, times)) return false;
+  for (const [p, n] of Object.entries(recipe)) takeBatches(shop.storage[p], n * times);
+  bus.emit('stock:changed', shop.id);
+  return true;
+}
+
+/** Take up to `qty` units of a product out of the back room. Returns how many were taken. */
+export function takeFromStorage(shop: ShopState, product: string, qty: number): number {
+  const src = shop.storage[product];
+  if (!src) return 0;
+  const n = takeBatches(src, qty).reduce((a, b) => a + b.qty, 0);
+  if (n) bus.emit('stock:changed', shop.id);
+  return n;
+}

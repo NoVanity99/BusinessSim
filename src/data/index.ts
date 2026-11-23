@@ -53,7 +53,15 @@ export const NEIGHBORHOODS = neighborhoodsJson as Record<string, NeighborhoodDef
 export const CITY_CONFIG = cityJson as CityConfig;
 export const DIFFICULTIES = difficultyJson as Record<string, DifficultyDef>;
 
-export type StorageClass = 'ambient' | 'chilled' | 'frozen';
+export type StorageClass = 'ambient' | 'chilled' | 'frozen' | 'collectible';
+
+/**
+ * good: bought wholesale, sold from shelves.   menu: made to order from a recipe.
+ * ingredient: consumed by recipes.            service: time on a machine or attraction.
+ * collectible: single cards from opened packs. crafted: made in your factory.
+ * fuel: sold through pumps.
+ */
+export type ProductKind = 'good' | 'menu' | 'ingredient' | 'service' | 'collectible' | 'crafted' | 'fuel';
 
 export interface ProductDef {
   name: string;
@@ -69,10 +77,23 @@ export interface ProductDef {
   /** Relative demand weight. */
   popularity: number;
   color: string;
+  kind?: ProductKind;
+  /** Inputs consumed per run (menu item, production batch or service). */
+  recipe?: Record<string, number>;
+  /** Station type that makes it, matching a furniture `station`. */
+  station?: string;
+  /** Game minutes to prepare one (menu) or one batch (production). */
+  prepMinutes?: number;
+  /** Units produced per production run. */
+  batch?: number;
+  /** Game minutes a service takes. */
+  duration?: number;
+  /** Multiplier on daily price drift. */
+  volatility?: number;
 }
 
 /** `kind` selects the behaviour implemented in code; everything else is tuning data. */
-export type FurnitureKind = 'floor' | 'wall' | 'door' | 'shelf' | 'register' | 'storage' | 'decor' | 'bin';
+export type FurnitureKind = 'floor' | 'wall' | 'door' | 'shelf' | 'register' | 'storage' | 'decor' | 'bin' | 'service' | 'seat' | 'cookstation' | 'producer' | 'vending';
 
 export interface FurnitureDef {
   name: string;
@@ -100,6 +121,28 @@ export interface FurnitureDef {
   /** Electricity use, in utility units. */
   power?: number;
   light?: number;
+  /** Service kind: product id of a paid service, or a free one such as 'ride', 'play' or 'fuel'. */
+  service?: string;
+  /** How many customers can use it at once. */
+  capacity?: number;
+  /** Game minutes per use, overriding the service's own duration. */
+  duration?: number;
+  /** Mood gained by using it. */
+  fun?: number;
+  /** Chance to break down after each use or batch. */
+  breakChance?: number;
+  repairCost?: number;
+  /** Cook station or producer type, matched against product `station`. */
+  station?: string;
+  /** Producer runs without staff. */
+  auto?: boolean;
+  /** Used by cars rather than pedestrians. */
+  vehicle?: boolean;
+  /** Only usable while someone with this role is on shift. */
+  needsRole?: string;
+  outdoor?: boolean;
+  /** Can be placed on any pavement in the city. */
+  anywhere?: boolean;
 }
 
 export interface ShopTypeDef {
@@ -112,8 +155,25 @@ export interface ShopTypeDef {
   defaultHours: [number, number];
   baseStorage: number;
   defaultFloor: string;
+  /** How customers use the place; selects the behaviour in the AI. */
+  flow: 'retail' | 'counter' | 'service' | 'park' | 'depot' | 'factory';
   furniture: string[];
+  /** Everything it sells and prices. */
   products: string[];
+  /** Extra things it can order that are not sold directly. */
+  supplies: string[];
+  /** Services every customer uses, in order (service flow). */
+  plan?: string[];
+  /** Optional services customers may use after shopping. */
+  after?: string[];
+  /** How strongly decor raises the prices customers accept. */
+  decorWeight?: number;
+  /** Relative rate of cars pulling in. */
+  carDemand?: number;
+  openAir?: boolean;
+  /** Share of the lot's depth taken by the building; the rest is an open forecourt. */
+  shellDepth?: number;
+  forecourtFloor?: string;
   /** Staff roles that are useful here. */
   roles: string[];
   /** Share of all pedestrians out looking for this kind of business (all types together must stay below 1). */
@@ -156,6 +216,18 @@ export interface PopulationConfig {
   patienceMax: number;
   firstNames: string[];
   lastNames: string[];
+  traffic: {
+    /** Cars on the road at the busiest hour. */
+    cars: number;
+    /** Tiles per game minute. */
+    speed: number;
+    /** Chance a passing car pulls into an open gas station at average reputation. */
+    fuelStopChance: number;
+    washChance: number;
+    martChance: number;
+    /** Cars per hour that come in for repairs when a bay is staffed. */
+    repairPerHour: number;
+  };
 }
 
 export const POPULATION = populationJson as PopulationConfig;

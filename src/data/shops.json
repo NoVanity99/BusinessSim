@@ -1,53 +1,443 @@
 {
-  "convenience": {
-    "name": "Convenience Store",
-    "description": "Shelves, fridges and a checkout. Simple, steady and a good first business.",
-    "color": "#4fc3a1",
-    "licenseCost": 400,
-    "unlockLevel": 1,
-    "minArea": 40,
-    "defaultHours": [
-      7,
-      21
-    ],
-    "baseStorage": 80,
-    "defaultFloor": "floor_concrete",
-    "furniture": [
-      "shelf",
-      "rack",
-      "fridge",
-      "freezer",
-      "register",
-      "storage_rack",
-      "plant",
-      "lamp",
-      "rug",
-      "bin"
-    ],
-    "products": [
-      "chips",
-      "candy",
-      "gum",
-      "noodles",
-      "bread",
-      "newspaper",
-      "toiletpaper",
-      "batteries",
-      "soda",
-      "water",
-      "energy",
-      "milk",
-      "sandwich",
-      "icecream",
-      "pizza"
-    ],
-    "demand": 0.16,
-    "roles": [
-      "cashier",
-      "stocker",
-      "cleaner",
-      "manager",
-      "security"
-    ]
-  }
+ "convenience": {
+  "name": "Convenience Store",
+  "description": "Shelves, fridges and a checkout. Simple, steady and a good first business.",
+  "color": "#4fc3a1",
+  "flow": "retail",
+  "licenseCost": 400,
+  "unlockLevel": 1,
+  "minArea": 40,
+  "defaultHours": [
+   7,
+   21
+  ],
+  "baseStorage": 80,
+  "defaultFloor": "floor_concrete",
+  "furniture": [
+   "shelf",
+   "rack",
+   "fridge",
+   "freezer",
+   "register",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "chips",
+   "candy",
+   "gum",
+   "noodles",
+   "bread",
+   "newspaper",
+   "toiletpaper",
+   "batteries",
+   "soda",
+   "water",
+   "energy",
+   "milk",
+   "sandwich",
+   "icecream",
+   "pizza",
+   "cookies",
+   "hotsauce",
+   "mangosauce",
+   "fruitenergy"
+  ],
+  "supplies": [],
+  "roles": [
+   "cashier",
+   "stocker",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.16
+ },
+ "coffee": {
+  "name": "Coffee Shop & Bakery",
+  "description": "Made-to-order coffee and fresh pastries. Bake your own for better margins. Seating and decor let you charge more.",
+  "color": "#c9a36a",
+  "flow": "counter",
+  "licenseCost": 700,
+  "unlockLevel": 2,
+  "minArea": 40,
+  "defaultHours": [
+   6,
+   18
+  ],
+  "baseStorage": 150,
+  "defaultFloor": "floor_wood",
+  "furniture": [
+   "counter",
+   "espresso",
+   "oven",
+   "pastry_case",
+   "table",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "m_espresso",
+   "m_latte",
+   "m_tea",
+   "m_croissant",
+   "m_muffin"
+  ],
+  "supplies": [
+   "beans",
+   "milkjug",
+   "teabag",
+   "dough",
+   "croissant",
+   "muffin"
+  ],
+  "roles": [
+   "cashier",
+   "cook",
+   "cleaner",
+   "manager"
+  ],
+  "demand": 0.09,
+  "decorWeight": 2
+ },
+ "laundromat": {
+  "name": "Laundromat",
+  "description": "Washers and dryers that earn while you are busy elsewhere. No checkout needed, but machines break.",
+  "color": "#5aa9e6",
+  "flow": "service",
+  "licenseCost": 600,
+  "unlockLevel": 2,
+  "minArea": 40,
+  "defaultHours": [
+   6,
+   23
+  ],
+  "baseStorage": 60,
+  "defaultFloor": "floor_tile",
+  "furniture": [
+   "washer",
+   "dryer",
+   "bench",
+   "rack",
+   "register",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "svc_wash",
+   "svc_dry",
+   "detergent"
+  ],
+  "supplies": [],
+  "plan": [
+   "svc_wash",
+   "svc_dry"
+  ],
+  "roles": [
+   "cleaner",
+   "mechanic",
+   "manager"
+  ],
+  "demand": 0.05
+ },
+ "fastfood": {
+  "name": "Fast Food Restaurant",
+  "description": "Take orders, cook them fast, and get people seated. Slow kitchens lose customers.",
+  "color": "#d9534f",
+  "flow": "counter",
+  "licenseCost": 1200,
+  "unlockLevel": 3,
+  "minArea": 56,
+  "defaultHours": [
+   10,
+   23
+  ],
+  "baseStorage": 200,
+  "defaultFloor": "floor_tile",
+  "furniture": [
+   "counter",
+   "grill",
+   "fryer",
+   "drinks",
+   "table",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "m_burger",
+   "m_cheeseburger",
+   "m_fries",
+   "m_nuggets",
+   "m_cola",
+   "m_shake"
+  ],
+  "supplies": [
+   "bun",
+   "patty",
+   "cheese",
+   "potato",
+   "chicken",
+   "syrup",
+   "milkmix"
+  ],
+  "roles": [
+   "cashier",
+   "cook",
+   "cleaner",
+   "manager",
+   "mechanic"
+  ],
+  "demand": 0.11
+ },
+ "cardshop": {
+  "name": "Card & Collectibles Shop",
+  "description": "Sell sealed packs or crack them open for singles. Rare cards swing in value. Host tournaments to pack the place.",
+  "color": "#b07cc6",
+  "flow": "retail",
+  "licenseCost": 900,
+  "unlockLevel": 3,
+  "minArea": 40,
+  "defaultHours": [
+   10,
+   20
+  ],
+  "baseStorage": 200,
+  "defaultFloor": "floor_wood",
+  "furniture": [
+   "card_shelf",
+   "display_case",
+   "play_table",
+   "register",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "booster",
+   "starterdeck",
+   "sleeves",
+   "binder",
+   "dice",
+   "single_common",
+   "single_rare",
+   "single_ultra"
+  ],
+  "supplies": [],
+  "after": [
+   "play"
+  ],
+  "roles": [
+   "cashier",
+   "stocker",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.05
+ },
+ "gas": {
+  "name": "Gas Station",
+  "description": "Fuel pumps out front, a mini-mart inside, and a car wash and repair bay if you have room. Thin margins on fuel, good ones on everything else.",
+  "color": "#e58f4f",
+  "flow": "retail",
+  "licenseCost": 2500,
+  "unlockLevel": 4,
+  "minArea": 80,
+  "defaultHours": [
+   5,
+   24
+  ],
+  "baseStorage": 80,
+  "defaultFloor": "floor_concrete",
+  "furniture": [
+   "pump",
+   "fuel_tank",
+   "carwash",
+   "repair_bay",
+   "shelf",
+   "rack",
+   "fridge",
+   "register",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "fuel",
+   "svc_carwash",
+   "svc_repair",
+   "chips",
+   "candy",
+   "gum",
+   "soda",
+   "water",
+   "energy",
+   "sandwich"
+  ],
+  "supplies": [
+   "parts"
+  ],
+  "roles": [
+   "cashier",
+   "stocker",
+   "cleaner",
+   "mechanic",
+   "manager",
+   "security"
+  ],
+  "demand": 0.05,
+  "carDemand": 1,
+  "shellDepth": 0.45,
+  "forecourtFloor": "floor_paving"
+ },
+ "vending": {
+  "name": "Vending Machine Business",
+  "description": "A small depot plus machines you place on any pavement in the city. Restock them yourself for a fee, or hire a driver to run the route.",
+  "color": "#d9534f",
+  "flow": "depot",
+  "licenseCost": 500,
+  "unlockLevel": 2,
+  "minArea": 40,
+  "defaultHours": [
+   0,
+   24
+  ],
+  "baseStorage": 200,
+  "defaultFloor": "floor_concrete",
+  "furniture": [
+   "vending",
+   "storage_rack",
+   "pallet_rack",
+   "bin"
+  ],
+  "products": [
+   "chips",
+   "candy",
+   "gum",
+   "soda",
+   "water",
+   "energy"
+  ],
+  "supplies": [],
+  "roles": [
+   "driver",
+   "manager",
+   "mechanic"
+  ],
+  "demand": 0
+ },
+ "factory": {
+  "name": "Workshop / Factory",
+  "description": "Turn raw ingredients into your own brands. Sell them wholesale or ship them to your shops for full retail margin.",
+  "color": "#8f9bb0",
+  "flow": "factory",
+  "licenseCost": 2000,
+  "unlockLevel": 4,
+  "minArea": 80,
+  "defaultHours": [
+   6,
+   22
+  ],
+  "baseStorage": 300,
+  "defaultFloor": "floor_concrete",
+  "furniture": [
+   "mixer",
+   "ind_oven",
+   "bottler",
+   "roaster",
+   "storage_rack",
+   "pallet_rack",
+   "bin",
+   "lamp"
+  ],
+  "products": [
+   "cookies",
+   "hotsauce",
+   "mangosauce",
+   "fruitenergy",
+   "beans"
+  ],
+  "supplies": [
+   "flour",
+   "sugar",
+   "chili",
+   "vinegar",
+   "mango",
+   "concentrate",
+   "fruitsyrup",
+   "greenbeans"
+  ],
+  "roles": [
+   "stocker",
+   "mechanic",
+   "manager",
+   "driver",
+   "cleaner"
+  ],
+  "demand": 0
+ },
+ "funpark": {
+  "name": "Fun Park",
+  "description": "Sell tickets at the gate and keep guests happy with attractions, snacks and somewhere to sit. Needs a big lot.",
+  "color": "#4a90c2",
+  "flow": "park",
+  "licenseCost": 4000,
+  "unlockLevel": 5,
+  "minArea": 150,
+  "defaultHours": [
+   9,
+   21
+  ],
+  "baseStorage": 150,
+  "defaultFloor": "floor_grass",
+  "openAir": true,
+  "furniture": [
+   "gate",
+   "slide",
+   "wave_pool",
+   "carousel",
+   "bumper_cars",
+   "arcade",
+   "snack_stall",
+   "picnic",
+   "fountain",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "svc_ticket",
+   "svc_arcade",
+   "svc_snack"
+  ],
+  "supplies": [
+   "snackpack"
+  ],
+  "roles": [
+   "cashier",
+   "cleaner",
+   "mechanic",
+   "manager",
+   "security"
+  ],
+  "demand": 0.06
+ }
 }

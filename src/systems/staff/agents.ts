@@ -3,7 +3,7 @@ import { clamp } from '../../core/format';
 import { rand } from '../../core/rng';
 import { session, shopById, type GameState } from '../../core/state';
 import type { Employee } from '../../entities/Employee';
-import { backTile, batchQty, defOf, doors, frontTiles, inLot, registers, type PlacedObject, type ShopState } from '../../entities/Shop';
+import { backTile, batchQty, defOf, doors, frontTiles, inLot, objectTiles, registers, type PlacedObject, type ShopState } from '../../entities/Shop';
 import { walkable } from '../ai/grid';
 import { findPath } from '../ai/pathfind';
 import { rt, type StaffAgent } from '../ai/runtime';
@@ -127,6 +127,7 @@ function plan(s: GameState, shop: ShopState, e: Employee, a: StaffAgent): void {
       // Refill whichever shelf section is emptiest and has stock waiting in the back.
       let best: { obj: PlacedObject; slot: number; fill: number } | null = null;
       for (const obj of shop.objects) {
+        if (defOf(obj).kind !== 'shelf') continue;
         obj.slots?.forEach((sl, i) => {
           if (!sl.product || batchQty(shop.storage[sl.product]) <= 0) return;
           const cap = defOf(obj).slotCapacity ?? 1;
@@ -145,8 +146,49 @@ function plan(s: GameState, shop: ShopState, e: Employee, a: StaffAgent): void {
           return;
         }
       }
+      if (shop.objects.some((o) => defOf(o).kind === 'producer')) {
+        a.activity = 'Running the machines';
+        a.state = 'working';
+        a.timer = 10;
+        return;
+      }
       a.activity = 'Waiting for shelves to restock';
       a.timer = 1.5;
+      return;
+    }
+    case 'cook': {
+      // Stand at a cooking station; the kitchen system does the actual cooking.
+      const station = shop.objects.find((o) => defOf(o).kind === 'cookstation' && !o.broken && operatorTile(o) !== null && ![...rt.staff.values()].some((x) => x.id !== a.id && x.taskObj === o.id));
+      const tile = station ? operatorTile(station) : null;
+      if (!station || tile === null) {
+        a.state = 'working';
+        a.timer = 5;
+        a.activity = 'Cooking';
+        return;
+      }
+      a.taskObj = station.id;
+      a.activity = 'Cooking';
+      if (tile === tileOf(Math.floor(a.x), Math.floor(a.y))) {
+        a.state = 'working';
+        a.timer = 20;
+      } else if (setPath(a, tile)) a.state = 'toTask';
+      else a.timer = 1;
+      return;
+    }
+    case 'mechanic': {
+      const broken = shop.objects.find((o) => o.broken);
+      if (broken) {
+        const spots = objectTiles(broken).flatMap((t) => [[t.x + 1, t.y], [t.x - 1, t.y], [t.x, t.y + 1], [t.x, t.y - 1]]).filter(([x, y]) => walkable(g, x, y));
+        if (spots.length && setPath(a, tileOf(spots[0][0], spots[0][1]))) {
+          a.taskObj = broken.id;
+          a.state = 'toTask';
+          a.activity = `Repairing the ${defOf(broken).name.toLowerCase()}`;
+          return;
+        }
+      }
+      a.activity = 'Keeping the machines running';
+      a.state = 'working';
+      a.timer = 3;
       return;
     }
     case 'cleaner': {
@@ -193,6 +235,14 @@ function arrive(e: Employee, a: StaffAgent): void {
       a.state = 'working';
       a.timer = rand.range(1.5, 3);
       return;
+    case 'mechanic':
+      a.state = 'working';
+      a.timer = 8 / performance(e);
+      return;
+    case 'cook':
+      a.state = 'working';
+      a.timer = 20;
+      return;
     default:
       a.state = 'working';
       a.timer = 30;
@@ -200,9 +250,15 @@ function arrive(e: Employee, a: StaffAgent): void {
 }
 
 function finishWork(shop: ShopState, e: Employee, a: StaffAgent): void {
+  const obj = shop.objects.find((o) => o.id === a.taskObj);
   if (e.role === 'stocker') {
-    const obj = shop.objects.find((o) => o.id === a.taskObj);
-    if (obj) fillSlot(shop, obj, a.taskSlot, Math.round(CARRY_UNITS * traitSum(e, 'carry')));
+    if (obj?.slots) fillSlot(shop, obj, a.taskSlot, Math.round(CARRY_UNITS * traitSum(e, 'carry')));
+    a.taskObj = -1;
+  } else if (e.role === 'mechanic') {
+    if (obj?.broken) {
+      obj.broken = false;
+      bus.emit('shop:changed', shop.id);
+    }
     a.taskObj = -1;
   }
   a.state = 'idle';

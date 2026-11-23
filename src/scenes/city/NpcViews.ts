@@ -27,6 +27,7 @@ interface Bubble {
 export class NpcViews {
   private sprites = new Map<number, Phaser.GameObjects.Image>();
   private staffSprites = new Map<number, Phaser.GameObjects.Image>();
+  private carSprites = new Map<number, Phaser.GameObjects.Image>();
   private bubbles: Bubble[] = [];
   private ring: Phaser.GameObjects.Graphics;
   private offs: (() => void)[];
@@ -42,6 +43,14 @@ export class NpcViews {
       bus.on('staff:removed', (id) => {
         this.staffSprites.get(id)?.destroy();
         this.staffSprites.delete(id);
+      }),
+      bus.on('car:removed', (id) => {
+        const img = this.carSprites.get(id);
+        if (img) img.destroy();
+        this.carSprites.delete(id);
+      }),
+      bus.on('world:bubble', ({ x, y, text, kind }) => {
+        this.addBubble({ id: -1, x: x * TILE, y: y * TILE, rise: 18 }, text, kind === 'bad' ? '#b3261e' : kind === 'good' ? '#1b7a4b' : '#2b3340', '#ffffff');
       }),
       bus.on('npc:thought', ({ id, text, kind }) => {
         if (kind === 'neutral' && id !== ui.selectedNpc) return;
@@ -115,6 +124,33 @@ export class NpcViews {
     return key;
   }
 
+  /** Cars point right in their texture and are rotated to their heading. Look 99 is the delivery van. */
+  private carTexture(look: number): string {
+    const key = `car_${look}`;
+    if (this.scene.textures.exists(key)) return key;
+    const van = look === 99;
+    const w = van ? 34 : 28;
+    const tex = this.scene.textures.createCanvas(key, w + 4, 20)!;
+    const ctx = tex.getContext();
+    const body = van ? '#f2f2f2' : ['#d9534f', '#5aa9e6', '#f2b84b', '#e8edf5', '#3d4450', '#7cc576'][look % 6];
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.roundRect(3, 4, w, 14, 4);
+    ctx.fill();
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.roundRect(1, 2, w, 14, 4);
+    ctx.fill();
+    ctx.fillStyle = '#20262f';
+    ctx.fillRect(w - 9, 4, 5, 10);
+    if (van) {
+      ctx.fillStyle = '#d9534f';
+      ctx.fillRect(5, 5, 14, 8);
+    } else ctx.fillRect(5, 4, 4, 10);
+    tex.refresh();
+    return key;
+  }
+
   private addBubble(anchor: { id: number; x: number; y: number; rise: number }, text: string, color: string, bg: string): void {
     if (this.scene.cameras.main.zoom < 0.55) return;
     // One bubble per person: a new thought replaces the old one.
@@ -164,6 +200,18 @@ export class NpcViews {
         this.staffSprites.set(a.id, img);
       }
       img.setPosition(a.x * TILE, a.y * TILE);
+    }
+
+    for (const car of rt.cars) {
+      let img = this.carSprites.get(car.id);
+      if (!img) {
+        img = this.scene.add.image(0, 0, this.carTexture(car.look)).setDepth(DEPTH.npcs + 2);
+        this.carSprites.set(car.id, img);
+      }
+      // Keep to the right-hand side of the road while driving.
+      const lane = car.state === 'drive' ? 0.5 : 0;
+      img.setPosition((car.x - Math.sin(car.heading) * lane) * TILE, (car.y + Math.cos(car.heading) * lane) * TILE);
+      img.setRotation(car.heading);
     }
 
     this.ring.clear();

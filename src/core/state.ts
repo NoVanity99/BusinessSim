@@ -35,6 +35,8 @@ export interface GameState {
   staff: Employee[];
   candidates: Candidate[];
   nextPersonId: number;
+  /** Purchased upgrade levels per shop id. */
+  upgrades: Record<number, Record<string, number>>;
 }
 
 export interface NewGameOptions {
@@ -61,6 +63,7 @@ export function createNewGame(opts: NewGameOptions): GameState {
     staff: [],
     candidates: [],
     nextPersonId: 1,
+    upgrades: {},
   };
 }
 

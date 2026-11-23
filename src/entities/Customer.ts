@@ -1,12 +1,23 @@
 export type CustomerState =
-  | 'walk'      // strolling toward their own destination
-  | 'toShop'    // heading for a shop door
-  | 'browse'    // deciding what to look for next
-  | 'toShelf'   // walking to a shelf
-  | 'pick'      // looking at a shelf
-  | 'toQueue'   // walking to their place in a checkout line
-  | 'queue'     // standing in line
-  | 'leave';    // done, heading off
+  | 'walk'         // strolling toward their own destination
+  | 'toShop'       // heading for a shop door
+  | 'browse'       // deciding what to do next
+  | 'toShelf'      // walking to a shelf
+  | 'pick'         // looking at a shelf
+  | 'toQueue'      // walking to their place in a checkout line
+  | 'queue'        // standing in line
+  | 'awaitOrder'   // paid, waiting for food
+  | 'toStation'    // walking to a machine, seat or attraction
+  | 'using'        // using it
+  | 'waitStation'  // everything is taken; waiting for one to free up
+  | 'leave';       // done, heading off
+
+/** One thing a customer intends to do during a visit. */
+export type Step =
+  | { t: 'buy'; product: string; done?: boolean }
+  | { t: 'pay' }
+  | { t: 'order'; items: string[] }
+  | { t: 'use'; service: string; optional?: boolean };
 
 export type ThoughtKind = 'good' | 'bad' | 'neutral';
 
@@ -43,8 +54,9 @@ export interface Customer {
   speed: number;
   /** Shop type they want to visit, or null for people just passing through. */
   need: string | null;
-  wants: string[];
-  wantIndex: number;
+  /** What they plan to do in the shop, in order. */
+  plan: Step[];
+  step: number;
   cart: CartLine[];
   budget: number;
   /** Multiplier on how much markup they accept. */
@@ -65,6 +77,14 @@ export interface Customer {
   registerId: number;
   queueSlot: number;
   entered: boolean;
+  /** Station (machine, seat, attraction) they hold a place on, or -1. */
+  stationId: number;
+  /** Seat taken while a long machine cycle runs, or -1. */
+  seatId: number;
+  /** Things used this visit, so guests try different attractions. */
+  used: number[];
+  bought: boolean;
+  collector?: boolean;
 }
 
 export const cartTotal = (c: Customer): number => c.cart.reduce((a, l) => a + l.qty * l.price, 0);
@@ -77,6 +97,10 @@ export const STATE_LABEL: Record<CustomerState, string> = {
   toShelf: 'Browsing',
   pick: 'Looking at a shelf',
   toQueue: 'Joining the queue',
-  queue: 'Waiting to pay',
+  queue: 'Waiting in line',
+  awaitOrder: 'Waiting for their order',
+  toStation: 'Walking over',
+  using: 'Enjoying themselves',
+  waitStation: 'Waiting for a free spot',
   leave: 'Leaving',
 };

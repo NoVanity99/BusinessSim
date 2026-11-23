@@ -23,10 +23,14 @@ export interface GameEvents {
   'tool:changed': Tool | null;
   'npc:thought': { id: number; text: string; kind: 'good' | 'bad' | 'neutral' };
   'npc:removed': number;
+  'car:removed': number;
   'npc:selected': number | null;
   /** A customer paid. Tile coordinates of the checkout for effects. */
   sale: { shopId: number; amount: number; x: number; y: number };
   'door:enter': { shopId: number };
+  /** A floating message at a world position (tile coordinates). */
+  'world:bubble': { x: number; y: number; text: string; kind: 'good' | 'bad' | 'neutral' };
+  'visit:ended': { shopId: number; mood: number; bought: boolean };
   'staff:changed': void;
   'staff:removed': number;
   'staff:selected': number | null;

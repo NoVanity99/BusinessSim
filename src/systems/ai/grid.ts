@@ -42,7 +42,7 @@ export function rebuildLot(grid: Grid, city: City, lot: LotDef): void {
   }
   if (!shop) return;
   for (const o of shop.objects) {
-    if (defOf(o).walkable) continue;
+    if (defOf(o).walkable || defOf(o).anywhere) continue;
     for (const t of objectTiles(o)) grid.cost[idx(city, t.x, t.y)] = 0;
   }
 }
