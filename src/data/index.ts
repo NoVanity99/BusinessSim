@@ -9,6 +9,7 @@ import populationJson from './population.json';
 import employeesJson from './employees.json';
 import upgradesJson from './upgrades.json';
 import eventsJson from './events.json';
+import weatherJson from './weather.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -315,3 +316,29 @@ export interface EventsConfig {
 
 export const UPGRADES = upgradesJson as Record<string, UpgradeDef>;
 export const EVENTS = eventsJson as EventsConfig;
+
+export interface WeatherDef {
+  name: string;
+  icon: string;
+  /** Relative chance of this weather being picked. */
+  weight: number;
+  /** Multiplier on how many people are out. */
+  crowd: number;
+  /** Demand multiplier per shop type id. */
+  demand: Record<string, number>;
+  /** Appetite multiplier per product id. */
+  products?: Record<string, number>;
+  /** Multiplier on how far away passers-by notice a shop. */
+  notice?: number;
+  /** Only starts during the day. */
+  dayOnly?: boolean;
+  description: string;
+}
+
+export interface WeatherConfig {
+  minHours: number;
+  maxHours: number;
+  kinds: Record<string, WeatherDef>;
+}
+
+export const WEATHER = weatherJson as WeatherConfig;

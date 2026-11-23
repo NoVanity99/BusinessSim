@@ -9,6 +9,7 @@ import { newMarketState, type MarketState } from '../systems/economy/market';
 import type { Order } from '../systems/economy/stock';
 import type { Loan } from '../systems/economy/loans';
 import type { ActiveEvent, NewsItem } from '../systems/events/events';
+import { newWeatherState, type WeatherState } from '../systems/world/weather';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
@@ -48,6 +49,7 @@ export interface GameState {
   /** The net-worth goal has been reached (the game carries on). */
   won: boolean;
   bankrupt: boolean;
+  weather: WeatherState;
 }
 
 export interface NewGameOptions {
@@ -83,6 +85,7 @@ export function createNewGame(opts: NewGameOptions): GameState {
     news: [],
     won: false,
     bankrupt: false,
+    weather: newWeatherState(),
   };
 }
 

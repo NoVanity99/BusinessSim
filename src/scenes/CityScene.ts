@@ -26,7 +26,10 @@ import { ShopPanel } from '../ui/panels/ShopPanel';
 import { ObjectPanel } from '../ui/panels/ObjectPanel';
 import { idx, type LotDef } from '../systems/city/generate';
 import { rentOf } from '../systems/economy/property';
-import { darkness, hourFloat, setSpeed } from '../systems/time/clock';
+import { setSpeed } from '../systems/time/clock';
+import { Atmosphere } from './city/Atmosphere';
+import { CityProps } from './city/CityProps';
+import { Effects } from './city/Effects';
 import { clear, h, nightLayer, uiRoot } from '../ui/dom';
 import { TopBar } from '../ui/hud/TopBar';
 import { LotPanel } from '../ui/panels/LotPanel';
@@ -51,6 +54,11 @@ export class CityScene extends Phaser.Scene {
   private dragging = false;
   private cleanups: (() => void)[] = [];
   private night = nightLayer();
+  private atmosphere!: Atmosphere;
+  private props!: CityProps;
+  private effects!: Effects;
+  private zoomTarget = 1;
+  private zoomAnchor: { x: number; y: number } | null = null;
   private lastSpeed = 1;
   private shopViews!: ShopViews;
   private buildTool!: BuildTool;
@@ -90,6 +98,11 @@ export class CityScene extends Phaser.Scene {
     // The simulation (people, cars, schedules) must exist before anything draws it.
     this.cleanups.push(installSim());
     this.npcViews = new NpcViews(this);
+    this.atmosphere = new Atmosphere(this);
+    this.props = new CityProps(this, this.atmosphere);
+    this.effects = new Effects(this);
+    // Ease in from black, so loading into the city is not a hard cut.
+    this.cameras.main.fadeIn(350, 16, 20, 28);
     this.drawLots();
 
     this.setupCamera();
@@ -143,6 +156,8 @@ export class CityScene extends Phaser.Scene {
         this.shopLots.delete(id);
       }),
       () => this.npcViews.destroy(),
+      () => this.effects.destroy(),
+      () => this.atmosphere.destroy(),
       bus.on('stock:changed', (id) => this.shopViews.markStockDirty(id)),
       bus.on('object:selected', () => this.drawSelection()),
       bus.on('shop:changed', () => this.drawSelection()),
@@ -168,6 +183,7 @@ export class CityScene extends Phaser.Scene {
     cam.setBounds(-pad, -pad, city.w * TILE + pad * 2, city.h * TILE + pad * 2);
     cam.setBackgroundColor('#2c5d8a');
     cam.setZoom(1);
+    this.zoomTarget = 1;
     // Start over the cheapest available lot, which is where a broke founder would look first.
     const held = session.state.shops[0]?.lotId ?? Object.keys(session.state.lots).map(Number)[0];
     const start = held !== undefined ? city.lots[held] : city.lots.filter((l) => l.rentable).sort((a, b) => a.rent - b.rent)[0];
@@ -340,6 +356,12 @@ export class CityScene extends Phaser.Scene {
     sfx(won ? 'good' : 'error');
   }
 
+  /** Fade to black, then switch scene. */
+  private leaveTo(scene: string): void {
+    this.cameras.main.fadeOut(250, 16, 20, 28);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start(scene));
+  }
+
   // ---------- Pause menu ----------
 
   private openPauseMenu(): void {
@@ -360,7 +382,7 @@ export class CityScene extends Phaser.Scene {
           if (result.ok) this.scene.restart();
           else toast(result.reason, 'bad');
         }),
-      onQuitToMenu: () => this.scene.start('Menu'),
+      onQuitToMenu: () => this.leaveTo('Menu'),
     });
     uiRoot().append(this.pauseEl);
   }
@@ -374,19 +396,28 @@ export class CityScene extends Phaser.Scene {
 
   // ---------- Camera ----------
 
+  /** Ask for a zoom change. The camera eases toward it over a few frames. */
   private zoomBy(factor: number, pointer?: Phaser.Input.Pointer): void {
+    this.zoomTarget = clamp(this.zoomTarget * factor, MIN_ZOOM, MAX_ZOOM);
+    this.zoomAnchor = pointer ? { x: pointer.x, y: pointer.y } : null;
+  }
+
+  /** Move the zoom a step toward its target, keeping the point under the cursor fixed. */
+  private easeZoom(dt: number): void {
     const cam = this.cameras.main;
-    const next = clamp(cam.zoom * factor, MIN_ZOOM, MAX_ZOOM);
-    if (next === cam.zoom) return;
-    if (!pointer) {
+    if (Math.abs(cam.zoom - this.zoomTarget) < 0.001) return;
+    const t = 1 - Math.exp(-dt * 14);
+    let next = cam.zoom + (this.zoomTarget - cam.zoom) * t;
+    if (Math.abs(next - this.zoomTarget) < 0.004) next = this.zoomTarget;
+    const a = this.zoomAnchor;
+    if (!a) {
       cam.setZoom(next);
       return;
     }
-    // Keep the world point under the cursor fixed while zooming.
-    const before = cam.getWorldPoint(pointer.x, pointer.y);
+    const before = cam.getWorldPoint(a.x, a.y);
     cam.setZoom(next);
     cam.preRender();
-    const after = cam.getWorldPoint(pointer.x, pointer.y);
+    const after = cam.getWorldPoint(a.x, a.y);
     cam.scrollX += before.x - after.x;
     cam.scrollY += before.y - after.y;
   }
@@ -525,8 +556,13 @@ export class CityScene extends Phaser.Scene {
     // Production progress bars creep forward without any stock event; refresh them now and then.
     this.frame = (this.frame + 1) % 30;
     if (this.frame === 0) for (const shop of session.state.shops) if (shop.objects.some((o) => defOf(o).kind === 'producer' && (o.progress ?? 0) > 0)) this.shopViews.markStockDirty(shop.id);
+    this.easeZoom(dt);
     this.npcViews.update(dt);
     this.shopViews.flush(dt);
+    // Props add their lamps to the lighting first; then the atmosphere draws night and weather.
+    this.props.update(dt);
+    this.effects.update(dt);
+    this.atmosphere.update();
     this.stepTimer -= dt * session.state.time.speed;
     if (this.stepTimer <= 0 && cam.zoom >= 1.3 && session.state.time.speed > 0) {
       this.stepTimer = 0.32;
@@ -541,6 +577,7 @@ export class CityScene extends Phaser.Scene {
       this.overlayTimer = 0;
       this.drawOverlay();
     }
-    this.night.style.opacity = (darkness(hourFloat(session.state.time)) * 0.55).toFixed(3);
+    // The flat tint is only used when the light layer is switched off (Low graphics).
+    this.night.style.opacity = this.atmosphere.flatTint().toFixed(3);
   }
 }

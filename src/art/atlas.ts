@@ -84,6 +84,14 @@ export class Pix {
     return this;
   }
 
+  /** Slide a region sideways by `dx` pixels, leaving the vacated column transparent. */
+  shift(x: number, y: number, w: number, h: number, dx: number): this {
+    const img = this.ctx.getImageData(this.ox + x, this.oy + y, w, h);
+    this.ctx.clearRect(this.ox + x, this.oy + y, w, h);
+    this.ctx.putImageData(img, this.ox + x + dx, this.oy + y, Math.max(0, -dx), 0, w - Math.abs(dx), h);
+    return this;
+  }
+
   /** Replace exact colours inside a region, for recoloured variants of a tile. */
   recolor(x: number, y: number, w: number, h: number, map: Record<string, string>): this {
     const img = this.ctx.getImageData(this.ox + x, this.oy + y, w, h);

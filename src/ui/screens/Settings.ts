@@ -1,5 +1,5 @@
 import { isElectron } from '../../core/platform';
-import { ACTIONS, applyDisplay, DEFAULT_KEYS, keyLabel, RESOLUTIONS, saveSettings, settings, type Action } from '../../core/settings';
+import { ACTIONS, applyDisplay, DEFAULT_KEYS, keyLabel, QUALITY, RESOLUTIONS, saveSettings, settings, type Action, type Quality } from '../../core/settings';
 import { sfx } from '../../systems/audio/audio';
 import { h, setChildren } from '../dom';
 import { APP_VERSION } from '../../core/platform';
@@ -84,6 +84,16 @@ export function SettingsView(onBack: () => void): HTMLElement {
           'select',
           { disabled: !isElectron, onchange: (e: Event) => { settings.resolution = (e.target as HTMLSelectElement).value; saveSettings(); void applyDisplay(); } },
           ...RESOLUTIONS.map((r) => h('option', { value: r, selected: settings.resolution === r }, r === 'window' ? 'Keep current window' : r.replace('x', ' × '))),
+        ),
+      ),
+      h(
+        'div.kv',
+        { tip: 'Low turns off lighting, shadows and particles. Medium halves their detail. Try a lower setting if the game feels slow.' },
+        h('span.k', 'Graphics quality'),
+        h(
+          'select',
+          { onchange: (e: Event) => { settings.quality = (e.target as HTMLSelectElement).value as Quality; saveSettings(); } },
+          ...(Object.keys(QUALITY) as Quality[]).map((q) => h('option', { value: q, selected: settings.quality === q }, QUALITY[q].label)),
         ),
       ),
       h('div.section', 'Game'),

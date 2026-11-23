@@ -10,13 +10,6 @@ import { ROOF_COLORS } from './worldArt';
  * registered in worldArt.ts, not this file.
  */
 
-/** Cheap deterministic per-tile noise in [0, 1). */
-function hash(x: number, y: number, k = 0): number {
-  let h = (x * 374761393 + y * 668265263 + k * 2147483647) | 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
-
 const CURB = '#7a77a4';
 
 export function drawTile(ctx: CanvasRenderingContext2D, city: City, tx: number, ty: number, px: number, py: number): void {
@@ -57,9 +50,6 @@ export function drawTile(ctx: CanvasRenderingContext2D, city: City, tx: number, 
       break;
     case T.Water:
       blit(ctx, 'water', px, py);
-      break;
-    case T.Tree:
-      blit(ctx, `tree_${Math.floor(hash(tx, ty) * 3)}`, px, py);
       break;
     default:
       blit(ctx, 'grass', px, py);

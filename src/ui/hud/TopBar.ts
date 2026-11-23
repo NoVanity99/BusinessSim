@@ -4,6 +4,7 @@ import { money } from '../../core/format';
 import { session } from '../../core/state';
 import { clockText, dateText, setSpeed } from '../../systems/time/clock';
 import { h } from '../dom';
+import { weatherDef } from '../../systems/world/weather';
 import { SHOP_TYPES } from '../../data';
 import { levelProgress } from '../../systems/progress/level';
 
@@ -17,6 +18,12 @@ export function TopBar(): { el: HTMLElement; destroy(): void } {
   const levelEl = h('div.level', { tip: 'Earn experience by serving customers, making sales and opening businesses. Levels unlock new business types, upgrades and loans.' }, levelText, h('div.meter', levelFill));
   const repEl = h('div.stat', { tip: 'Average reputation across your businesses that serve customers.' });
   const dateEl = h('div.date');
+  const weatherEl = h('div.weather');
+  const refreshWeather = (): void => {
+    const w = weatherDef(s);
+    weatherEl.textContent = `${w.icon} ${w.name}`;
+    weatherEl.dataset.tip = w.description;
+  };
 
   const labels: Record<number, [string, string]> = {
     0: ['❚❚', 'Pause (Space)'],
@@ -47,6 +54,8 @@ export function TopBar(): { el: HTMLElement; destroy(): void } {
   const offs = [bus.on('money:changed', refreshMoney), bus.on('time:minute', refreshTime), bus.on('time:speed', refreshSpeed), bus.on('xp:changed', refreshLevel), bus.on('time:hour', refreshRep), bus.on('shop:created', refreshRep)];
   refreshLevel();
   refreshRep();
+  refreshWeather();
+  offs.push(bus.on('weather:changed', refreshWeather));
   refreshMoney();
   refreshTime();
   refreshSpeed();
@@ -58,6 +67,7 @@ export function TopBar(): { el: HTMLElement; destroy(): void } {
     levelEl,
     repEl,
     h('div.spacer'),
+    weatherEl,
     dateEl,
     clockEl,
     h('div.speed', ...speedBtns),

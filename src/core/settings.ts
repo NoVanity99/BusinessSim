@@ -42,6 +42,16 @@ export const DEFAULT_KEYS: Record<Action, string> = {
   staff: 'KeyT',
 };
 
+export type Quality = 'low' | 'medium' | 'high';
+
+/** What each graphics level turns on. Renderers read this instead of checking the level by name. */
+export const QUALITY: Record<Quality, { label: string; lights: boolean; lightRes: number; shadows: boolean; particles: number; weather: number; props: boolean }> = {
+  low: { label: 'Low', lights: false, lightRes: 0, shadows: false, particles: 0, weather: 0.35, props: false },
+  medium: { label: 'Medium', lights: true, lightRes: 0.5, shadows: true, particles: 0.5, weather: 0.7, props: true },
+  high: { label: 'High', lights: true, lightRes: 1, shadows: true, particles: 1, weather: 1, props: true },
+};
+export const quality = (): (typeof QUALITY)[Quality] => QUALITY[settings.quality] ?? QUALITY.high;
+
 export const RESOLUTIONS = ['window', '1280x720', '1366x768', '1600x900', '1920x1080', '2560x1440'] as const;
 
 export interface Settings {
@@ -53,6 +63,8 @@ export interface Settings {
   autosave: boolean;
   /** Download new versions in the background as soon as they are found. */
   autoDownloadUpdates: boolean;
+  /** Graphics detail: lights, shadows, particles and weather density. */
+  quality: Quality;
   keys: Record<Action, string>;
 }
 
@@ -64,6 +76,7 @@ export const settings: Settings = {
   resolution: 'window',
   autosave: true,
   autoDownloadUpdates: true,
+  quality: 'high',
   keys: { ...DEFAULT_KEYS },
 };
 

@@ -18,6 +18,7 @@ import { loansDaily } from './economy/loans';
 import { netWorth } from './economy/networth';
 import { eventsDaily, eventsHourly, initEvents } from './events/events';
 import { installProgress } from './progress/level';
+import { weatherHourly } from './world/weather';
 import { DIFFICULTIES, EVENTS } from '../data';
 import { rt } from './ai/runtime';
 
@@ -71,6 +72,7 @@ export function installSim(): () => void {
       staffHourly(s);
       managerReorder(s);
       eventsHourly(s);
+      weatherHourly(s);
       // Footfall fades so the overlay shows recent traffic, not all of history.
       for (let i = 0; i < rt.heat.length; i++) rt.heat[i] *= 0.82;
       checkEndings();

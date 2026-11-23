@@ -40,6 +40,10 @@ export interface GameEvents {
   'game:won': void;
   'game:over': void;
   'overlay:changed': string | null;
+  'weather:changed': string;
+  'quality:changed': string;
+  /** Something visual happened at a tile: dust when building, sparkles at a till. */
+  fx: { kind: 'dust' | 'coins' | 'steam' | 'smoke' | 'splash'; x: number; y: number };
   'staff:removed': number;
   'staff:selected': number | null;
   'object:selected': { shopId: number; objectId: number } | null;

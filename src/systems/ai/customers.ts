@@ -10,6 +10,8 @@ import { idx, T } from '../city/generate';
 import { earn } from '../economy/finance';
 import { addToStorage, consumeIngredients, hasIngredients, takeFromSlot } from '../economy/stock';
 import { fairPrice } from '../shop/pricing';
+import { weatherCrowd, weatherDef, weatherDemand, weatherProductBoost } from '../world/weather';
+import { LOOK_COUNT } from '../../art/looks';
 import { shopDemandMult } from '../events/events';
 import { kitchenCanMake, openTicket, updateKitchens } from '../shop/kitchen';
 import { onDuty } from '../staff/staff';
@@ -24,7 +26,7 @@ import { cashierAt, staffLayoutChanged } from '../staff/agents';
 import { skill } from '../staff/staff';
 
 const MAX_QUEUE_SLOTS = 8;
-const LOOKS = 24;
+const LOOKS = LOOK_COUNT;
 
 // ---------- Setup ----------
 
@@ -160,7 +162,7 @@ export function activity(): number {
 }
 
 function targetPopulation(): number {
-  return Math.min(POPULATION.maxPopulation, Math.round(POPULATION.basePopulation * activity() * rt.crowdMult));
+  return Math.min(POPULATION.maxPopulation, Math.round(POPULATION.basePopulation * activity() * rt.crowdMult * weatherCrowd(session.state)));
 }
 
 function pickSpawnPoint(): { tile: number; weight: number; wealth: number } {
@@ -175,15 +177,17 @@ function pickSpawnPoint(): { tile: number; weight: number; wealth: number } {
 function pickNeed(): string | null {
   let r = rand.next();
   for (const [id, t] of Object.entries(SHOP_TYPES)) {
-    r -= t.demand * (rt.demandMult[id] ?? 1);
+    r -= t.demand * (rt.demandMult[id] ?? 1) * weatherDemand(session.state, id);
     if (r < 0) return id;
   }
   return null;
 }
 
 function weightedPick(pool: string[]): string {
-  let r = rand.next() * pool.reduce((a, p) => a + PRODUCTS[p].popularity, 0);
-  return pool.find((p) => (r -= PRODUCTS[p].popularity) <= 0) ?? pool[0];
+  // Weather shifts what people fancy: ice cream in a heatwave, tea in the snow.
+  const weight = (p: string): number => PRODUCTS[p].popularity * weatherProductBoost(session.state, p);
+  let r = rand.next() * pool.reduce((a, p) => a + weight(p), 0);
+  return pool.find((p) => (r -= weight(p)) <= 0) ?? pool[0];
 }
 
 function pickSeveral(pool: string[], count: number): string[] {
@@ -432,7 +436,7 @@ function considerShops(c: Customer): void {
     const lot = session.city.lots[shop.lotId];
     const dx = Math.max(lot.x - c.x, 0, c.x - (lot.x + lot.w));
     const dy = Math.max(lot.y - c.y, 0, c.y - (lot.y + lot.h));
-    if (Math.max(dx, dy) > POPULATION.noticeRadius) continue;
+    if (Math.max(dx, dy) > POPULATION.noticeRadius * (weatherDef(s).notice ?? 1)) continue;
     c.seen.push(shop.id);
     if (!isOpenNow(s, shop)) continue;
     // Reputation decides how tempting the shop looks from the street.

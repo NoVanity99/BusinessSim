@@ -59,6 +59,14 @@ export const MIGRATIONS: Migration[] = [
       }
     },
   },
+  {
+    to: 3,
+    name: 'Add weather; widen the range of character looks',
+    up(s) {
+      s.weather ??= { kind: 'sunny', until: 0 };
+      // Look ids used to run 0-23 over discs; they now index 72 drawn people. Old ids stay valid.
+    },
+  },
 ];
 
 export const LATEST_SAVE_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.to), 1);

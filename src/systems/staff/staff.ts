@@ -6,6 +6,7 @@ import { EMPLOYEES, POPULATION, type TraitDef } from '../../data';
 import { inShift, shiftLength, type Candidate, type Employee } from '../../entities/Employee';
 import { spend, tryPay } from '../economy/finance';
 import { dayOf, hourOf } from '../time/clock';
+import { LOOK_COUNT } from '../../art/looks';
 
 type NumericTrait = 'speed' | 'friendliness' | 'reliability' | 'wageMult' | 'energyDrain' | 'moraleBase' | 'carry' | 'learn' | 'theft';
 
@@ -51,7 +52,7 @@ export function generateCandidate(s: GameState, role?: string): Candidate {
     skills: { speed: rollSkill(), friendliness: rollSkill(), reliability: rollSkill() },
     traits,
     wage: 0,
-    look: rand.int(0, 23),
+    look: rand.int(0, LOOK_COUNT - 1),
   };
   // Asking wage wobbles around the market rate: some people undersell themselves.
   c.wage = Math.round(marketWage(c) * rand.range(0.92, 1.1) * 4) / 4;

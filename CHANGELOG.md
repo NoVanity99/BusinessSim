@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0 (unreleased) - Overhaul phase 2: characters and atmosphere
+
+- **72 distinct people** made by recolouring the pack's six characters (five skin tones, seven hair colours, nine tops, six trousers), including children drawn smaller and grey-haired seniors. Each has a walk cycle in four directions and a soft shadow.
+- **Emotes** over people's heads show what is going on at a glance: happy, angry, waiting, carrying a bag, eating. People who sit are drawn on the seat.
+- **Day and night**: a darkness layer in dusk purple and night blue, with every light source cutting a soft pool out of it: street lamps that switch on at dusk, lit windows (fewer in the small hours), open shops, lamps and vending machines you place, car headlights, traffic signals.
+- **Weather**, saved with the game: sunny, cloudy, rain, fog, snow and heatwaves, with rain and snow particles, fog, and a grey cast. Weather changes how many people are out, which businesses they want (cafés fill up in the rain, the park empties) and what they buy (ice cream in a heatwave, tea in the snow). Defined in `src/data/weather.json`.
+- **A livelier city**: traffic lights that cars actually obey, cars that keep a gap behind the one in front, drivers who pull over and park for a while, buses, lamp posts, hydrants, mailboxes and benches, trees that sway, birds crossing the sky.
+- **Effects**: coins and sparkles at the till on every sale, steam from coffee machines, smoke from grills and fryers, dust when you build, spray from the car wash.
+- **Camera**: zoom eases smoothly toward the cursor; scenes fade in and out.
+- **Performance**: sprites are pooled and reused, anything off screen is hidden and skipped, and shadows are part of the sprite. New **Graphics quality** setting (Low, Medium, High) controls lighting, particles and weather density.
+- Save format 3 (adds weather). Older saves upgrade automatically.
+
 ## 1.2.0 (unreleased) - Overhaul phase 1: art pipeline and world
 
 The game is now pixel art: 32×32 tiles in one consistent style, built on Kenney's CC0 "RPG Urban Pack" and "Roguelike Indoors" with everything else drawn in code to match.

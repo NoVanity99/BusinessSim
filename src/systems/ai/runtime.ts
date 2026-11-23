@@ -48,7 +48,11 @@ export interface Car {
   look: number;
   /** Remaining road tiles (reversed). */
   path: number[];
-  state: 'drive' | 'toStation' | 'service' | 'toRoad';
+  state: 'drive' | 'toStation' | 'service' | 'toRoad' | 'parked';
+  /** Path length at which the driver pulls over for a while, if they plan to. */
+  parkAt?: number;
+  /** Stopped at a red light or behind another car this frame, for brake lights and idling. */
+  waiting?: boolean;
   shopId: number;
   objId: number;
   timer: number;

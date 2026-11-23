@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { registerActorFrames } from '../art/actorArt';
 import { atlasUsage, beginAtlas, finishAtlas, preloadAtlasSources } from '../art/atlas';
 import { registerFurnitureFrames } from '../art/furnitureArt';
+import { registerFxFrames } from '../art/fxArt';
 import { registerWorldFrames } from '../art/worldArt';
 import { installInput } from '../core/input';
 import { loadSettings } from '../core/settings';
@@ -25,6 +26,7 @@ export class BootScene extends Phaser.Scene {
     registerWorldFrames();
     registerFurnitureFrames();
     registerActorFrames();
+    registerFxFrames(this);
     finishAtlas(this);
     const usage = atlasUsage();
     console.info(`Atlas: ${usage.frames} frames, ${Math.round(usage.filled * 100)}% of the sheet used`);

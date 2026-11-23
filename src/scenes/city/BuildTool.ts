@@ -83,7 +83,10 @@ export class BuildTool {
         if (obj) moveObject(shop, lot, obj, x, y, t.rot);
         setTool({ type: 'move' });
       } else {
-        if (placeObject(s, shop, lot, t.def, x, y, t.rot)) sfx('place');
+        if (placeObject(s, shop, lot, t.def, x, y, t.rot)) {
+          sfx('place');
+          bus.emit('fx', { kind: 'dust', x, y });
+        }
       }
       this.refresh();
       return;

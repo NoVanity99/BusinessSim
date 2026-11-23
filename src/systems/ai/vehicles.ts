@@ -2,7 +2,7 @@ import { bus } from '../../core/events';
 import { clamp, money } from '../../core/format';
 import { rand } from '../../core/rng';
 import { session, shopById, type GameState } from '../../core/state';
-import { POPULATION, PRODUCTS, SHOP_TYPES } from '../../data';
+import { CITY_CONFIG, POPULATION, PRODUCTS, SHOP_TYPES } from '../../data';
 import { batchQty, defOf, footprint, type PlacedObject, type ShopState } from '../../entities/Shop';
 import { T } from '../city/generate';
 import { earn, spend } from '../economy/finance';
@@ -18,7 +18,43 @@ import { findPath } from './pathfind';
 import { regKey, rt, type Car } from './runtime';
 
 const TRAFFIC = POPULATION.traffic;
-const VAN_LOOK = 99;
+export const VAN_LOOK = 99;
+export const BUS_LOOK = 100;
+
+// ---------- Traffic lights ----------
+
+/** Game minutes for a full cycle: north-south green, all red, east-west green, all red. */
+const LIGHT_CYCLE = 3;
+const roadCols = new Set<number>();
+const roadRows = new Set<number>();
+const street = CITY_CONFIG.roadW + CITY_CONFIG.sidewalkW * 2;
+
+/** Which block corner a road tile's intersection belongs to, or -1 if it is not in one. */
+const crossingIndex = (x: number, y: number): number => (roadCols.has(x) && roadRows.has(y) ? Math.floor(x / (CITY_CONFIG.blockW + street)) + Math.floor(y / (CITY_CONFIG.blockH + street)) * 64 : -1);
+
+/** Which direction of travel has green at an intersection right now. */
+export function greenAxis(index: number, minutes: number): 'ns' | 'ew' | 'none' {
+  // Offset each junction so the whole city does not change at once.
+  const t = (minutes + (index * 37) % 7 * 0.4) % LIGHT_CYCLE;
+  if (t < LIGHT_CYCLE * 0.42) return 'ns';
+  if (t < LIGHT_CYCLE * 0.5) return 'none';
+  if (t < LIGHT_CYCLE * 0.92) return 'ew';
+  return 'none';
+}
+
+/** Every signalled junction: where to draw its signal, and its index for `greenAxis`. */
+export function trafficSignals(): { x: number; y: number; index: number }[] {
+  const out: { x: number; y: number; index: number }[] = [];
+  for (let by = 0; by <= CITY_CONFIG.blocksY; by++) {
+    for (let bx = 0; bx <= CITY_CONFIG.blocksX; bx++) {
+      const x0 = bx * (CITY_CONFIG.blockW + street);
+      const y0 = by * (CITY_CONFIG.blockH + street);
+      // The signal stands on the pavement at the junction's north-east corner.
+      out.push({ x: x0 + street - 1, y: y0, index: crossingIndex(x0 + CITY_CONFIG.sidewalkW, y0 + CITY_CONFIG.sidewalkW) });
+    }
+  }
+  return out;
+}
 
 // ---------- Setup ----------
 
@@ -26,6 +62,10 @@ export function initVehicles(): void {
   const { city } = session;
   const grid: Grid = { w: city.w, h: city.h, cost: new Uint8Array(city.w * city.h) };
   rt.roadEdges = [];
+  roadCols.clear();
+  roadRows.clear();
+  for (let b = 0; b <= CITY_CONFIG.blocksX; b++) for (let i = 0; i < CITY_CONFIG.roadW; i++) roadCols.add(b * (CITY_CONFIG.blockW + street) + CITY_CONFIG.sidewalkW + i);
+  for (let b = 0; b <= CITY_CONFIG.blocksY; b++) for (let i = 0; i < CITY_CONFIG.roadW; i++) roadRows.add(b * (CITY_CONFIG.blockH + street) + CITY_CONFIG.sidewalkW + i);
   for (let i = 0; i < city.tiles.length; i++) {
     const t = city.tiles[i];
     if (t !== T.Road && t !== T.Crosswalk) continue;
@@ -91,7 +131,7 @@ function spawnCar(van?: Car['van']): Car | null {
     x: (from % g.w) + 0.5,
     y: Math.floor(from / g.w) + 0.5,
     heading: 0,
-    look: van ? VAN_LOOK : rand.int(0, 5),
+    look: van ? VAN_LOOK : rand.chance(0.06) ? BUS_LOOK : rand.int(0, 5),
     path: [],
     state: 'drive',
     shopId: -1,
@@ -103,6 +143,8 @@ function spawnCar(van?: Car['van']): Car | null {
     van,
   };
   if (!van && !route(car, rand.pick(rt.roadEdges))) return null;
+  // Some drivers pull over part-way for an errand, then carry on.
+  if (!van && car.look !== BUS_LOOK && car.path.length > 30 && rand.chance(0.2)) car.parkAt = rand.int(8, car.path.length - 12);
   rt.cars.push(car);
   return car;
 }
@@ -338,6 +380,7 @@ function nextVanStop(s: GameState, car: Car): void {
 // ---------- Per-frame update ----------
 
 let dispatchTimer = 0;
+const occupied = new Map<number, Car>();
 
 export function updateVehicles(dt: number): void {
   if (dt <= 0) return;
@@ -353,10 +396,20 @@ export function updateVehicles(dt: number): void {
     dispatchVans(s);
   }
 
+  // Which car holds each road tile, so the one behind waits. Parked cars are off the lane.
+  occupied.clear();
+  for (const c of rt.cars) if (c.state === 'drive') occupied.set(Math.floor(c.y) * g.w + Math.floor(c.x), c);
+
   for (let i = rt.cars.length - 1; i >= 0; i--) {
     const car = rt.cars[i];
     const shop = car.shopId >= 0 ? shopById(s, car.shopId) : undefined;
     const obj = shop?.objects.find((o) => o.id === car.objId);
+
+    if (car.state === 'parked') {
+      car.timer -= dt;
+      if (car.timer <= 0) car.state = 'drive';
+      continue;
+    }
 
     if (car.state === 'service') {
       car.timer -= dt;
@@ -408,11 +461,28 @@ export function updateVehicles(dt: number): void {
     }
 
     // On the road.
-    let dist = TRAFFIC.speed * dt;
+    let dist = TRAFFIC.speed * (car.look === BUS_LOOK ? 0.75 : 1) * dt;
+    car.waiting = false;
     while (dist > 0 && car.path.length) {
       const n = car.path[car.path.length - 1];
       const tx = (n % g.w) + 0.5;
       const ty = Math.floor(n / g.w) + 0.5;
+      // Stop at a red light: only when about to enter a junction, never once inside it.
+      const next = crossingIndex(n % g.w, Math.floor(n / g.w));
+      if (next >= 0 && crossingIndex(Math.floor(car.x), Math.floor(car.y)) < 0) {
+        const axis = Math.abs(tx - car.x) > Math.abs(ty - car.y) ? 'ew' : 'ns';
+        if (greenAxis(next, s.time.minutes) !== axis) {
+          car.waiting = true;
+          break;
+        }
+      }
+      // Keep a gap behind whoever is ahead in the same lane.
+      // Only cars going the same way count: oncoming traffic uses the other lane.
+      const ahead = occupied.get(n);
+      if (ahead && ahead !== car && Math.cos(ahead.heading - car.heading) > 0.5) {
+        car.waiting = true;
+        break;
+      }
       const d = Math.hypot(tx - car.x, ty - car.y);
       if (d > 0.001) car.heading = Math.atan2(ty - car.y, tx - car.x);
       if (d <= dist) {
@@ -420,6 +490,12 @@ export function updateVehicles(dt: number): void {
         car.y = ty;
         car.path.pop();
         dist -= d;
+        if (car.parkAt !== undefined && car.path.length <= car.parkAt && crossingIndex(n % g.w, Math.floor(n / g.w)) < 0) {
+          car.parkAt = undefined;
+          car.state = 'parked';
+          car.timer = rand.range(8, 40);
+          break;
+        }
         if (!car.van && car.shopId < 0) {
           considerStations(s, car);
           if (car.state !== 'drive') break;
