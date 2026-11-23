@@ -55,7 +55,9 @@
         "funpark": 1.6,
         "fastfood": 1.3,
         "pizza": 1.3,
-        "arcade": 1.3
+        "arcade": 1.3,
+        "bar": 1.5,
+        "hotel": 1.6
       },
       "description": "Music, crowds and long evenings."
     },
@@ -105,7 +107,9 @@
         "clothing": 1.6,
         "bookstore": 1.7,
         "cardshop": 1.6,
-        "petshop": 1.3
+        "petshop": 1.3,
+        "cinema": 1.4,
+        "hotel": 1.3
       },
       "description": "Gift season. Everything giftable flies off the shelves."
     },
@@ -118,7 +122,9 @@
         "clothing": 1.6,
         "bookstore": 1.7,
         "cardshop": 1.6,
-        "petshop": 1.3
+        "petshop": 1.3,
+        "cinema": 1.4,
+        "hotel": 1.3
       },
       "description": "Gift season. Everything giftable flies off the shelves."
     },
@@ -129,7 +135,9 @@
       "demand": {
         "fastfood": 1.3,
         "pizza": 1.4,
-        "coffee": 0.8
+        "coffee": 0.8,
+        "bar": 2.0,
+        "hotel": 1.5
       },
       "description": "Parties tonight; a slow morning tomorrow."
     }
@@ -170,5 +178,64 @@
     "perShopOpened": 60,
     "base": 70,
     "power": 2.1
+  },
+  "random": {
+    "minDay": 4,
+    "fire": {
+      "perDay": 0.02,
+      "damageShare": 0.35,
+      "closedHours": 12,
+      "description": "A fire damages equipment and shuts a shop for the rest of the day."
+    },
+    "flood": {
+      "perDay": 0.02,
+      "stockLoss": 0.4,
+      "dirt": 70,
+      "description": "A burst pipe ruins stock in the back room and leaves the floor filthy."
+    },
+    "powercut": {
+      "perDay": 0.03,
+      "hours": 4,
+      "description": "A district loses power. Shops there cannot trade until it comes back, unless they have a generator."
+    },
+    "roadworks": {
+      "perDay": 0.04,
+      "days": 3,
+      "demandMult": 0.7,
+      "description": "Roadworks in a district put people off for a few days."
+    },
+    "trend": {
+      "perDay": 0.07,
+      "days": 3,
+      "boost": 3.0,
+      "description": "A product goes viral and everyone wants it."
+    },
+    "celebrity": {
+      "perDay": 0.03,
+      "reputation": 6,
+      "demandMult": 1.6,
+      "days": 2,
+      "description": "Someone famous is seen in one of your shops."
+    },
+    "critic": {
+      "perDay": 0.05,
+      "description": "A critic reviews one of your food businesses."
+    },
+    "strike": {
+      "perDay": 0.5,
+      "moraleBelow": 30,
+      "description": "Miserable staff walk out for a day."
+    },
+    "audit": {
+      "perDay": 0.02,
+      "fineShare": 0.04,
+      "description": "The tax office looks at your books."
+    },
+    "windfall": {
+      "perDay": 0.03,
+      "minAmount": 300,
+      "maxAmount": 1500,
+      "description": "A grant, a refund or a lucky break."
+    }
   }
 }

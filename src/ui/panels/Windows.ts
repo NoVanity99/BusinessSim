@@ -1,4 +1,7 @@
 import { bus } from '../../core/events';
+import { acceptJob, declineJob, deliverJob, inAllStorage } from '../../systems/progress/scenarios';
+import { PRODUCTS } from '../../data';
+import { dayOf } from '../../systems/time/clock';
 import { financeExtras, propertyWindow, youWindow } from './Corporate';
 import { acceptOffer, declineOffer, flagship, franchisable, impression, inspect, royaltyOf } from '../../systems/logistics/franchise';
 import { LOGISTICS, NEIGHBORHOODS } from '../../data';
@@ -104,6 +107,23 @@ function company(jumpTo: (lotId: number) => void): HTMLElement {
       h('div', h('div.label', `Goal ${money(goal)}`), h('div.value', s.won ? 'Reached!' : `${Math.max(0, Math.round((worth / goal) * 100))}%`)),
     ),
     next.length > 0 && h('div.note', { style: { marginTop: '0' } }, `Coming up: ${next.map((t) => `${t.name} (level ${t.unlockLevel})`).join(', ')}.`),
+    s.jobs.length > 0 && h('div.section', { tip: 'One-off orders from organisations in the city. Accept one, get the goods into any of your back rooms, and deliver before the deadline.' }, 'Delivery orders'),
+    ...s.jobs.map((j) => {
+      const have = inAllStorage(s, j.product);
+      const today = dayOf(s.time);
+      return h(
+        'div.offer-card',
+        { class: j.accepted ? 'accepted' : '' },
+        h('div', h('b', j.client), ` wants ${j.qty} ${PRODUCTS[j.product].name.toLowerCase()} by the end of day ${j.deadlineDay} for `, h('b', money(j.reward)), '.'),
+        h('div.dim', `${j.deadlineDay - today + 1} day${j.deadlineDay === today ? '' : 's'} left · you have ${Math.min(have, j.qty)} of ${j.qty} in your back rooms${j.accepted ? '' : ' · missing an accepted order costs a penalty'}`),
+        h(
+          'div.row',
+          !j.accepted && h('button', { onclick: () => declineJob(s, j.id) }, 'Decline'),
+          !j.accepted && h('button.primary', { onclick: () => acceptJob(s, j.id) }, 'Accept'),
+          j.accepted && h('button.primary', { disabled: have < j.qty, onclick: () => deliverJob(s, j.id), tip: have < j.qty ? 'Order more stock: it has to be in a back room, not on the shelves.' : 'Hand it over and get paid.' }, have < j.qty ? `Need ${j.qty - have} more` : `Deliver for ${money(j.reward)}`),
+        ),
+      );
+    }),
     ...s.franchiseOffers.map((o) => {
       const lot = session.city.lots[o.lotId];
       return h(
@@ -269,6 +289,7 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     bus.on('orders:changed', () => open === 'stock' && render()),
     bus.on('logistics:changed', () => open === 'stock' && render()),
     bus.on('finance:changed', () => (open === 'finances' || open === 'property') && render()),
+    bus.on('jobs:changed', () => open === 'company' && render(true)),
     bus.on('player:changed', () => open === 'you' && render()),
     bus.on('window:open', ({ id, shopId }) => {
       if (id === 'dashboard' && shopId !== undefined) return openDashboard(shopId);

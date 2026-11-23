@@ -1,4 +1,5 @@
 import { bus } from '../../core/events';
+import { trendBoost } from '../events/random';
 import { claim } from '../economy/corporate';
 import { couponCut } from '../marketing/marketing';
 import { calendarPriceSense } from '../world/seasons';
@@ -193,7 +194,7 @@ function pickSpawnPoint(): { tile: number; weight: number; wealth: number } {
 /** Pick a product by popularity, weather, and (if given) what this kind of person favours. */
 function weightedPick(pool: string[], likes?: string[]): string {
   // Weather shifts what people fancy: ice cream in a heatwave, tea in the snow.
-  const weight = (p: string): number => PRODUCTS[p].popularity * weatherProductBoost(session.state, p) * (likes?.includes(p) ? 2.5 : 1);
+  const weight = (p: string): number => PRODUCTS[p].popularity * weatherProductBoost(session.state, p) * trendBoost(session.state, p) * (likes?.includes(p) ? 2.5 : 1);
   let r = rand.next() * pool.reduce((a, p) => a + weight(p), 0);
   return pool.find((p) => (r -= weight(p)) <= 0) ?? pool[0];
 }
@@ -222,15 +223,19 @@ function makePlan(typeId: string, persona: string, kids: number): Step[] {
     case 'counter':
       plan.push({ t: 'order', items: [...new Set([...pickSeveral(type.products.filter((p) => kindOf(p) === 'menu'), count([1, 1, 2, 2, 3]), P.likes), ...(kids ? treats.filter((p) => kindOf(p) === 'menu').slice(0, kids) : [])])] });
       plan.push({ t: 'use', service: 'seat', optional: true });
+      // A bar with a dance floor: some stay on.
+      for (const svc of type.after ?? []) if (rand.chance(0.45)) plan.push({ t: 'use', service: svc, optional: true });
       break;
     case 'service':
-      if (goods.length && rand.chance(type.planFree ? 0.45 : 0.3)) plan.push({ t: 'buy', product: weightedPick(goods, P.likes) });
+      if (goods.length && rand.chance(type.goodsFirst ?? (type.planFree ? 0.45 : 0.3))) for (const product of pickSeveral(goods, type.goodsFirst ? count([1, 1, 2]) : 1, P.likes)) plan.push({ t: 'buy', product });
       if (type.planFree) {
         // An arcade: a few games on whatever takes their fancy and happens to be free.
         const games = count([2, 2, 3, 3, 4]);
         for (let i = 0; i < games; i++) plan.push({ t: 'use', service: weightedPick(type.plan ?? [], P.likes), optional: true });
       } else for (const svc of type.plan ?? []) plan.push({ t: 'use', service: svc });
       plan.push({ t: 'pay' });
+      // Hotel guests may take breakfast before they go.
+      if (!type.planFree) for (const svc of type.after ?? []) if (rand.chance(0.6)) plan.push({ t: 'use', service: svc, optional: true });
       break;
     case 'park': {
       plan.push({ t: 'use', service: 'svc_ticket' });
@@ -243,7 +248,8 @@ function makePlan(typeId: string, persona: string, kids: number): Step[] {
       break;
     }
     default: {
-      let wants = pickSeveral(goods, count([1, 1, 2, 2, 2, 3, 3, 4]), P.likes);
+      // Nobody buys three cars: one big purchase, chosen with care.
+      let wants = pickSeveral(goods, type.bigTicket ? 1 : count([1, 1, 2, 2, 2, 3, 3, 4]), P.likes);
       if (kids) wants = [...new Set([...wants, ...treats.filter(isShelfGood).slice(0, kids)])];
       // Collectors come for the valuable singles and little else.
       if (persona === 'collector') wants = [...new Set([rand.chance(0.35) ? 'single_ultra' : 'single_rare', ...wants.slice(0, 1)])].filter((p) => type.products.includes(p));
@@ -330,6 +336,13 @@ function spawn(crook?: { shop: ShopState; kind: 'steal' | 'vandal' }): Customer 
     fleeing: false,
     fleeFrom: -1,
   };
+  if (need) {
+    const T = SHOP_TYPES[need];
+    // People set out with enough for what they are going for: a room, a film, or a car on finance.
+    const top = Math.max(0, ...T.products.filter((p) => PRODUCTS[p].kind === 'service' || T.bigTicket).map((p) => PRODUCTS[p].market));
+    if (T.bigTicket) c.budget = Math.round(top * rand.range(0.35, 1.25) * from.wealth);
+    else if (top > 0) c.budget = Math.max(c.budget, Math.round(top * rand.range(1.2, 2.2)));
+  }
   if (!setPath(c, to.tile)) return null;
   rt.customers.push(c);
   rt.byId.set(c.id, c);
@@ -897,7 +910,7 @@ function tilesAround(obj: PlacedObject): number[] {
   return out;
 }
 
-const SERVICE_NAMES: Record<string, string> = { seat: 'seat', ride: 'ride', play: 'table', svc_wash: 'washer', svc_dry: 'dryer', svc_ticket: 'ticket gate', svc_arcade: 'arcade machine', svc_pinball: 'pinball table', svc_airhockey: 'air hockey table', svc_snack: 'snack stall' };
+const SERVICE_NAMES: Record<string, string> = { seat: 'seat', ride: 'ride', play: 'table', svc_wash: 'washer', svc_dry: 'dryer', svc_ticket: 'ticket gate', svc_dance: 'dance floor', svc_treadmill: 'treadmill', svc_weights: 'weights bench', svc_class: 'class', svc_room: 'room', svc_breakfast: 'breakfast', svc_film: 'screen', svc_arcade: 'arcade machine', svc_pinball: 'pinball table', svc_airhockey: 'air hockey table', svc_snack: 'snack stall' };
 
 function goToStation(c: Customer, shop: ShopState, step: Extract<Step, { t: 'use' }>): void {
   const s = session.state;
@@ -1054,7 +1067,8 @@ function goToTarget(c: Customer, shop: ShopState, kind: 'steal' | 'vandal'): voi
     for (const obj of shop.objects) {
       if (defOf(obj).kind !== 'shelf') continue;
       obj.slots?.forEach((sl, i) => {
-        if (!sl.product || batchQty(sl.batches) <= 0) return;
+        // Nobody walks out with a car under their coat.
+        if (!sl.product || batchQty(sl.batches) <= 0 || PRODUCTS[sl.product].storage === 'vehicle') return;
         const value = (shop.prices[sl.product] ?? 0) * rand.range(0.7, 1.3);
         if (!best || value > best.value) best = { obj, slot: i, value };
       });
@@ -1179,7 +1193,13 @@ function passVending(c: Customer, tile: number): void {
   const g = rt.grid;
   for (const near of [tile, tile - 1, tile + 1, tile - g.w, tile + g.w]) {
     const ref = rt.vendingAt.get(near);
-    if (!ref || !rand.chance(VENDING_CHANCE)) continue;
+    if (!ref) continue;
+    const stand = shopById(session.state, ref.shopId)?.objects.find((o) => o.id === ref.objId);
+    // Food trucks do most of their trade at mealtimes.
+    const hour = hourFloat(session.state.time);
+    const mealtime = (hour >= 11 && hour < 14) || (hour >= 17 && hour < 20) ? 1.8 : 1;
+    const chance = stand && defOf(stand).buyChance ? defOf(stand).buyChance! * mealtime : VENDING_CHANCE;
+    if (!rand.chance(chance)) continue;
     const s = session.state;
     const shop = shopById(s, ref.shopId);
     const obj = shop?.objects.find((o) => o.id === ref.objId);

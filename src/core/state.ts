@@ -17,6 +17,8 @@ import type { Contract } from '../systems/logistics/logistics';
 import type { Franchise, FranchiseOffer } from '../systems/logistics/franchise';
 import type { Investor, InvestorOffer } from '../systems/economy/corporate';
 import { newPlayer, type PlayerState } from '../systems/player/player';
+import { SANDBOX, SCENARIOS, type Job, type Rules } from '../systems/progress/scenarios';
+import { xpForLevel } from '../systems/progress/level';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
@@ -90,16 +92,25 @@ export interface GameState {
   /** Daily worth of every company, for the index chart. */
   companyIndex: { day: number; values: Record<string, number> }[];
   player: PlayerState;
+  /** How the game is being played. */
+  mode: 'career' | 'scenario' | 'sandbox';
+  scenario?: { id: string; deadlineDay: number; result?: 'won' | 'lost' };
+  rules?: Rules;
+  /** One-off delivery orders from organisations in the city. */
+  jobs: Job[];
+  nextJobId: number;
 }
 
 export interface NewGameOptions {
   companyName: string;
   difficulty: string;
+  mode?: 'career' | 'scenario' | 'sandbox';
+  scenarioId?: string;
 }
 
 export function createNewGame(opts: NewGameOptions): GameState {
   const time = newTimeState();
-  return {
+  const s: GameState = {
     version: SAVE_VERSION,
     companyName: opts.companyName.trim() || 'My Company',
     difficulty: opts.difficulty,
@@ -146,7 +157,25 @@ export function createNewGame(opts: NewGameOptions): GameState {
     insurance: {},
     companyIndex: [],
     player: newPlayer(),
+    mode: opts.mode ?? 'career',
+    jobs: [],
+    nextJobId: 1,
   };
+  // A scenario or the sandbox replaces the usual starting position.
+  const scenario = opts.mode === 'scenario' ? SCENARIOS.find((x) => x.id === opts.scenarioId) : undefined;
+  const setup = scenario ?? (opts.mode === 'sandbox' ? SANDBOX : undefined);
+  if (setup) {
+    s.money = setup.money;
+    s.level = setup.level;
+    s.xp = xpForLevel(setup.level);
+    s.rules = { ...(setup.rules ?? {}) };
+  }
+  if (scenario) {
+    s.difficulty = scenario.difficulty;
+    s.scenario = { id: scenario.id, deadlineDay: scenario.days };
+    if (scenario.loan) s.loans.push({ id: s.nextLoanId++, name: 'Opening Debt', principal: scenario.loan, balance: scenario.loan, dailyRate: 0.004, dailyCapital: Math.round(scenario.loan / (scenario.days + 12)), takenDay: 1 });
+  }
+  return s;
 }
 
 /** The running game. Set when a game starts or loads; cleared on return to menu. */

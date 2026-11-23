@@ -143,7 +143,7 @@ export function taxForecast(s: GameState): { profit: number; profitTax: number; 
 /** Called after a day's books are closed: on the last day of each tax week the bill is charged. */
 function taxDaily(s: GameState, closedDay: number): void {
   const T = C.tax;
-  if (closedDay % T.everyDays !== 0) return;
+  if (closedDay % T.everyDays !== 0 || s.rules?.noTax) return;
   const ledgers = s.finance.history.filter((l) => l.day > closedDay - T.everyDays && l.day <= closedDay);
   const bill = Math.round(Math.max(0, taxableProfit(ledgers)) * T.profitRate + ownedPropertyValue(s) * T.propertyRatePerDay * T.everyDays);
   if (bill <= 0) return;

@@ -62,7 +62,7 @@ export const NEIGHBORHOODS = neighborhoodsJson as Record<string, NeighborhoodDef
 export const CITY_CONFIG = cityJson as CityConfig;
 export const DIFFICULTIES = difficultyJson as Record<string, DifficultyDef>;
 
-export type StorageClass = 'ambient' | 'chilled' | 'frozen' | 'collectible';
+export type StorageClass = 'ambient' | 'chilled' | 'frozen' | 'collectible' | 'vehicle';
 
 /**
  * good: bought wholesale, sold from shelves.   menu: made to order from a recipe.
@@ -107,6 +107,8 @@ export type FurnitureKind = 'floor' | 'wall' | 'door' | 'shelf' | 'register' | '
 export interface FurnitureDef {
   /** Delivery vans this piece provides. */
   vans?: number;
+  /** Street-side machines and trucks: chance a passer-by buys, if not the default. */
+  buyChance?: number;
   name: string;
   category: string;
   kind: FurnitureKind;
@@ -177,6 +179,10 @@ export interface ShopTypeDef {
   plan?: string[];
   /** Customers pick a few of the shop's services as they please instead of following `plan` in order. */
   planFree?: boolean;
+  /** Chance a customer of a service business buys goods on the way in (cinema concessions). */
+  goodsFirst?: number;
+  /** Sells things that cost thousands: customers come with finance arranged and buy one. */
+  bigTicket?: boolean;
   /** Optional services customers may use after shopping. */
   after?: string[];
   /** How strongly decor raises the prices customers accept. */
@@ -327,6 +333,20 @@ export interface HolidayDef {
 }
 
 export interface EventsConfig {
+  /** Random events: chance per day and their sizes. */
+  random: {
+    minDay: number;
+    fire: { perDay: number; damageShare: number; closedHours: number };
+    flood: { perDay: number; stockLoss: number; dirt: number };
+    powercut: { perDay: number; hours: number };
+    roadworks: { perDay: number; days: number; demandMult: number };
+    trend: { perDay: number; days: number; boost: number };
+    celebrity: { perDay: number; reputation: number; demandMult: number; days: number };
+    critic: { perDay: number };
+    strike: { perDay: number; moraleBelow: number };
+    audit: { perDay: number; fineShare: number };
+    windfall: { perDay: number; minAmount: number; maxAmount: number };
+  };
   loans: LoanOffer[];
   maxLoans: number;
   overdraftDailyRate: number;
@@ -342,7 +362,7 @@ export interface EventsConfig {
 }
 
 export const UPGRADES = upgradesJson as Record<string, UpgradeDef>;
-export const EVENTS = eventsJson as EventsConfig;
+export const EVENTS = eventsJson as unknown as EventsConfig;
 
 export interface WeatherDef {
   name: string;

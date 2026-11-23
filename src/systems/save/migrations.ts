@@ -129,6 +129,15 @@ export const MIGRATIONS: Migration[] = [
       s.player ??= { energy: 100, home: 'studio', car: 'none', visited: [], visitDay: 0 };
     },
   },
+  {
+    to: 10,
+    name: 'Add game modes and delivery jobs',
+    up(s) {
+      s.mode ??= 'career';
+      s.jobs ??= [];
+      s.nextJobId ??= 1;
+    },
+  },
 ];
 
 export const LATEST_SAVE_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.to), 1);

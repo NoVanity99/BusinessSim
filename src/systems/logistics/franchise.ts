@@ -41,11 +41,12 @@ export function flagship(s: GameState, type: string): ShopState | undefined {
     .sort((a, b) => b.reputation - a.reputation)[0];
 }
 
-export const franchisable = (type: string): boolean => SHOP_TYPES[type].demand > 0 && ['retail', 'counter', 'service'].includes(SHOP_TYPES[type].flow);
+export const franchisable = (type: string): boolean => SHOP_TYPES[type].demand > 0 && !SHOP_TYPES[type].bigTicket && ['retail', 'counter', 'service'].includes(SHOP_TYPES[type].flow);
 
 function ticket(type: string): number {
   const prices = SHOP_TYPES[type].products.map((p) => PRODUCTS[p].market).filter((m) => m > 0);
-  return prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length) * 1.7 : 8;
+  // A typical visit is modest even where the price list is not.
+  return prices.length ? Math.min(45, (prices.reduce((a, b) => a + b, 0) / prices.length) * 1.7) : 8;
 }
 
 /** Now and then someone applies to open one of your brands. */

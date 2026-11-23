@@ -1,4 +1,8 @@
 import Phaser from 'phaser';
+import { Tracker } from '../ui/hud/Tracker';
+import { goalProgress, scenarioOf } from '../systems/progress/scenarios';
+import { setThumbProvider } from '../systems/save/saves';
+import { dayOf } from '../systems/time/clock';
 import { HelpWindow } from '../ui/screens/Help';
 import { isRegular } from '../systems/ai/residents';
 import { theftRisk } from '../systems/events/events';
@@ -118,6 +122,7 @@ export class CityScene extends Phaser.Scene {
     this.setupCamera();
     this.setupInput();
     this.setupHud();
+    setThumbProvider(() => this.thumbnail());
     // If the player restarts to update mid-game, their progress goes into the autosave first.
     updaterHooks.beforeInstall = () => saveGame(AUTOSAVE, true);
 
@@ -235,11 +240,13 @@ export class CityScene extends Phaser.Scene {
       onAction('staff', act(() => this.sidebar.toggle('staff'))),
       onAction('stock', act(() => this.sidebar.toggle('stock'))),
       onAction('help', () => this.toggleHelp()),
+      onAction('photo', () => this.togglePhoto()),
       onAction('notifications', act(() => this.sidebar.toggle('news'))),
       onAction('minimap', act(() => bus.emit('minimap:toggle'))),
       // The menu key backs out of whatever is open, one layer at a time, then pauses.
       onAction('menu', () => {
-        if (paused()) this.closePauseMenu();
+        if (this.photoEl) this.togglePhoto();
+        else if (paused()) this.closePauseMenu();
         else if (this.buildTool.active) this.buildTool.cancel();
         else if (ui.selectedNpc !== null) selectNpc(null);
         else if (ui.selectedStaff !== null) selectStaff(null);
@@ -251,6 +258,7 @@ export class CityScene extends Phaser.Scene {
 
     // Build shortcuts that are not rebindable: undo, redo and the copy tool.
     const buildKeys = (e: KeyboardEvent): void => {
+      if (this.photoEl && e.code === 'Enter') return this.takePhoto();
       const target = e.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
       const shop = ui.selectedLot !== null ? shopOnLot(session.state, ui.selectedLot) : undefined;
@@ -322,6 +330,91 @@ export class CityScene extends Phaser.Scene {
     });
   }
 
+  private photoEl: HTMLElement | null = null;
+
+  /** Photo mode: the interface disappears so the city can be framed and saved as a picture. */
+  private togglePhoto(): void {
+    if (this.photoEl) {
+      this.photoEl.remove();
+      this.photoEl = null;
+      uiRoot().style.display = '';
+      return;
+    }
+    if (this.pauseEl) return;
+    uiRoot().style.display = 'none';
+    hideTip();
+    const time = session.state.time;
+    this.photoEl = h(
+      'div.photo-bar',
+      h('b', 'Photo mode'),
+      h('span', { style: { opacity: '0.75' } }, 'Drag and scroll to frame the shot'),
+      h('button', { onclick: () => setSpeed(time, time.speed === 0 ? this.lastSpeed || 1 : 0) }, 'Freeze / run'),
+      h('button.primary', { onclick: () => this.takePhoto() }, 'Take picture (Enter)'),
+      h('button', { onclick: () => this.togglePhoto() }, 'Done (Esc)'),
+    );
+    document.body.append(this.photoEl);
+  }
+
+  /** Save what the camera sees as a PNG. */
+  private takePhoto(): void {
+    const bar = this.photoEl;
+    if (!bar) return;
+    bar.classList.add('hidden');
+    this.game.renderer.snapshot((image) => {
+      const link = document.createElement('a');
+      link.href = (image as HTMLImageElement).src;
+      link.download = `${session.state.companyName.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'city'}-day-${dayOf(session.state.time)}.png`;
+      // The link has to be in the page for every browser to honour the download.
+      document.body.append(link);
+      link.click();
+      link.remove();
+      const flash = h('div.photo-flash');
+      document.body.append(flash);
+      setTimeout(() => flash.remove(), 400);
+      bar.classList.remove('hidden');
+      sfx('register');
+    });
+  }
+
+  /** A small picture of the city for the save list. */
+  private thumbnail(): Promise<string | undefined> {
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(undefined), 900);
+      this.game.renderer.snapshot((image) => {
+        clearTimeout(timer);
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 144;
+        const img = image as HTMLImageElement;
+        // Centre-crop to 16:9 so every thumbnail is the same shape.
+        const k = Math.max(256 / img.width, 144 / img.height);
+        canvas.getContext('2d')!.drawImage(img, (256 - img.width * k) / 2, (144 - img.height * k) / 2, img.width * k, img.height * k);
+        resolve(canvas.toDataURL('image/jpeg', 0.62));
+      });
+    });
+  }
+
+  private showScenarioEnd(won: boolean): void {
+    const s = session.state;
+    const def = scenarioOf(s);
+    if (!def) return;
+    const speed = s.time.speed;
+    setSpeed(s.time, 0);
+    const el = h(
+      'div.overlay',
+      h(
+        'div.panel.window',
+        { style: { position: 'relative', width: '460px' } },
+        h('h2', won ? 'Scenario complete' : 'Out of time'),
+        h('div.modal-text', won ? `${def.name}: every goal met on day ${dayOf(s.time)} of ${def.days}. You can keep playing this company for as long as you like.` : `${def.name}: the ${def.days} days are up and the goals were not all met. You can keep playing, or try again from the main menu.`),
+        ...goalProgress(s, def.goals).map((g) => h('div.kv', h('span.k', `${g.done ? '✓' : '✗'} ${g.label}`), h('span.v', { class: g.done ? 'good' : 'bad' }, g.value))),
+        h('div.row', { style: { justifyContent: 'flex-end', marginTop: '12px' } }, h('button.primary', { onclick: () => { el.remove(); setSpeed(s.time, speed || 1); } }, 'Keep playing')),
+      ),
+    );
+    uiRoot().append(el);
+    sfx(won ? 'good' : 'error');
+  }
+
   private helpEl: HTMLElement | null = null;
 
   /** Show or hide the controls window. The game keeps running underneath. */
@@ -340,7 +433,7 @@ export class CityScene extends Phaser.Scene {
       const lot = session.city.lots[lotId];
       this.cameras.main.centerOn((lot.x + lot.w / 2) * TILE, (lot.y + lot.h / 2) * TILE);
     }, () => this.openPauseMenu());
-    const parts = [TopBar(() => this.sidebar.toggle('news')), this.sidebar, LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel(), StaffInfoPanel(), Guide(), Minimap()];
+    const parts = [TopBar(() => this.sidebar.toggle('news')), this.sidebar, LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel(), StaffInfoPanel(), Guide(), Minimap(), Tracker()];
     uiRoot().append(...parts.map((p) => p.el), h('div.hint', 'Drag or WASD to move · Scroll to zoom · Space to pause'));
     this.cleanups.push(
       ...parts.map((p) => p.destroy),
@@ -349,6 +442,13 @@ export class CityScene extends Phaser.Scene {
         const lot = session.city.lots[lotId];
         if (lot) this.cameras.main.centerOn((lot.x + lot.w / 2) * TILE, (lot.y + lot.h / 2) * TILE);
       }),
+      bus.on('scenario:ended', (won) => this.showScenarioEnd(won)),
+      bus.on('photo:toggle', () => this.togglePhoto()),
+      () => {
+        this.photoEl?.remove();
+        uiRoot().style.display = '';
+        setThumbProvider(null);
+      },
       bus.on('help:open', () => !this.helpEl && this.toggleHelp()),
       () => this.helpEl?.remove(),
       bus.on('camera:pan', ({ x, y }) => this.cameras.main.centerOn(x * TILE, y * TILE)),

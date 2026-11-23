@@ -1,27 +1,110 @@
 {
   "_comment": "Rival companies. They rent free lots, open shops that compete for the same residents, and react to what you do.",
   "companies": [
-    { "name": "MegaMart Group",   "short": "MegaMart", "color": "#d9483b", "roof": "brick",  "aggression": 0.8 },
-    { "name": "Blue Harbor Co.",  "short": "Blue Harbor", "color": "#3a7bd5", "roof": "office", "aggression": 0.45 },
-    { "name": "Sunny Side Shops", "short": "Sunny Side", "color": "#e0a02c", "roof": "resort", "aggression": 0.25 }
+    {
+      "name": "MegaMart Group",
+      "short": "MegaMart",
+      "color": "#d9483b",
+      "roof": "brick",
+      "aggression": 0.8
+    },
+    {
+      "name": "Blue Harbor Co.",
+      "short": "Blue Harbor",
+      "color": "#3a7bd5",
+      "roof": "office",
+      "aggression": 0.45
+    },
+    {
+      "name": "Sunny Side Shops",
+      "short": "Sunny Side",
+      "color": "#e0a02c",
+      "roof": "resort",
+      "aggression": 0.25
+    }
   ],
   "shopNames": {
-    "convenience": ["Express", "Quick Stop", "Mini Market"],
-    "cardshop": ["Cards & Games", "Hobby Vault"],
-    "fastfood": ["Burger Bar", "Grill"],
-    "coffee": ["Coffee House", "Espresso"],
-    "laundromat": ["Wash & Go", "Laundry"],
-    "gas": ["Fuel Stop"],
-    "drugstore": ["Pharmacy", "Chemist"],
-    "bookstore": ["Books", "Book Nook"],
-    "clothing": ["Fashion", "Outfitters"],
-    "pizza": ["Pizza", "Pizzeria"],
-    "petshop": ["Pets", "Pet Corner"],
-    "arcade": ["Arcade", "Game Zone"],
-    "electronics": ["Electronics", "Tech"],
-    "default": ["Store", "Outlet"]
+    "convenience": [
+      "Express",
+      "Quick Stop",
+      "Mini Market"
+    ],
+    "cardshop": [
+      "Cards & Games",
+      "Hobby Vault"
+    ],
+    "fastfood": [
+      "Burger Bar",
+      "Grill"
+    ],
+    "coffee": [
+      "Coffee House",
+      "Espresso"
+    ],
+    "laundromat": [
+      "Wash & Go",
+      "Laundry"
+    ],
+    "gas": [
+      "Fuel Stop"
+    ],
+    "drugstore": [
+      "Pharmacy",
+      "Chemist"
+    ],
+    "bookstore": [
+      "Books",
+      "Book Nook"
+    ],
+    "clothing": [
+      "Fashion",
+      "Outfitters"
+    ],
+    "pizza": [
+      "Pizza",
+      "Pizzeria"
+    ],
+    "petshop": [
+      "Pets",
+      "Pet Corner"
+    ],
+    "arcade": [
+      "Arcade",
+      "Game Zone"
+    ],
+    "electronics": [
+      "Electronics",
+      "Tech"
+    ],
+    "default": [
+      "Store",
+      "Outlet"
+    ],
+    "gym": [
+      "Fitness",
+      "Gym"
+    ],
+    "bar": [
+      "Bar",
+      "Lounge"
+    ],
+    "cinema": [
+      "Cinema",
+      "Pictures"
+    ],
+    "hotel": [
+      "Hotel",
+      "Inn"
+    ],
+    "cardealer": [
+      "Motors",
+      "Autos"
+    ]
   },
-  "startCash": [5000, 9000],
+  "startCash": [
+    5000,
+    9000
+  ],
   "firstDay": 3,
   "dailyIncome": 140,
   "openCostBase": 2500,
@@ -32,7 +115,10 @@
   "dailyOverhead": 40,
   "margin": 0.5,
   "baseVisits": 40,
-  "hours": [8, 22],
+  "hours": [
+    8,
+    22
+  ],
   "minPrice": 0.76,
   "restPrice": 1.06,
   "saleCut": 0.15,

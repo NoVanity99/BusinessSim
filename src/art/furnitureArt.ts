@@ -277,6 +277,62 @@ const PAINTERS: Record<string, Painter> = {
       p.rbox(cx, cy, 8, 5, C.white, C.line).r(cx + 6, cy + 1, 1, 3, C.ironDark).r(cx + 1, cy + 3, 4, 1, '#b07cc6');
     }
   },
+  taps(p, w, h, rot) {
+    const t = cab(p, 0, 0, w, h, C.woodDark, C.woodMid, C.woodDeep, rot);
+    // Bottles along the back, three taps at the front.
+    for (let x = t.x + 1, i = 0; x < t.x + t.w - 1; x += 3, i++) p.r(x, t.y, 2, 3, [C.green, C.red, C.orangeHi, C.glass][i % 4]);
+    for (let x = t.x + 3; x < t.x + t.w - 2; x += Math.max(4, Math.floor(t.w / 3))) p.r(x, t.y + t.h - 3, 2, 3, C.steelHi).r(x, t.y + t.h - 4, 2, 1, C.yellow);
+  },
+  dancefloor(p, w, h, _rot, frame) {
+    p.rbox(0, 0, w, h, '#2b2440', '#16121f');
+    const cols = ['#d55181', '#3987e5', '#c98500', '#199e70', '#9085e9'];
+    for (let y = 2, r = 0; y < h - 6; y += 8, r++) for (let x = 2, c = 0; x < w - 6; x += 8, c++) p.r(x, y, 6, 6, cols[(r * 2 + c + frame) % cols.length]);
+  },
+  djbooth(p, w, h, rot) {
+    const t = cab(p, 0, 0, w, h, C.black, C.ironDark, '#101010', rot);
+    p.disc(t.x + 4, t.y + Math.floor(t.h / 2), 3, C.iron).disc(t.x + t.w - 5, t.y + Math.floor(t.h / 2), 3, C.iron);
+    p.r(t.x + Math.floor(t.w / 2) - 2, t.y + 1, 4, Math.max(2, t.h - 2), C.steelMid).r(t.x + Math.floor(t.w / 2) - 1, t.y + 2, 1, 1, C.red).r(t.x + Math.floor(t.w / 2) + 1, t.y + 2, 1, 1, C.screen);
+  },
+  treadmill(p, w, h, _rot, frame) {
+    shadow(p, w, h);
+    const up = h >= w;
+    p.rbox(up ? 2 : 1, up ? 1 : 2, up ? w - 4 : w - 2, up ? h - 2 : h - 4, C.iron, C.ironDark);
+    // The belt, with a mark that moves.
+    if (up) p.r(4, 8, w - 8, h - 11, C.black).r(4, 10 + (frame % 2) * 5, w - 8, 1, C.steelMid).r(3, 2, w - 6, 4, C.steelHi).r(5, 3, w - 10, 2, C.screen);
+    else p.r(8, 4, w - 11, h - 8, C.black).r(10 + (frame % 2) * 5, 4, 1, h - 8, C.steelMid).r(2, 3, 4, h - 6, C.steelHi);
+  },
+  weights(p, w, h) {
+    shadow(p, w, h);
+    p.rbox(3, 4, w - 6, h - 8, C.red, C.redDark);
+    p.r(1, Math.floor(h / 2) - 1, w - 2, 2, C.steelHi);
+    p.r(1, Math.floor(h / 2) - 4, 3, 8, C.black).r(w - 4, Math.floor(h / 2) - 4, 3, 8, C.black);
+  },
+  studio(p, w, h) {
+    p.rbox(0, 0, w, h, C.woodMid, C.woodDark).r(1, 1, w - 2, 2, C.glassHi);
+    for (let y = 6, r = 0; y < h - 5; y += 10, r++) for (let x = 4; x < w - 8; x += 14) p.rbox(x, y, 9, 5, r % 2 ? C.teal : '#b07cc6', C.line);
+  },
+  hotelbed(p, w, h) {
+    p.rbox(0, 0, w, h, C.cream, C.woodDark);
+    p.rbox(4, 3, w - 8, h - 8, C.white, C.steelMid).r(5, 4, w - 10, 6, '#f6f6f6').r(5, 12, w - 10, h - 18, '#8e2f4a').r(5, 12, w - 10, 2, '#b04a66');
+    p.r(2, 4, 2, 4, C.woodDark).r(w - 4, 4, 2, 4, C.woodDark).r(w - 4, 3, 2, 1, C.yellow);
+  },
+  cinema(p, w, h, _rot, frame) {
+    p.rbox(0, 0, w, h, '#3a2630', '#1f141a');
+    // The screen along the back wall, flickering, and rows of seats.
+    p.box(4, 2, w - 8, 9, frame % 2 ? '#dfe7f2' : '#bcd0e6', C.black).r(8, 4, w - 20, 3, frame % 2 ? '#8fb3d9' : '#e6c58a');
+    for (let y = 18; y < h - 6; y += 9) for (let x = 5; x < w - 8; x += 9) p.rbox(x, y, 7, 6, C.red, C.redDark);
+  },
+  carstand(p, w, h) {
+    // A polished floor plate; the car itself is drawn as the stock on it.
+    p.rbox(0, 0, w, h, '#dfe7f2', C.steelMid).r(2, 2, w - 4, 1, C.glassHi).r(2, h - 3, w - 4, 1, C.steelMid);
+    p.r(3, 3, 2, 2, C.yellow).r(w - 5, 3, 2, 2, C.yellow);
+  },
+  foodtruck(p) {
+    p.rbox(0, 2, U, U - 4, '#e58f4f', '#8f4f24');
+    p.r(1, 3, U - 2, 2, '#f3e2a0').r(3, 6, U - 6, 4, C.glass).r(3, 10, U - 6, 1, C.white);
+    for (let x = 1; x < U - 1; x += 4) p.r(x, 3, 2, 2, C.red);
+    p.r(2, U - 3, 3, 2, C.black).r(U - 5, U - 3, 3, 2, C.black);
+  },
   playtable(p, w, h) {
     shadow(p, w, h);
     for (const [sx, sy] of [[5, 1], [w - 10, 1], [5, h - 6], [w - 10, h - 6]]) p.rbox(sx, sy, 5, 5, C.woodMid, C.woodDark);
@@ -423,9 +479,9 @@ const PAINTERS: Record<string, Painter> = {
 };
 
 /** How many animation frames each sprite has. Unlisted sprites have one. */
-const FRAMES: Record<string, number> = { pinball: 2, washer: 4, dryer: 4, oven: 2, mixer: 2, bottler: 2, carwash: 2, pool: 2, carousel: 2, bumper: 2, arcade: 2, fountain: 2 };
+const FRAMES: Record<string, number> = { dancefloor: 4, treadmill: 2, cinema: 2, pinball: 2, washer: 4, dryer: 4, oven: 2, mixer: 2, bottler: 2, carwash: 2, pool: 2, carousel: 2, bumper: 2, arcade: 2, fountain: 2 };
 /** Sprites that look the same from every side, so one facing is painted and shared. */
-const SYMMETRIC = new Set(['vanbay', 'mannequin', 'fitting', 'airhockey', 'plant', 'lamp', 'bin', 'vending', 'tank', 'playtable', 'fountain', 'carousel', 'pool', 'bumper', 'gate', 'mixer']);
+const SYMMETRIC = new Set(['dancefloor', 'weights', 'studio', 'hotelbed', 'cinema', 'carstand', 'foodtruck', 'vanbay', 'mannequin', 'fitting', 'airhockey', 'plant', 'lamp', 'bin', 'vending', 'tank', 'playtable', 'fountain', 'carousel', 'pool', 'bumper', 'gate', 'mixer']);
 
 const spriteOf = (defId: string): string => {
   const d = FURNITURE[defId];

@@ -577,5 +577,200 @@
     "rot": 0
    }
   ]
+ },
+ "gym": {
+  "name": "Starter gym",
+  "items": [
+   {
+    "def": "treadmill",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "treadmill",
+    "dx": 2,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "weights",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "studio_mat",
+    "dx": 1,
+    "dy": 4,
+    "rot": 0
+   },
+   {
+    "def": "fridge",
+    "dx": 5,
+    "dy": 3,
+    "rot": 0,
+    "products": [
+     "sportsdrink",
+     "water"
+    ]
+   },
+   {
+    "def": "register",
+    "dx": 6,
+    "dy": 5,
+    "rot": 1
+   }
+  ]
+ },
+ "bar": {
+  "name": "Starter bar",
+  "items": [
+   {
+    "def": "bar_taps",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "counter",
+    "dx": 2,
+    "dy": 2,
+    "rot": 0
+   },
+   {
+    "def": "bar_stool_table",
+    "dx": 5,
+    "dy": 2,
+    "rot": 0
+   },
+   {
+    "def": "table",
+    "dx": 2,
+    "dy": 5,
+    "rot": 0
+   },
+   {
+    "def": "dance_floor",
+    "dx": 4,
+    "dy": 4,
+    "rot": 0
+   }
+  ]
+ },
+ "cinema": {
+  "name": "Starter cinema",
+  "items": [
+   {
+    "def": "cinema_screen",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "popcorn_stand",
+    "dx": 6,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "popcorn",
+     "nachos",
+     "soda"
+    ]
+   },
+   {
+    "def": "register",
+    "dx": 6,
+    "dy": 4,
+    "rot": 1
+   }
+  ]
+ },
+ "hotel": {
+  "name": "Starter hotel",
+  "items": [
+   {
+    "def": "hotel_bed",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "hotel_bed",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "hotel_bed",
+    "dx": 7,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "breakfast_bar",
+    "dx": 1,
+    "dy": 4,
+    "rot": 0
+   },
+   {
+    "def": "register",
+    "dx": 5,
+    "dy": 5,
+    "rot": 1
+   }
+  ]
+ },
+ "cardealer": {
+  "name": "Starter showroom",
+  "items": [
+   {
+    "def": "car_stand",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "car_compact"
+    ]
+   },
+   {
+    "def": "car_stand",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "car_family"
+    ]
+   },
+   {
+    "def": "car_lot",
+    "dx": 7,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 5,
+    "rot": 3
+   }
+  ]
+ },
+ "foodtruck": {
+  "name": "Starter depot",
+  "items": [
+   {
+    "def": "storage_rack",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "storage_rack",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   }
+  ]
  }
 }

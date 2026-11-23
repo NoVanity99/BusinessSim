@@ -1,12 +1,147 @@
 {
-  "fastRegisters":   { "name": "Faster Tills",        "description": "Barcode scanners speed up every checkout by 25% per level.", "cost": 600,  "maxLevel": 2, "unlockLevel": 2, "flows": ["retail", "counter"] },
-  "selfCheckout":    { "name": "Self-Checkout",       "description": "Checkouts with nobody behind them still work, at about half speed.", "cost": 2200, "maxLevel": 1, "unlockLevel": 3, "flows": ["retail"] },
-  "bigBackroom":     { "name": "Back-Room Shelving",  "description": "Adds 150 units of storage per level without using floor space.", "cost": 500,  "maxLevel": 3, "unlockLevel": 1, "flows": ["retail", "counter", "service", "park", "depot", "factory"] },
-  "sturdyMachines":  { "name": "Service Contract",    "description": "Regular maintenance makes machines 30% less likely to break per level.", "cost": 900,  "maxLevel": 2, "unlockLevel": 2, "flows": ["service", "counter", "park", "factory", "retail", "depot"] },
-  "efficientEnergy": { "name": "Energy Efficiency",   "description": "LED lighting and better insulation cut utility bills by 20% per level.", "cost": 700,  "maxLevel": 2, "unlockLevel": 2, "flows": ["retail", "counter", "service", "park", "depot", "factory"] },
-  "localAds":        { "name": "Local Advertising",   "description": "Posters and flyers make passers-by 15% more likely to come in, per level.", "cost": 800,  "maxLevel": 3, "unlockLevel": 2, "flows": ["retail", "counter", "service", "park"] },
-  "cameras":         { "name": "Security Cameras",    "description": "Puts off shoplifters, helps staff spot them, and often gets stolen goods back. Also catches staff with sticky fingers.", "cost": 1100, "maxLevel": 1, "unlockLevel": 3, "flows": ["retail"] },
-  "fastKitchen":     { "name": "Kitchen Upgrade",     "description": "Better equipment layout: orders cook 20% faster per level.", "cost": 1200, "maxLevel": 2, "unlockLevel": 3, "flows": ["counter"] },
-  "bulkContract":    { "name": "Supplier Contract",   "description": "Company-wide: 4% off every wholesale order per level.", "cost": 4000, "maxLevel": 3, "unlockLevel": 3, "company": true },
-  "ownFleet":        { "name": "Priority Logistics",  "description": "Company-wide: standard deliveries arrive in half the time.", "cost": 6000, "maxLevel": 1, "unlockLevel": 4, "company": true }
+  "fastRegisters": {
+    "name": "Faster Tills",
+    "description": "Barcode scanners speed up every checkout by 25% per level.",
+    "cost": 600,
+    "maxLevel": 2,
+    "unlockLevel": 2,
+    "flows": [
+      "retail",
+      "counter"
+    ]
+  },
+  "selfCheckout": {
+    "name": "Self-Checkout",
+    "description": "Checkouts with nobody behind them still work, at about half speed.",
+    "cost": 2200,
+    "maxLevel": 1,
+    "unlockLevel": 3,
+    "flows": [
+      "retail"
+    ]
+  },
+  "bigBackroom": {
+    "name": "Back-Room Shelving",
+    "description": "Adds 150 units of storage per level without using floor space.",
+    "cost": 500,
+    "maxLevel": 3,
+    "unlockLevel": 1,
+    "flows": [
+      "retail",
+      "counter",
+      "service",
+      "park",
+      "depot",
+      "factory"
+    ]
+  },
+  "sturdyMachines": {
+    "name": "Service Contract",
+    "description": "Regular maintenance makes machines 30% less likely to break per level.",
+    "cost": 900,
+    "maxLevel": 2,
+    "unlockLevel": 2,
+    "flows": [
+      "service",
+      "counter",
+      "park",
+      "factory",
+      "retail",
+      "depot"
+    ]
+  },
+  "efficientEnergy": {
+    "name": "Energy Efficiency",
+    "description": "LED lighting and better insulation cut utility bills by 20% per level.",
+    "cost": 700,
+    "maxLevel": 2,
+    "unlockLevel": 2,
+    "flows": [
+      "retail",
+      "counter",
+      "service",
+      "park",
+      "depot",
+      "factory"
+    ]
+  },
+  "localAds": {
+    "name": "Local Advertising",
+    "description": "Posters and flyers make passers-by 15% more likely to come in, per level.",
+    "cost": 800,
+    "maxLevel": 3,
+    "unlockLevel": 2,
+    "flows": [
+      "retail",
+      "counter",
+      "service",
+      "park"
+    ]
+  },
+  "cameras": {
+    "name": "Security Cameras",
+    "description": "Puts off shoplifters, helps staff spot them, and often gets stolen goods back. Also catches staff with sticky fingers.",
+    "cost": 1100,
+    "maxLevel": 1,
+    "unlockLevel": 3,
+    "flows": [
+      "retail"
+    ]
+  },
+  "fastKitchen": {
+    "name": "Kitchen Upgrade",
+    "description": "Better equipment layout: orders cook 20% faster per level.",
+    "cost": 1200,
+    "maxLevel": 2,
+    "unlockLevel": 3,
+    "flows": [
+      "counter"
+    ]
+  },
+  "bulkContract": {
+    "name": "Supplier Contract",
+    "description": "Company-wide: 4% off every wholesale order per level.",
+    "cost": 4000,
+    "maxLevel": 3,
+    "unlockLevel": 3,
+    "company": true
+  },
+  "ownFleet": {
+    "name": "Priority Logistics",
+    "description": "Company-wide: standard deliveries arrive in half the time.",
+    "cost": 6000,
+    "maxLevel": 1,
+    "unlockLevel": 4,
+    "company": true
+  },
+  "generator": {
+    "name": "Backup Generator",
+    "description": "Keeps this business trading through power cuts.",
+    "cost": 1800,
+    "maxLevel": 1,
+    "unlockLevel": 4,
+    "flows": [
+      "retail",
+      "counter",
+      "service",
+      "park",
+      "factory",
+      "depot"
+    ]
+  },
+  "sprinklers": {
+    "name": "Sprinkler System",
+    "description": "A fire here does a third of the damage and the shop reopens sooner.",
+    "cost": 1500,
+    "maxLevel": 1,
+    "unlockLevel": 4,
+    "flows": [
+      "retail",
+      "counter",
+      "service",
+      "park",
+      "factory",
+      "depot"
+    ]
+  }
 }

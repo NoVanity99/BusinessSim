@@ -21,6 +21,16 @@ export class Rng {
   chance(p: number): boolean {
     return this.next() < p;
   }
+  /** A new array with the same items in random order. */
+  shuffle<T>(arr: readonly T[]): T[] {
+    const out = [...arr];
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = this.int(0, i);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }
+
   pick<T>(arr: readonly T[]): T {
     return arr[Math.floor(this.next() * arr.length)];
   }

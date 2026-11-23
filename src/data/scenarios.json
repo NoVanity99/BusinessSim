@@ -1,0 +1,83 @@
+{
+  "_comment": "Scenarios: a starting position, a set of goals and a deadline. Goals: netWorth, shops, shopsOfType {type,count}, served, franchises, topCompany, noLoans, staff. rules: noRivals, noTax, noBankruptcy, aggressiveRivals.",
+  "scenarios": [
+    {
+      "id": "corner",
+      "name": "The Corner Shop",
+      "description": "One small loan, one small shop. Turn $6,000 into a business worth $20,000 in two weeks.",
+      "difficulty": "normal",
+      "money": 6000,
+      "level": 1,
+      "days": 14,
+      "goals": { "netWorth": 20000 }
+    },
+    {
+      "id": "debt",
+      "name": "Borrowed Time",
+      "description": "You start $30,000 in debt with $3,000 in the bank and three weeks to clear it. Every day of interest hurts.",
+      "difficulty": "normal",
+      "money": 3000,
+      "level": 3,
+      "loan": 30000,
+      "days": 21,
+      "goals": { "noLoans": true, "netWorth": 10000 }
+    },
+    {
+      "id": "caffeine",
+      "name": "Caffeine Empire",
+      "description": "The city runs on coffee. Open three coffee shops and serve two thousand customers within a month.",
+      "difficulty": "normal",
+      "money": 14000,
+      "level": 4,
+      "days": 28,
+      "goals": { "shopsOfType": { "type": "coffee", "count": 3 }, "served": 2000 }
+    },
+    {
+      "id": "rivals",
+      "name": "Hostile Territory",
+      "description": "Three well-funded rivals already have shops in town and they play rough. Be worth more than all of them by the end of the month.",
+      "difficulty": "hard",
+      "money": 12000,
+      "level": 4,
+      "days": 28,
+      "rules": { "aggressiveRivals": true },
+      "goals": { "topCompany": true, "shops": 3 }
+    },
+    {
+      "id": "franchise",
+      "name": "Household Name",
+      "description": "Build a brand good enough that other people want to run it. Have three franchises trading and six shops of your own in five weeks.",
+      "difficulty": "normal",
+      "money": 25000,
+      "level": 6,
+      "days": 35,
+      "goals": { "franchises": 3, "shops": 6 }
+    },
+    {
+      "id": "tycoon",
+      "name": "Tycoon in a Hurry",
+      "description": "Everything is unlocked and the bank is feeling generous. Reach a quarter of a million in net worth in forty days.",
+      "difficulty": "normal",
+      "money": 40000,
+      "level": 12,
+      "days": 40,
+      "goals": { "netWorth": 250000 }
+    }
+  ],
+  "sandbox": {
+    "name": "Sandbox",
+    "description": "A million in the bank, everything unlocked, no tax and no bankruptcy. Build whatever you like.",
+    "money": 1000000,
+    "level": 12,
+    "rules": { "noTax": true, "noBankruptcy": true }
+  },
+  "jobs": {
+    "clients": ["Riverside School", "City Hospital", "The Grand Hotel", "Harbor Offices", "Northside Sports Club", "The Town Hall", "Sunrise Care Home", "Film Crew on Location", "Wedding at the Pavilion", "Tech Start-up Launch"],
+    "offerChance": 0.45,
+    "maxOpen": 3,
+    "priceMult": 1.2,
+    "penaltyShare": 0.15,
+    "xpPerDollar": 0.05,
+    "minDay": 2
+  }
+}

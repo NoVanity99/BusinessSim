@@ -30,6 +30,7 @@ export const STAT_LABELS: Record<string, string> = {
   loansRepaid: 'Loans paid off',
   built: 'Things built',
   franchises: 'Franchises opened',
+  jobs: 'Delivery orders completed',
 };
 
 const bump = (s: GameState, stat: string, by = 1): void => {

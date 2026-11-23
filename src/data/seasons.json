@@ -18,7 +18,9 @@
       "demand": {
         "clothing": 1.15,
         "funpark": 1.1,
-        "petshop": 1.1
+        "petshop": 1.1,
+        "gym": 1.2,
+        "cardealer": 1.2
       },
       "products": {
         "tshirt": 1.3,
@@ -46,7 +48,11 @@
         "funpark": 1.4,
         "coffee": 0.9,
         "arcade": 0.85,
-        "laundromat": 1.05
+        "laundromat": 1.05,
+        "hotel": 1.5,
+        "bar": 1.15,
+        "gym": 0.9,
+        "cardealer": 1.1
       },
       "products": {
         "icecream": 2.0,
@@ -58,7 +64,9 @@
         "cap": 1.7,
         "tshirt": 1.5,
         "jacket": 0.3,
-        "scarf": 0.1
+        "scarf": 0.1,
+        "lemonade": 1.8,
+        "m_beer": 1.3
       },
       "tint": "#ffd27a",
       "tintAlpha": 0.05,
@@ -82,7 +90,8 @@
         "bookstore": 1.2,
         "coffee": 1.15,
         "clothing": 1.2,
-        "funpark": 0.8
+        "funpark": 0.8,
+        "cinema": 1.15
       },
       "products": {
         "jacket": 1.6,
@@ -115,7 +124,10 @@
         "drugstore": 1.4,
         "arcade": 1.25,
         "pizza": 1.15,
-        "clothing": 1.1
+        "clothing": 1.1,
+        "hotel": 0.8,
+        "cinema": 1.25,
+        "gym": 1.2
       },
       "products": {
         "jacket": 2.2,

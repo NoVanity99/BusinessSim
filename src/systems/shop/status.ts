@@ -8,7 +8,7 @@ import { ownerSpeed } from '../player/player';
 
 /** Within opening hours and not closed by the player. */
 export function isOpenNow(s: GameState, shop: ShopState): boolean {
-  if (shop.closed) return false;
+  if (shop.closed || (shop.closedUntil ?? 0) > s.time.minutes) return false;
   const h = hourFloat(s.time);
   const [from, to] = shop.hours;
   return from < to ? h >= from && h < to : h >= from || h < to;

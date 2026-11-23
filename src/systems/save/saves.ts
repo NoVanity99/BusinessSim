@@ -9,7 +9,13 @@ import { netWorth } from '../economy/networth';
 import { dayOf } from '../time/clock';
 import { readJson, storage, writeJson } from './storage';
 
-export const SLOTS = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5'] as const;
+export const SLOTS = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5', 'slot6', 'slot7', 'slot8', 'slot9', 'slot10'] as const;
+
+/** Supplies a small picture of the game as it looks now, if there is a screen to take one from. */
+let thumbProvider: (() => Promise<string | undefined>) | null = null;
+export function setThumbProvider(fn: typeof thumbProvider): void {
+  thumbProvider = fn;
+}
 export const AUTOSAVE = 'autosave';
 const keyOf = (slot: string): string => `save_${slot}`;
 
@@ -23,6 +29,10 @@ export interface SaveMeta {
   shops: number;
   /** Real-world time the save was written (ISO string). */
   savedAt: string;
+  /** A small JPEG of the city when it was saved, as a data URL. */
+  thumb?: string;
+  mode?: string;
+  scenario?: string;
 }
 
 interface SaveFile {
@@ -37,6 +47,7 @@ interface SaveFile {
 export async function saveGame(slot: string, quiet = false): Promise<boolean> {
   const s = session.state;
   if (!s) return false;
+  const thumb = await thumbProvider?.().catch(() => undefined);
   const file: SaveFile = {
     version: SAVE_VERSION,
     gameVersion: APP_VERSION,
@@ -49,6 +60,9 @@ export async function saveGame(slot: string, quiet = false): Promise<boolean> {
       netWorth: Math.round(netWorth(s, session.city)),
       shops: s.shops.length,
       savedAt: new Date().toISOString(),
+      thumb,
+      mode: s.mode,
+      scenario: s.scenario?.id,
     },
     state: s,
   };

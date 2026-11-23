@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.11.0 (unreleased) - Overhaul phase 10: six more businesses, events, scenarios and photo mode
+
+- **Six more kinds of business**, bringing the total to 23:
+  - **Gym** (level 6): treadmills, weights and classes paid per session; busiest before and after work.
+  - **Food Truck Business** (level 6): trucks you park on any pavement and restock from a depot; they trade hardest at mealtimes.
+  - **Bar and Nightclub** (level 7): drinks poured to order into the small hours. Add a dance floor and a DJ booth and guests pay to stay on.
+  - **Movie Theater** (level 8): a screen seating fourteen with concessions on the way in; packed in the rain.
+  - **Hotel** (level 9): rooms by the night, mostly for visitors, with breakfast in the morning.
+  - **Car Dealership** (level 10): a few sales a day worth thousands each. Customers arrive with finance arranged, and cars are shown as cars on the showroom floor.
+- Four new needs (a night out, a workout, somewhere to stay, a new car) and tastes for every persona; seasons, weather and holidays reach the new businesses too.
+- **Random events**: fires, burst pipes, district power cuts, roadworks, product crazes, celebrity visits, newspaper critics, staff walk-outs when morale is on the floor, tax audits and the occasional windfall. Two new upgrades, a **Backup Generator** and a **Sprinkler System**, and the fire and flood policy, take the sting out of the worst.
+- **Delivery orders** (Company window): organisations in the city ask for a quantity of something you sell by a deadline, at better than retail. Accept, get the goods into a back room and deliver; miss an accepted order and you pay a penalty.
+- **Scenarios**: six challenges with their own starting position, goals and deadline, from a two-week corner shop to out-growing three aggressive rivals. A tracker on screen shows each goal and the days left.
+- **Sandbox**: a million in the bank, everything unlocked, no tax and no bankruptcy.
+- **Photo mode** (P, or the pause menu): the interface disappears, time can be frozen, and Enter saves the view as a PNG.
+- **Ten save slots**, each with a small picture of the city as it was when saved.
+- Save format 10. Older saves upgrade automatically.
+
 ## 1.10.0 (unreleased) - Overhaul phase 9: property, corporate finance and the owner's life
 
 - **Property market**: every district has a price index that drifts from day to day and rises where shops are thriving. Rents and purchase prices follow it. Selling a lot now fetches today's market price less a 4% fee, so property can be bought low and sold high.

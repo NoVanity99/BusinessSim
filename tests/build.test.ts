@@ -68,10 +68,11 @@ describe('build history', () => {
 
 describe('layout templates', () => {
   it('every business with a starter layout can build all of it, and one undo removes it', () => {
-    const s = startGame();
     for (const type of Object.keys(SHOP_TYPES)) {
       const starter = templatesFor(type).find((t) => t.builtIn);
       if (!starter) continue;
+      // A fresh city each time: there are more kinds of business than big empty lots.
+      const s = startGame();
       const { shop } = emptyShop(type);
       const cash = s.money;
       const pv = previewTemplate(s, shop, starter);

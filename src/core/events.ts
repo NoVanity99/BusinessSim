@@ -59,6 +59,10 @@ export interface GameEvents {
   'marketing:changed': void;
   'logistics:changed': void;
   'finance:changed': void;
+  'jobs:changed': void;
+  /** A scenario has been won (true) or its deadline has passed (false). */
+  'scenario:ended': boolean;
+  'photo:toggle': void;
   'player:changed': void;
   /** One of your vans has set off with a delivery. */
   'delivery:sent': { fromShopId: number; toShopId: number };

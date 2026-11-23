@@ -917,5 +917,285 @@
    "security"
   ],
   "demand": 0
+ },
+ "gym": {
+  "name": "Gym",
+  "description": "Treadmills, weights and classes, paid per session. Busy before and after work; drinks and protein bars sell on the side.",
+  "color": "#4fc3a1",
+  "flow": "service",
+  "licenseCost": 2600,
+  "unlockLevel": 6,
+  "minArea": 64,
+  "defaultHours": [
+   6,
+   22
+  ],
+  "baseStorage": 80,
+  "defaultFloor": "floor_wood",
+  "furniture": [
+   "treadmill",
+   "weights",
+   "studio_mat",
+   "fridge",
+   "rack",
+   "register",
+   "bench",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "svc_treadmill",
+   "svc_weights",
+   "svc_class",
+   "proteinbar",
+   "sportsdrink",
+   "water"
+  ],
+  "supplies": [],
+  "plan": [
+   "svc_treadmill",
+   "svc_weights",
+   "svc_class"
+  ],
+  "planFree": true,
+  "roles": [
+   "cashier",
+   "cleaner",
+   "mechanic",
+   "manager"
+  ],
+  "demand": 0.03,
+  "destination": 0.35
+ },
+ "bar": {
+  "name": "Bar and Nightclub",
+  "description": "Drinks poured to order from late afternoon into the small hours. Add a dance floor and a DJ and it becomes the place to be at night.",
+  "color": "#8e2f4a",
+  "flow": "counter",
+  "licenseCost": 3200,
+  "unlockLevel": 7,
+  "minArea": 64,
+  "defaultHours": [
+   16,
+   2
+  ],
+  "baseStorage": 200,
+  "defaultFloor": "floor_wood",
+  "furniture": [
+   "counter",
+   "bar_taps",
+   "bar_stool_table",
+   "table",
+   "dance_floor",
+   "dj_booth",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "m_beer",
+   "m_wine",
+   "m_cocktail",
+   "m_softdrink",
+   "m_nuts",
+   "svc_dance"
+  ],
+  "supplies": [
+   "beerkeg",
+   "winebottle",
+   "spirits",
+   "mixers",
+   "barsnacks"
+  ],
+  "after": [
+   "svc_dance"
+  ],
+  "roles": [
+   "cashier",
+   "cook",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.04,
+  "decorWeight": 2,
+  "destination": 0.4
+ },
+ "cinema": {
+  "name": "Movie Theater",
+  "description": "A big screen that seats fourteen at a time, with concessions on the way in. Packed when it rains and at weekends.",
+  "color": "#c2504d",
+  "flow": "service",
+  "licenseCost": 5500,
+  "unlockLevel": 8,
+  "minArea": 100,
+  "defaultHours": [
+   12,
+   24
+  ],
+  "baseStorage": 120,
+  "defaultFloor": "floor_wood",
+  "furniture": [
+   "cinema_screen",
+   "popcorn_stand",
+   "fridge",
+   "register",
+   "bench",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "svc_film",
+   "popcorn",
+   "nachos",
+   "soda",
+   "candy"
+  ],
+  "supplies": [],
+  "plan": [
+   "svc_film"
+  ],
+  "goodsFirst": 0.65,
+  "roles": [
+   "cashier",
+   "cleaner",
+   "mechanic",
+   "manager",
+   "security"
+  ],
+  "demand": 0.035,
+  "destination": 0.6
+ },
+ "hotel": {
+  "name": "Hotel",
+  "description": "Rooms by the night, mostly for visitors to the city. Few customers, long stays and a big bill each. A pleasant lobby matters.",
+  "color": "#c9a36a",
+  "flow": "service",
+  "licenseCost": 6500,
+  "unlockLevel": 9,
+  "minArea": 120,
+  "defaultHours": [
+   0,
+   24
+  ],
+  "baseStorage": 80,
+  "defaultFloor": "floor_wood",
+  "furniture": [
+   "hotel_bed",
+   "breakfast_bar",
+   "register",
+   "bench",
+   "table",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "svc_room",
+   "svc_breakfast"
+  ],
+  "supplies": [],
+  "plan": [
+   "svc_room"
+  ],
+  "after": [
+   "svc_breakfast"
+  ],
+  "roles": [
+   "cashier",
+   "cleaner",
+   "manager",
+   "security",
+   "mechanic"
+  ],
+  "demand": 0.012,
+  "decorWeight": 3,
+  "destination": 0.8
+ },
+ "cardealer": {
+  "name": "Car Dealership",
+  "description": "A handful of sales a day, each worth thousands. Stock costs a fortune to hold, so buy what sells and price it carefully.",
+  "color": "#3a5f9e",
+  "flow": "retail",
+  "licenseCost": 12000,
+  "unlockLevel": 10,
+  "minArea": 120,
+  "defaultHours": [
+   9,
+   19
+  ],
+  "baseStorage": 2,
+  "defaultFloor": "floor_tile",
+  "furniture": [
+   "car_stand",
+   "car_lot",
+   "register",
+   "bench",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "car_compact",
+   "car_family",
+   "car_suv",
+   "car_sports"
+  ],
+  "supplies": [],
+  "roles": [
+   "cashier",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.005,
+  "decorWeight": 3,
+  "destination": 0.9,
+  "bigTicket": true
+ },
+ "foodtruck": {
+  "name": "Food Truck Business",
+  "description": "Trucks you park on any pavement in the city, selling hot food to whoever walks past. Put them where the crowds are and keep them stocked from a small depot.",
+  "color": "#e58f4f",
+  "flow": "depot",
+  "licenseCost": 1800,
+  "unlockLevel": 6,
+  "minArea": 40,
+  "defaultHours": [
+   0,
+   24
+  ],
+  "baseStorage": 200,
+  "defaultFloor": "floor_concrete",
+  "furniture": [
+   "food_truck",
+   "storage_rack",
+   "pallet_rack",
+   "bin"
+  ],
+  "products": [
+   "hotdog",
+   "taco",
+   "lemonade",
+   "pretzel"
+  ],
+  "supplies": [],
+  "roles": [
+   "driver",
+   "manager",
+   "mechanic"
+  ],
+  "demand": 0
  }
 }

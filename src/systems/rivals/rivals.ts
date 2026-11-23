@@ -59,7 +59,8 @@ export interface PoachOffer {
 /** Make sure the city has its rival companies (new game, or a save from before they existed). */
 export function ensureRivals(s: GameState): void {
   if (s.rivals.length) return;
-  s.rivals = R.companies.map((c, i) => ({ id: i + 1, name: c.name, short: c.short, color: c.color, roof: c.roof, aggression: c.aggression, cash: Math.round(rand.range(R.startCash[0], R.startCash[1])), shops: [] }));
+  const rough = s.rules?.aggressiveRivals;
+  s.rivals = R.companies.map((c, i) => ({ id: i + 1, name: c.name, short: c.short, color: c.color, roof: c.roof, aggression: rough ? Math.min(1, c.aggression + 0.3) : c.aggression, cash: Math.round(rand.range(R.startCash[0], R.startCash[1]) * (rough ? 3 : 1)), shops: [] }));
 }
 
 export const allRivalShops = (s: GameState): RivalShop[] => s.rivals.flatMap((c) => c.shops);
@@ -112,7 +113,8 @@ export function rivalUtility(s: GameState, shop: RivalShop, priceSense: number, 
 /** A rough average spend per visit for a kind of shop. */
 function ticket(type: string): number {
   const prices = SHOP_TYPES[type].products.map((p) => PRODUCTS[p].market).filter((m) => m > 0);
-  return prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length) * 1.7 : 8;
+  // A typical visit is modest even where the price list is not.
+  return prices.length ? Math.min(45, (prices.reduce((a, b) => a + b, 0) / prices.length) * 1.7) : 8;
 }
 
 const lotCentre = (lot: LotDef): { x: number; y: number } => ({ x: lot.x + lot.w / 2, y: lot.y + lot.h / 2 });
@@ -135,7 +137,7 @@ function openShop(s: GameState, company: RivalCompany): void {
   const { city } = session;
   const day = dayOf(s.time);
   // Go where the money is: kinds of shop the player is doing well with, otherwise anything ordinary.
-  const types = Object.entries(SHOP_TYPES).filter(([, t]) => t.demand > 0 && ['retail', 'counter', 'service'].includes(t.flow) && t.unlockLevel <= s.level + 1);
+  const types = Object.entries(SHOP_TYPES).filter(([, t]) => t.demand > 0 && !t.bigTicket && ['retail', 'counter', 'service'].includes(t.flow) && t.unlockLevel <= s.level + 1);
   if (!types.length) return;
   const weights = types.map(([id]) => 1 + (s.shops.filter((sh) => sh.type === id).reduce((a, sh) => a + sh.yesterday.revenue, 0) / 150) * (0.5 + company.aggression));
   let roll = rand.next() * weights.reduce((a, b) => a + b, 0);
@@ -255,6 +257,7 @@ export function matchOffer(s: GameState, staffId: number): void {
 /** Start-of-day turn for every rival company. */
 export function rivalsDaily(s: GameState): void {
   const day = dayOf(s.time);
+  if (s.rules?.noRivals) return;
   ensureRivals(s);
 
   // Unanswered offers: the employee goes.
@@ -280,7 +283,9 @@ export function rivalsDaily(s: GameState): void {
       company.cash = 0;
     }
     const cap = Math.min(R.maxShopsCap, R.maxShopsBase + Math.floor(s.shops.length / 2));
-    if (day >= R.firstDay && company.cash > 0 && company.shops.length < cap && rand.chance(R.openChance + company.aggression * 0.2)) openShop(s, company);
+    // In scenarios with rough rivals they expand faster and from the first day.
+    const rough = s.rules?.aggressiveRivals ? 2.2 : 1;
+    if ((day >= R.firstDay || rough > 1) && company.cash > 0 && company.shops.length < cap + (rough > 1 ? 2 : 0) && rand.chance((R.openChance + company.aggression * 0.2) * rough)) openShop(s, company);
     if (company.shops.length && s.staff.length && rand.chance(R.poachChance * (0.5 + company.aggression))) poach(s, company, day);
   }
   bus.emit('rivals:changed');

@@ -13,6 +13,8 @@ import { contractsDaily, dispatchDeliveries, resetLogistics } from './logistics/
 import { franchisesDaily } from './logistics/franchise';
 import { corporateDaily } from './economy/corporate';
 import { playerDaily, playerHourly } from './player/player';
+import { checkScenario, jobsDaily } from './progress/scenarios';
+import { randomDaily } from './events/random';
 import { sendDeliveryVan } from './ai/vehicles';
 import { initVehicles, syncVending, updateVehicles } from './ai/vehicles';
 import { updateProduction } from './shop/production';
@@ -130,6 +132,8 @@ export function installSim(): () => void {
       marketingDaily(s);
       contractsDaily(s);
       franchisesDaily(s);
+      jobsDaily(s);
+      randomDaily(s);
       const income = Object.values(closed.income).reduce((a, b) => a + (b ?? 0), 0);
       const expense = Object.values(closed.expense).reduce((a, b) => a + (b ?? 0), 0);
       if (rent + utilities > 0 || income > 0) {
@@ -139,11 +143,13 @@ export function installSim(): () => void {
   ];
   /** Winning is a milestone, not the end; bankruptcy is the end. */
   function checkEndings(): void {
-    if (!s.won && netWorth(s, session.city) >= DIFFICULTIES[s.difficulty].netWorthGoal) {
+    checkScenario(s);
+    // The career goal belongs to the career; the sandbox has no endings at all.
+    if (s.mode === 'career' && !s.won && netWorth(s, session.city) >= DIFFICULTIES[s.difficulty].netWorthGoal) {
       s.won = true;
       bus.emit('game:won');
     }
-    if (!s.bankrupt && s.money <= EVENTS.bankruptcyCash) {
+    if (!s.rules?.noBankruptcy && !s.bankrupt && s.money <= EVENTS.bankruptcyCash) {
       s.bankrupt = true;
       bus.emit('game:over');
     }

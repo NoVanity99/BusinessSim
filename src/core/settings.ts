@@ -22,6 +22,7 @@ export const ACTIONS = {
   help: 'Help and controls',
   notifications: 'Notifications',
   minimap: 'Show or hide the map',
+  photo: 'Photo mode',
 } as const;
 
 export type Action = keyof typeof ACTIONS;
@@ -48,6 +49,7 @@ export const DEFAULT_KEYS: Record<Action, string> = {
   help: 'F1',
   notifications: 'KeyN',
   minimap: 'KeyM',
+  photo: 'KeyP',
 };
 
 export type Quality = 'low' | 'medium' | 'high';

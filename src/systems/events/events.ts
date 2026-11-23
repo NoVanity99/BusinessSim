@@ -5,7 +5,7 @@ import { SEASONS } from '../../data';
 import { adDemand } from '../marketing/marketing';
 import { clamp, money } from '../../core/format';
 import { rand } from '../../core/rng';
-import { shopById, type GameState } from '../../core/state';
+import { session, shopById, type GameState } from '../../core/state';
 import { EMPLOYEES, EVENTS, PRODUCTS, SHOP_TYPES } from '../../data';
 import { batchQty, defOf, type ShopState } from '../../entities/Shop';
 import { rt } from '../ai/runtime';
@@ -15,7 +15,7 @@ import { isOpenNow } from '../shop/status';
 import { fire, hasTrait, onDuty } from '../staff/staff';
 import { dayOf } from '../time/clock';
 
-export type EventType = 'viralGood' | 'viralBad' | 'shortage' | 'holiday';
+export type EventType = 'roadworks' | 'trend' | 'celebrity' | 'viralGood' | 'viralBad' | 'shortage' | 'holiday';
 
 /** Something temporary that is changing the rules. Saved with the game. */
 export interface ActiveEvent {
@@ -24,6 +24,7 @@ export interface ActiveEvent {
   untilDay: number;
   shopId?: number;
   product?: string;
+  district?: string;
   label: string;
 }
 
@@ -49,7 +50,9 @@ const customerShops = (s: GameState): ShopState[] => s.shops.filter((sh) => SHOP
 export function shopDemandMult(s: GameState, shop: ShopState): number {
   let m = 1 + upgradeLevel(s, shop.id, 'localAds') * 0.15 + (adDemand(s, shop) - 1);
   for (const e of s.events) {
+    if (e.type === 'roadworks' && e.district === session.city.lots[shop.lotId].district) m *= EVENTS.random.roadworks.demandMult;
     if (e.shopId !== shop.id) continue;
+    if (e.type === 'celebrity') m *= EVENTS.random.celebrity.demandMult;
     if (e.type === 'viralGood') m *= EVENTS.viral.goodMult;
     if (e.type === 'viralBad') m *= EVENTS.viral.badMult;
   }
@@ -123,7 +126,7 @@ export function theftRisk(s: GameState, shop: ShopState): number {
   let value = 0;
   for (const o of shop.objects) {
     if (defOf(o).kind !== 'shelf') continue;
-    for (const sl of o.slots ?? []) if (sl.product) value += batchQty(sl.batches) * (shop.prices[sl.product] ?? 0);
+    for (const sl of o.slots ?? []) if (sl.product && PRODUCTS[sl.product].storage !== 'vehicle') value += batchQty(sl.batches) * (shop.prices[sl.product] ?? 0);
   }
   if (value <= 0) return 0;
   const cameras = upgradeLevel(s, shop.id, 'cameras') > 0;

@@ -196,6 +196,27 @@ export class ShopViews {
           const show = qty <= 0 ? 0 : Math.max(1, Math.round((qty / (def.slotCapacity ?? 1)) * cols * rows));
           const color = colorOf(PRODUCTS[slot.product].color);
           const shade = darker(color);
+          if (PRODUCTS[slot.product].storage === 'vehicle') {
+            // A car on a showroom bay is drawn as a car, nose toward the front of the bay.
+            const { w: fw, h: fh } = footprint(o.def, o.rot);
+            if (show) {
+              const bw = fw * TILE - 20;
+              const bh = fh * TILE - 22;
+              const bx = ox + 10;
+              const by = oy + 11;
+              const tall = bh >= bw;
+              g.fillStyle(0x10141c, 0.25).fillRoundedRect(bx + 2, by + 3, bw, bh, 8);
+              g.fillStyle(0x23262e, 1);
+              if (tall) g.fillRect(bx - 2, by + 8, 4, 12).fillRect(bx + bw - 2, by + 8, 4, 12).fillRect(bx - 2, by + bh - 20, 4, 12).fillRect(bx + bw - 2, by + bh - 20, 4, 12);
+              else g.fillRect(bx + 8, by - 2, 12, 4).fillRect(bx + 8, by + bh - 2, 12, 4).fillRect(bx + bw - 20, by - 2, 12, 4).fillRect(bx + bw - 20, by + bh - 2, 12, 4);
+              g.fillStyle(color, 1).fillRoundedRect(bx, by, bw, bh, 8);
+              g.fillStyle(shade, 1).fillRoundedRect(tall ? bx + 3 : bx + bw * 0.28, tall ? by + bh * 0.28 : by + 3, tall ? bw - 6 : bw * 0.44, tall ? bh * 0.44 : bh - 6, 4);
+              g.fillStyle(0xcfe6f5, 0.9);
+              if (tall) g.fillRect(bx + 5, by + bh * 0.3, bw - 10, 5).fillRect(bx + 5, by + bh * 0.66, bw - 10, 4);
+              else g.fillRect(bx + bw * 0.3, by + 5, 5, bh - 10).fillRect(bx + bw * 0.66, by + 5, 4, bh - 10);
+            } else g.fillStyle(0xe5605a, 1).fillRect(ox + a.x * SCALE, oy + a.y * SCALE, 3 * SCALE, 3 * SCALE);
+            return;
+          }
           for (let n = 0; n < show; n++) {
             const x = ox + (a.x + (n % cols) * 4) * SCALE;
             const y = oy + (a.y + Math.floor(n / cols) * 4) * SCALE;

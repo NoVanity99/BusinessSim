@@ -90,6 +90,8 @@ export interface ShopState {
   reviews: Review[];
   /** Task order per staff role, where the player has changed it from the default. */
   priorities?: Record<string, string[]>;
+  /** Shut by a fire or a power cut until this game minute. */
+  closedUntil?: number;
   /** The warehouse or factory that keeps this shop stocked with its own vans, if any. */
   supplierId?: number;
   /** Supplier sites: the order in which the shops they supply are served. */

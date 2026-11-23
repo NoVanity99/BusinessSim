@@ -11,6 +11,7 @@ const FIXED: [string[], string][] = [
   [['Ctrl', 'Y'], 'Redo'],
   [['C'], 'Copy tool, while building'],
   [['Right-click'], 'Put the build tool away'],
+  [['Enter'], 'Take the picture, in photo mode'],
   [['F11'], 'Fullscreen'],
 ];
 

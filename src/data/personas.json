@@ -150,7 +150,8 @@
         "cardshop": 0.5,
         "arcade": 0.8,
         "bookstore": 0.3,
-        "electronics": 0.2
+        "electronics": 0.2,
+        "cinema": 0.9
       },
       "curve": [
         0.2,
@@ -312,6 +313,140 @@
         0.3,
         0.2
       ]
+    },
+    "social": {
+      "name": "Fancies a night out",
+      "hours": 60,
+      "types": {
+        "bar": 1,
+        "cinema": 0.5,
+        "pizza": 0.3
+      },
+      "curve": [
+        0.5,
+        0.3,
+        0.1,
+        0.05,
+        0.05,
+        0.05,
+        0.05,
+        0.05,
+        0.05,
+        0.1,
+        0.1,
+        0.2,
+        0.3,
+        0.3,
+        0.4,
+        0.6,
+        0.9,
+        1.3,
+        1.7,
+        2.0,
+        2.1,
+        2.0,
+        1.6,
+        1.0
+      ]
+    },
+    "fitness": {
+      "name": "Wants a workout",
+      "hours": 50,
+      "types": {
+        "gym": 1
+      },
+      "curve": [
+        0.1,
+        0.05,
+        0.05,
+        0.05,
+        0.1,
+        0.6,
+        1.5,
+        1.6,
+        1.1,
+        0.8,
+        0.7,
+        0.8,
+        1.0,
+        0.8,
+        0.7,
+        0.8,
+        1.2,
+        1.8,
+        1.9,
+        1.5,
+        0.9,
+        0.4,
+        0.2,
+        0.1
+      ]
+    },
+    "lodging": {
+      "name": "Needs somewhere to stay",
+      "hours": 400,
+      "types": {
+        "hotel": 1
+      },
+      "curve": [
+        0.3,
+        0.1,
+        0.05,
+        0.05,
+        0.05,
+        0.05,
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.8,
+        0.9,
+        1.0,
+        1.1,
+        1.3,
+        1.6,
+        1.9,
+        2.0,
+        1.8,
+        1.4,
+        0.9,
+        0.5
+      ]
+    },
+    "wheels": {
+      "name": "Thinking about a new car",
+      "hours": 3000,
+      "types": {
+        "cardealer": 1
+      },
+      "curve": [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        1.0,
+        1.2,
+        1.2,
+        1.1,
+        1.1,
+        1.2,
+        1.2,
+        1.1,
+        1.0,
+        0.6,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1
+      ]
     }
   },
   "personas": {
@@ -327,7 +462,10 @@
       "basket": 1.1,
       "needs": {
         "errands": 1.3,
-        "health": 1.2
+        "health": 1.2,
+        "social": 0.6,
+        "wheels": 0.7,
+        "lodging": 0.05
       },
       "likes": []
     },
@@ -343,7 +481,9 @@
       "basket": 1.5,
       "needs": {
         "boredom": 1.2,
-        "treat": 1.6
+        "treat": 1.6,
+        "social": 1.3,
+        "wheels": 1.2
       },
       "likes": [
         "candy",
@@ -353,7 +493,10 @@
         "tshirt",
         "headphones",
         "comic",
-        "svc_pinball"
+        "svc_pinball",
+        "car_sports",
+        "m_cocktail",
+        "nachos"
       ]
     },
     "regular": {
@@ -368,7 +511,10 @@
       "basket": 1.0,
       "needs": {
         "pets": 1.3,
-        "health": 1.1
+        "health": 1.1,
+        "fitness": 1.2,
+        "social": 0.9,
+        "lodging": 0.05
       },
       "likes": []
     },
@@ -385,7 +531,8 @@
       "ambience": 2.2,
       "needs": {
         "hunger": 1.5,
-        "thirst": 1.3
+        "thirst": 1.3,
+        "social": 1.5
       },
       "likes": [
         "m_latte",
@@ -395,7 +542,10 @@
         "mangosauce",
         "m_pepperoni",
         "m_funghi",
-        "cookbook"
+        "cookbook",
+        "m_cocktail",
+        "m_wine",
+        "taco"
       ]
     },
     "collector": {
@@ -411,7 +561,8 @@
       "needs": {
         "collecting": 4,
         "boredom": 0.6,
-        "treat": 0.8
+        "treat": 0.8,
+        "lodging": 0.05
       },
       "likes": [
         "single_rare",
@@ -444,7 +595,10 @@
         "collecting": 1.4,
         "boredom": 1.3,
         "treat": 1.2,
-        "pets": 0.3
+        "pets": 0.3,
+        "social": 1.8,
+        "fitness": 1.1,
+        "wheels": 0.3
       },
       "likes": [
         "noodles",
@@ -456,7 +610,10 @@
         "notebook",
         "m_margherita",
         "videogame",
-        "svc_arcade"
+        "svc_arcade",
+        "m_beer",
+        "popcorn",
+        "hotdog"
       ]
     },
     "family": {
@@ -484,7 +641,8 @@
         "booster",
         "comic",
         "pettoy",
-        "m_garlicbread"
+        "m_garlicbread",
+        "popcorn"
       ],
       "needs": {
         "errands": 1.5,
@@ -492,7 +650,10 @@
         "hunger": 1.2,
         "health": 1.4,
         "pets": 1.6,
-        "treat": 1.1
+        "treat": 1.1,
+        "social": 0.4,
+        "wheels": 1.4,
+        "lodging": 0.05
       },
       "likes": [
         "bread",
@@ -503,7 +664,10 @@
         "m_margherita",
         "socks",
         "painkillers",
-        "puzzle"
+        "puzzle",
+        "popcorn",
+        "car_family",
+        "car_suv"
       ]
     },
     "commuter": {
@@ -521,7 +685,11 @@
         "hunger": 1.1,
         "boredom": 0.4,
         "treat": 0.9,
-        "pets": 0.6
+        "pets": 0.6,
+        "fitness": 1.6,
+        "social": 1.0,
+        "wheels": 1.6,
+        "lodging": 0.3
       },
       "likes": [
         "m_espresso",
@@ -531,7 +699,10 @@
         "energy",
         "magazine",
         "charger",
-        "painkillers"
+        "painkillers",
+        "svc_treadmill",
+        "sportsdrink",
+        "car_family"
       ]
     },
     "tourist": {
@@ -558,7 +729,11 @@
         "errands": 0.5,
         "treat": 1.3,
         "health": 0.5,
-        "pets": 0.05
+        "pets": 0.05,
+        "lodging": 12,
+        "social": 1.4,
+        "fitness": 0.2,
+        "wheels": 0
       },
       "likes": [
         "icecream",
@@ -568,7 +743,10 @@
         "sunglasses",
         "cap",
         "sunscreen",
-        "m_pepperoni"
+        "m_pepperoni",
+        "m_cocktail",
+        "pretzel",
+        "lemonade"
       ]
     }
   }

@@ -23,11 +23,12 @@ export function SaveList(mode: 'load' | 'save', onPick: (slot: string) => void, 
         const m = bySlot.get(slot);
         return h(
           'div.save',
+          m?.thumb ? h('img.thumb', { src: m.thumb, alt: '' }) : h('div.thumb.empty'),
           h(
             'div',
             { style: { flex: '1', minWidth: '0' } },
             h('div', h('b', slotName(slot)), m ? ` · ${m.company}` : ''),
-            h('div.dim', { style: { fontSize: '12.5px' } }, m ? `Day ${m.day} · ${money(m.money)} cash · ${m.shops} shop${m.shops === 1 ? '' : 's'} · ${DIFFICULTIES[m.difficulty]?.name ?? ''} · ${new Date(m.savedAt).toLocaleString()}` : 'Empty'),
+            h('div.dim', { style: { fontSize: '12.5px' } }, m ? `${m.mode === 'sandbox' ? 'Sandbox · ' : m.mode === 'scenario' ? 'Scenario · ' : ''}Day ${m.day} · ${money(m.money)} cash · ${m.shops} shop${m.shops === 1 ? '' : 's'} · ${DIFFICULTIES[m.difficulty]?.name ?? ''} · ${new Date(m.savedAt).toLocaleString()}` : 'Empty'),
           ),
           h('button.primary', { onclick: () => { if (mode === 'load' || !m || confirm(`Overwrite ${slotName(slot)}?`)) onPick(slot); } }, mode === 'load' ? 'Load' : 'Save here'),
           m && h('button.danger', { tip: 'Delete this save', onclick: async () => { if (confirm(`Delete ${slotName(slot)}? This cannot be undone.`)) { await deleteSave(slot); void refresh(); } } }, 'Delete'),

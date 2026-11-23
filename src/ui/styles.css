@@ -607,3 +607,26 @@ table.grid th { text-align: right; }
 .topbar .level .meter { width: 64px; }
 .topbar .stat .label { display: none; }
 .topbar .date { font-size: 13px; }
+
+/* New game modes, scenario tracker, saves with pictures, photo mode */
+.screen .segmented { margin-bottom: 14px; }
+.screen .segmented button { padding: 8px 22px; font-size: 15px; }
+.cards.wrap { flex-wrap: wrap; max-width: 720px; justify-content: center; }
+.cards.wrap .card { width: 200px; padding: 12px; }
+.cards.wrap .card p { min-height: 70px; font-size: 12.5px; }
+.cards.wrap .card .big { font-size: 16px; }
+.tracker { left: 50%; transform: translateX(-50%); top: 54px; width: 300px; padding: 9px 12px; z-index: 1; }
+.tracker h3 { font-size: 14px; margin-bottom: 4px; padding-bottom: 4px; }
+.tracker .step { font-size: 13px; padding: 1px 0; }
+.tracker .step.done { color: var(--accent); }
+.tracker .mark { display: inline-block; width: 16px; }
+.tracker + .guide, .guide { top: 54px; }
+.save .thumb { width: 96px; height: 54px; border-radius: 4px; object-fit: cover; flex: none; border: 1px solid var(--border-soft); image-rendering: auto; }
+.save .thumb.empty { background: var(--panel-3); }
+.saves { max-height: 60vh; }
+.offer-card.accepted { border-color: var(--accent); background: rgba(79, 195, 161, 0.07); }
+.photo-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 95; display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: rgba(14, 18, 25, 0.82); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; color: #e8edf5; font: 13px system-ui, sans-serif; transition: opacity 0.2s; }
+.photo-bar.hidden { opacity: 0; pointer-events: none; }
+.photo-bar button { padding: 5px 12px; font-size: 13px; }
+.photo-flash { position: fixed; inset: 0; background: #fff; z-index: 96; pointer-events: none; animation: flash 0.35s ease-out forwards; }
+@keyframes flash { from { opacity: 0.8; } to { opacity: 0; } }
