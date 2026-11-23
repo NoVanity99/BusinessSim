@@ -12,6 +12,7 @@ import type { ActiveEvent, NewsItem } from '../systems/events/events';
 import { newWeatherState, type WeatherState } from '../systems/world/weather';
 import type { Resident } from '../systems/ai/residents';
 import type { PoachOffer, RivalCompany } from '../systems/rivals/rivals';
+import type { Campaign } from '../systems/marketing/marketing';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
@@ -63,6 +64,8 @@ export interface GameState {
   stats: Record<string, number>;
   /** Achievement id to the day it was unlocked. */
   achievements: Record<string, number>;
+  /** Advertising campaigns that are running. */
+  campaigns: Campaign[];
 }
 
 export interface NewGameOptions {
@@ -105,6 +108,7 @@ export function createNewGame(opts: NewGameOptions): GameState {
     offers: [],
     stats: {},
     achievements: {},
+    campaigns: [],
   };
 }
 

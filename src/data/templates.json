@@ -1,53 +1,558 @@
 {
-  "_comment": "Starter layouts per business type. Positions are tiles from the lot's back-left corner for a lot that faces south; they are mirrored for lots that face north. products lists what each shelf section displays.",
-  "convenience": { "name": "Starter store", "items": [
-    { "def": "shelf", "dx": 1, "dy": 1, "rot": 0, "products": ["chips", "candy"] },
-    { "def": "shelf", "dx": 3, "dy": 1, "rot": 0, "products": ["bread", "noodles"] },
-    { "def": "fridge", "dx": 5, "dy": 1, "rot": 0, "products": ["soda", "water"] },
-    { "def": "register", "dx": 1, "dy": 5, "rot": 3 }
-  ] },
-  "coffee": { "name": "Starter café", "items": [
-    { "def": "espresso", "dx": 1, "dy": 1, "rot": 0 },
-    { "def": "oven", "dx": 4, "dy": 1, "rot": 0 },
-    { "def": "counter", "dx": 2, "dy": 2, "rot": 0 },
-    { "def": "table", "dx": 2, "dy": 5, "rot": 0 }
-  ] },
-  "laundromat": { "name": "Starter laundromat", "items": [
-    { "def": "washer", "dx": 1, "dy": 1, "rot": 0 },
-    { "def": "washer", "dx": 2, "dy": 1, "rot": 0 },
-    { "def": "dryer", "dx": 4, "dy": 1, "rot": 0 },
-    { "def": "dryer", "dx": 5, "dy": 1, "rot": 0 },
-    { "def": "bench", "dx": 3, "dy": 4, "rot": 0 }
-  ] },
-  "fastfood": { "name": "Starter restaurant", "items": [
-    { "def": "grill", "dx": 1, "dy": 1, "rot": 0 },
-    { "def": "fryer", "dx": 4, "dy": 1, "rot": 0 },
-    { "def": "drinks", "dx": 5, "dy": 1, "rot": 0 },
-    { "def": "counter", "dx": 2, "dy": 2, "rot": 0 },
-    { "def": "table", "dx": 2, "dy": 5, "rot": 0 }
-  ] },
-  "cardshop": { "name": "Starter card shop", "items": [
-    { "def": "card_shelf", "dx": 1, "dy": 1, "rot": 0, "products": ["booster", "sleeves"] },
-    { "def": "display_case", "dx": 4, "dy": 1, "rot": 0, "products": ["single_common", "single_rare", "single_ultra"] },
-    { "def": "play_table", "dx": 4, "dy": 4, "rot": 0 },
-    { "def": "register", "dx": 1, "dy": 4, "rot": 3 }
-  ] },
-  "gas": { "name": "Starter forecourt", "items": [
-    { "def": "shelf", "dx": 1, "dy": 1, "rot": 0, "products": ["chips"] },
-    { "def": "register", "dx": 1, "dy": 2, "rot": 3 },
-    { "def": "pump", "dx": 2, "dy": 5, "rot": 0 },
-    { "def": "pump", "dx": 5, "dy": 5, "rot": 0 },
-    { "def": "fuel_tank", "dx": 0, "dy": 6, "rot": 0 }
-  ] },
-  "factory": { "name": "Starter workshop", "items": [
-    { "def": "mixer", "dx": 1, "dy": 1, "rot": 0 },
-    { "def": "ind_oven", "dx": 4, "dy": 1, "rot": 0 },
-    { "def": "pallet_rack", "dx": 1, "dy": 5, "rot": 0 }
-  ] },
-  "funpark": { "name": "Starter park", "items": [
-    { "def": "slide", "dx": 1, "dy": 1, "rot": 0 },
-    { "def": "carousel", "dx": 5, "dy": 1, "rot": 0 },
-    { "def": "picnic", "dx": 6, "dy": 6, "rot": 0 },
-    { "def": "gate", "dx": 5, "dy": 12, "rot": 0 }
-  ] }
+ "_comment": "Starter layouts per business type. Positions are tiles from the lot's back-left corner for a lot that faces south; they are mirrored for lots that face north. products lists what each shelf section displays.",
+ "convenience": {
+  "name": "Starter store",
+  "items": [
+   {
+    "def": "shelf",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "chips",
+     "candy"
+    ]
+   },
+   {
+    "def": "shelf",
+    "dx": 3,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "bread",
+     "noodles"
+    ]
+   },
+   {
+    "def": "fridge",
+    "dx": 5,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "soda",
+     "water"
+    ]
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 5,
+    "rot": 3
+   }
+  ]
+ },
+ "coffee": {
+  "name": "Starter café",
+  "items": [
+   {
+    "def": "espresso",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "oven",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "counter",
+    "dx": 2,
+    "dy": 2,
+    "rot": 0
+   },
+   {
+    "def": "table",
+    "dx": 2,
+    "dy": 5,
+    "rot": 0
+   }
+  ]
+ },
+ "laundromat": {
+  "name": "Starter laundromat",
+  "items": [
+   {
+    "def": "washer",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "washer",
+    "dx": 2,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "dryer",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "dryer",
+    "dx": 5,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "bench",
+    "dx": 3,
+    "dy": 4,
+    "rot": 0
+   }
+  ]
+ },
+ "fastfood": {
+  "name": "Starter restaurant",
+  "items": [
+   {
+    "def": "grill",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "fryer",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "drinks",
+    "dx": 5,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "counter",
+    "dx": 2,
+    "dy": 2,
+    "rot": 0
+   },
+   {
+    "def": "table",
+    "dx": 2,
+    "dy": 5,
+    "rot": 0
+   }
+  ]
+ },
+ "cardshop": {
+  "name": "Starter card shop",
+  "items": [
+   {
+    "def": "card_shelf",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "booster",
+     "sleeves"
+    ]
+   },
+   {
+    "def": "display_case",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "single_common",
+     "single_rare",
+     "single_ultra"
+    ]
+   },
+   {
+    "def": "play_table",
+    "dx": 4,
+    "dy": 4,
+    "rot": 0
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 4,
+    "rot": 3
+   }
+  ]
+ },
+ "gas": {
+  "name": "Starter forecourt",
+  "items": [
+   {
+    "def": "shelf",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "chips"
+    ]
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 2,
+    "rot": 3
+   },
+   {
+    "def": "pump",
+    "dx": 2,
+    "dy": 5,
+    "rot": 0
+   },
+   {
+    "def": "pump",
+    "dx": 5,
+    "dy": 5,
+    "rot": 0
+   },
+   {
+    "def": "fuel_tank",
+    "dx": 0,
+    "dy": 6,
+    "rot": 0
+   }
+  ]
+ },
+ "factory": {
+  "name": "Starter workshop",
+  "items": [
+   {
+    "def": "mixer",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "ind_oven",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "pallet_rack",
+    "dx": 1,
+    "dy": 5,
+    "rot": 0
+   }
+  ]
+ },
+ "funpark": {
+  "name": "Starter park",
+  "items": [
+   {
+    "def": "slide",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "carousel",
+    "dx": 5,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "picnic",
+    "dx": 6,
+    "dy": 6,
+    "rot": 0
+   },
+   {
+    "def": "gate",
+    "dx": 5,
+    "dy": 12,
+    "rot": 0
+   }
+  ]
+ },
+ "drugstore": {
+  "name": "Starter chemist",
+  "items": [
+   {
+    "def": "med_shelf",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "painkillers",
+     "vitamins",
+     "coldmedicine"
+    ]
+   },
+   {
+    "def": "med_shelf",
+    "dx": 3,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "shampoo",
+     "toothpaste",
+     "bandages"
+    ]
+   },
+   {
+    "def": "shelf",
+    "dx": 5,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "tissues",
+     "toiletpaper"
+    ]
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 5,
+    "rot": 3
+   }
+  ]
+ },
+ "bookstore": {
+  "name": "Starter bookshop",
+  "items": [
+   {
+    "def": "bookshelf",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "novel",
+     "comic",
+     "magazine"
+    ]
+   },
+   {
+    "def": "bookshelf",
+    "dx": 3,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "textbook",
+     "notebook",
+     "puzzle"
+    ]
+   },
+   {
+    "def": "bookshelf",
+    "dx": 5,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "cookbook",
+     "newspaper",
+     "novel"
+    ]
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 5,
+    "rot": 3
+   }
+  ]
+ },
+ "clothing": {
+  "name": "Starter boutique",
+  "items": [
+   {
+    "def": "clothes_rack",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "tshirt",
+     "jeans"
+    ]
+   },
+   {
+    "def": "clothes_rack",
+    "dx": 3,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "jacket",
+     "scarf"
+    ]
+   },
+   {
+    "def": "shoe_wall",
+    "dx": 5,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "sneakers",
+     "cap",
+     "socks"
+    ]
+   },
+   {
+    "def": "mannequin",
+    "dx": 5,
+    "dy": 4,
+    "rot": 0
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 5,
+    "rot": 3
+   }
+  ]
+ },
+ "pizza": {
+  "name": "Starter pizzeria",
+  "items": [
+   {
+    "def": "pizza_oven",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "drinks",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "counter",
+    "dx": 2,
+    "dy": 2,
+    "rot": 0
+   },
+   {
+    "def": "table",
+    "dx": 2,
+    "dy": 5,
+    "rot": 0
+   }
+  ]
+ },
+ "petshop": {
+  "name": "Starter pet shop",
+  "items": [
+   {
+    "def": "pet_shelf",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "petfood",
+     "cattreats"
+    ]
+   },
+   {
+    "def": "pet_shelf",
+    "dx": 3,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "pettoy",
+     "catlitter"
+    ]
+   },
+   {
+    "def": "shelf",
+    "dx": 5,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "leash",
+     "petbed"
+    ]
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 5,
+    "rot": 3
+   }
+  ]
+ },
+ "arcade": {
+  "name": "Starter arcade",
+  "items": [
+   {
+    "def": "arcade",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "arcade",
+    "dx": 2,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "pinball",
+    "dx": 4,
+    "dy": 1,
+    "rot": 0
+   },
+   {
+    "def": "air_hockey",
+    "dx": 4,
+    "dy": 4,
+    "rot": 0
+   },
+   {
+    "def": "rack",
+    "dx": 6,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "chips",
+     "candy",
+     "soda"
+    ]
+   }
+  ]
+ },
+ "electronics": {
+  "name": "Starter gadget shop",
+  "items": [
+   {
+    "def": "display_table",
+    "dx": 1,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "phone",
+     "headphones"
+    ]
+   },
+   {
+    "def": "display_table",
+    "dx": 3,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "console",
+     "speaker"
+    ]
+   },
+   {
+    "def": "accessory_wall",
+    "dx": 6,
+    "dy": 1,
+    "rot": 0,
+    "products": [
+     "charger",
+     "videogame",
+     "batteries"
+    ]
+   },
+   {
+    "def": "register",
+    "dx": 1,
+    "dy": 5,
+    "rot": 3
+   }
+  ]
+ }
 }

@@ -1,25 +1,174 @@
 {
   "loans": [
-    { "id": "small",  "name": "Starter Loan",   "amount": 5000,  "dailyRate": 0.006,  "days": 30, "unlockLevel": 1 },
-    { "id": "medium", "name": "Business Loan",  "amount": 20000, "dailyRate": 0.005,  "days": 40, "unlockLevel": 3 },
-    { "id": "large",  "name": "Expansion Loan", "amount": 75000, "dailyRate": 0.0045, "days": 60, "unlockLevel": 5 }
+    {
+      "id": "small",
+      "name": "Starter Loan",
+      "amount": 5000,
+      "dailyRate": 0.006,
+      "days": 30,
+      "unlockLevel": 1
+    },
+    {
+      "id": "medium",
+      "name": "Business Loan",
+      "amount": 20000,
+      "dailyRate": 0.005,
+      "days": 40,
+      "unlockLevel": 3
+    },
+    {
+      "id": "large",
+      "name": "Expansion Loan",
+      "amount": 75000,
+      "dailyRate": 0.0045,
+      "days": 60,
+      "unlockLevel": 5
+    }
   ],
   "maxLoans": 3,
   "overdraftDailyRate": 0.02,
   "bankruptcyCash": -6000,
   "holidays": [
-    { "everyDays": 7,  "offset": 6,  "name": "Sunday Market",    "crowd": 1.35 },
-    { "everyDays": 14, "offset": 13, "name": "City Festival",    "crowd": 1.7 },
-    { "everyDays": 28, "offset": 20, "name": "Bank Holiday",     "crowd": 1.5 }
+    {
+      "day": 4,
+      "name": "Spring Fair",
+      "crowd": 1.4,
+      "demand": {
+        "funpark": 1.5,
+        "clothing": 1.3,
+        "coffee": 1.2
+      },
+      "description": "Stalls in the streets and everyone out for a stroll."
+    },
+    {
+      "day": 7,
+      "name": "Sunday Market",
+      "crowd": 1.3,
+      "demand": {},
+      "description": "The weekly market brings people into town."
+    },
+    {
+      "day": 11,
+      "name": "Summer Festival",
+      "crowd": 1.7,
+      "demand": {
+        "funpark": 1.6,
+        "fastfood": 1.3,
+        "pizza": 1.3,
+        "arcade": 1.3
+      },
+      "description": "Music, crowds and long evenings."
+    },
+    {
+      "day": 14,
+      "name": "Sunday Market",
+      "crowd": 1.3,
+      "demand": {},
+      "description": "The weekly market brings people into town."
+    },
+    {
+      "day": 16,
+      "name": "Back to School",
+      "crowd": 1.15,
+      "demand": {
+        "bookstore": 2.0,
+        "clothing": 1.5,
+        "electronics": 1.4
+      },
+      "description": "Parents and students stock up on books, clothes and gadgets."
+    },
+    {
+      "day": 20,
+      "name": "Harvest Sale",
+      "crowd": 1.5,
+      "demand": {
+        "clothing": 1.6,
+        "electronics": 1.8,
+        "convenience": 1.2
+      },
+      "priceSense": 1.4,
+      "description": "The big sale day. Shoppers are everywhere, and they are hunting bargains: sharp prices win."
+    },
+    {
+      "day": 21,
+      "name": "Sunday Market",
+      "crowd": 1.3,
+      "demand": {},
+      "description": "The weekly market brings people into town."
+    },
+    {
+      "day": 26,
+      "name": "Winter Holidays",
+      "crowd": 1.6,
+      "demand": {
+        "electronics": 2.0,
+        "clothing": 1.6,
+        "bookstore": 1.7,
+        "cardshop": 1.6,
+        "petshop": 1.3
+      },
+      "description": "Gift season. Everything giftable flies off the shelves."
+    },
+    {
+      "day": 27,
+      "name": "Winter Holidays",
+      "crowd": 1.6,
+      "demand": {
+        "electronics": 2.0,
+        "clothing": 1.6,
+        "bookstore": 1.7,
+        "cardshop": 1.6,
+        "petshop": 1.3
+      },
+      "description": "Gift season. Everything giftable flies off the shelves."
+    },
+    {
+      "day": 28,
+      "name": "New Year",
+      "crowd": 1.4,
+      "demand": {
+        "fastfood": 1.3,
+        "pizza": 1.4,
+        "coffee": 0.8
+      },
+      "description": "Parties tonight; a slow morning tomorrow."
+    }
   ],
   "chances": {
     "inspectionPerDay": 0.1,
     "viralPerDay": 0.08,
     "shortagePerDay": 0.1
   },
-  "inspection": { "dirtLimit": 45, "fineMin": 250, "fineMax": 700 },
-  "theft": { "thiefPerHour": 0.045, "vandalPerHour": 0.008, "seenBase": 0.12, "seenGuard": 0.5, "seenCameras": 0.2, "seenPerStaff": 0.07, "seenStaffMax": 0.2, "cameraRecover": 0.5 },
-  "viral": { "days": 2, "goodMult": 1.8, "badMult": 0.6 },
-  "shortage": { "days": 3, "priceMult": 1.5 },
-  "xp": { "perCustomer": 1, "perRevenueDollar": 0.04, "perDay": 10, "perShopOpened": 60, "base": 70, "power": 2.1 }
+  "inspection": {
+    "dirtLimit": 45,
+    "fineMin": 250,
+    "fineMax": 700
+  },
+  "theft": {
+    "thiefPerHour": 0.045,
+    "vandalPerHour": 0.008,
+    "seenBase": 0.12,
+    "seenGuard": 0.5,
+    "seenCameras": 0.2,
+    "seenPerStaff": 0.07,
+    "seenStaffMax": 0.2,
+    "cameraRecover": 0.5
+  },
+  "viral": {
+    "days": 2,
+    "goodMult": 1.8,
+    "badMult": 0.6
+  },
+  "shortage": {
+    "days": 3,
+    "priceMult": 1.5
+  },
+  "xp": {
+    "perCustomer": 1,
+    "perRevenueDollar": 0.04,
+    "perDay": 10,
+    "perShopOpened": 60,
+    "base": 70,
+    "power": 2.1
+  }
 }

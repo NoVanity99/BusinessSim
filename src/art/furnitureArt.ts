@@ -199,6 +199,61 @@ const PAINTERS: Record<string, Painter> = {
     p.box(t.x + 1, t.y + 1, t.w - 2, t.h - 2, frame % 2 ? C.orangeHi : C.orange, C.black);
     p.r(t.x + 3, t.y + 3, t.w - 6, 1, C.yellow).r(t.x + 2, t.y, 2, 1, C.red).r(t.x + 5, t.y, 2, 1, C.steelHi);
   },
+  clothesrack(p, w, h, rot) {
+    // A chrome rail on two posts; hangers show as the goods drawn on top.
+    const t = cab(p, 0, 0, w, h, C.steelHi, C.steel, C.steelDark, rot);
+    p.r(t.x + 1, t.y + 1, t.w - 2, t.h - 2, C.cream);
+    p.r(t.x, t.y, t.w, 1, C.steelDark).r(t.x, t.y, 1, t.h, C.steelMid).r(t.x + t.w - 1, t.y, 1, t.h, C.steelMid);
+  },
+  bookshelf(p, w, h, rot) {
+    const t = cab(p, 0, 0, w, h, C.woodDark, C.woodMid, C.woodDeep, rot);
+    p.r(t.x + 1, t.y + 1, t.w - 2, t.h - 2, C.woodDeep);
+    // Shelf boards between the rows of spines.
+    if (t.h >= 6) p.r(t.x + 1, t.y + Math.floor(t.h / 2), t.w - 2, 1, C.woodDark);
+  },
+  displaytable(p, w, h, rot) {
+    const t = cab(p, 0, 0, w, h, C.white, C.steelHi, C.steelMid, rot);
+    p.r(t.x + 1, t.y + 1, t.w - 2, t.h - 2, '#dfe7f2');
+    // A lit strip along the back.
+    p.r(t.x + 1, t.y, t.w - 2, 1, C.glassHi);
+  },
+  medshelf(p, w, h, rot) {
+    const t = cab(p, 0, 0, w, h, C.white, C.steelHi, C.steelMid, rot);
+    p.r(t.x + 1, t.y + 1, t.w - 2, t.h - 2, '#cfe0ea');
+    // Green cross on the facing strip.
+    if (rot === 0) p.r(Math.floor(w / 2) - 1, h - 4, 3, 1, C.green).r(Math.floor(w / 2), h - 5, 1, 3, C.green);
+  },
+  mannequin(p, w, h) {
+    shadow(p, w, h);
+    p.rbox(5, 12, 6, 3, C.steelMid, C.steelDark);
+    p.r(7, 9, 2, 3, C.steelDark);
+    p.rbox(4, 4, 8, 6, '#b07cc6', '#7a5590').r(5, 5, 6, 1, '#c79adb');
+    p.disc(8, 2, 2, '#e8c9a0');
+  },
+  fitting(p, w, h) {
+    p.rbox(1, 1, w - 2, h - 2, C.woodMid, C.woodDeep);
+    // Curtain, drawn half across.
+    for (let x = 3; x < w - 3; x += 2) p.r(x, 3, 1, h - 6, x % 4 === 3 ? '#b07cc6' : '#9a68b3');
+    p.r(2, 2, w - 4, 1, C.steelHi);
+  },
+  pizzaoven(p, w, h, rot) {
+    const t = cab(p, 0, 0, w, h, '#a8614b', '#8f503d', '#5c3a2e', rot);
+    // Brick dome with the fire showing in its mouth.
+    p.disc(t.x + Math.floor(t.w / 2), t.y + Math.floor(t.h / 2), Math.max(2, Math.floor(Math.min(t.w, t.h) / 2) - 1), '#c0765e');
+    p.r(t.x + Math.floor(t.w / 2) - 2, t.y + t.h - 3, 4, 3, C.black).r(t.x + Math.floor(t.w / 2) - 1, t.y + t.h - 2, 2, 2, C.orangeHi);
+  },
+  pinball(p, w, h, rot, frame) {
+    const t = cab(p, 0, 0, w, h, C.orange, C.orangeHi, C.woodDeep, rot);
+    p.box(t.x + 1, t.y + 1, t.w - 2, t.h - 2, '#2f3b52', C.black);
+    p.r(t.x + 3, t.y + 2, 1, 1, frame % 2 ? C.yellow : C.red).r(t.x + t.w - 4, t.y + 3, 1, 1, frame % 2 ? C.red : C.screen).r(t.x + Math.floor(t.w / 2), t.y + 4, 1, 1, C.steelHi);
+  },
+  airhockey(p, w, h) {
+    shadow(p, w, h);
+    p.rbox(1, 2, w - 2, h - 5, C.white, C.steelDark);
+    p.r(2, 3, w - 4, h - 7, '#cfe8f5').r(Math.floor(w / 2), 3, 1, h - 7, C.red);
+    p.r(4, Math.floor(h / 2) - 1, 2, 2, C.red).r(w - 6, Math.floor(h / 2) - 2, 2, 2, C.water).r(Math.floor(w / 2) + 3, Math.floor(h / 2), 1, 1, C.black);
+    p.r(2, h - 3, 2, 2, C.steelDark).r(w - 4, h - 3, 2, 2, C.steelDark);
+  },
   playtable(p, w, h) {
     shadow(p, w, h);
     for (const [sx, sy] of [[5, 1], [w - 10, 1], [5, h - 6], [w - 10, h - 6]]) p.rbox(sx, sy, 5, 5, C.woodMid, C.woodDark);
@@ -345,9 +400,9 @@ const PAINTERS: Record<string, Painter> = {
 };
 
 /** How many animation frames each sprite has. Unlisted sprites have one. */
-const FRAMES: Record<string, number> = { washer: 4, dryer: 4, oven: 2, mixer: 2, bottler: 2, carwash: 2, pool: 2, carousel: 2, bumper: 2, arcade: 2, fountain: 2 };
+const FRAMES: Record<string, number> = { pinball: 2, washer: 4, dryer: 4, oven: 2, mixer: 2, bottler: 2, carwash: 2, pool: 2, carousel: 2, bumper: 2, arcade: 2, fountain: 2 };
 /** Sprites that look the same from every side, so one facing is painted and shared. */
-const SYMMETRIC = new Set(['plant', 'lamp', 'bin', 'vending', 'tank', 'playtable', 'fountain', 'carousel', 'pool', 'bumper', 'gate', 'mixer']);
+const SYMMETRIC = new Set(['mannequin', 'fitting', 'airhockey', 'plant', 'lamp', 'bin', 'vending', 'tank', 'playtable', 'fountain', 'carousel', 'pool', 'bumper', 'gate', 'mixer']);
 
 const spriteOf = (defId: string): string => {
   const d = FURNITURE[defId];

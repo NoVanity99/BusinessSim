@@ -1,4 +1,6 @@
 import { bus } from '../../core/events';
+import { couponCut } from '../marketing/marketing';
+import { calendarPriceSense } from '../world/seasons';
 import { clamp } from '../../core/format';
 import { rand } from '../../core/rng';
 import { session, shopById } from '../../core/state';
@@ -221,8 +223,12 @@ function makePlan(typeId: string, persona: string, kids: number): Step[] {
       plan.push({ t: 'use', service: 'seat', optional: true });
       break;
     case 'service':
-      if (goods.length && rand.chance(0.3)) plan.push({ t: 'buy', product: weightedPick(goods, P.likes) });
-      for (const svc of type.plan ?? []) plan.push({ t: 'use', service: svc });
+      if (goods.length && rand.chance(type.planFree ? 0.45 : 0.3)) plan.push({ t: 'buy', product: weightedPick(goods, P.likes) });
+      if (type.planFree) {
+        // An arcade: a few games on whatever takes their fancy and happens to be free.
+        const games = count([2, 2, 3, 3, 4]);
+        for (let i = 0; i < games; i++) plan.push({ t: 'use', service: weightedPick(type.plan ?? [], P.likes), optional: true });
+      } else for (const svc of type.plan ?? []) plan.push({ t: 'use', service: svc });
       plan.push({ t: 'pay' });
       break;
     case 'park': {
@@ -391,6 +397,8 @@ function think(c: Customer, text: string, kind: ThoughtKind, moodDelta = 0): voi
 }
 
 const productName = (p: string): string => PRODUCTS[p].name.toLowerCase();
+/** What a customer pays for something here today, after any coupons. */
+const priceFor = (shop: ShopState, product: string): number => Math.round(shop.prices[product] * (1 - couponCut(session.state, shop)) * 100) / 100;
 const shopOf = (c: Customer): ShopState | undefined => (c.shopId !== null ? shopById(session.state, c.shopId) : undefined);
 
 function headToShop(c: Customer, shop: ShopState): boolean {
@@ -476,7 +484,8 @@ function charge(c: Customer, shop: ShopState, amount: number, category: 'sales' 
 /** Does the customer accept this price? Thinks out loud and returns false if not. */
 function acceptsPrice(c: Customer, shop: ShopState, product: string, price: number): boolean {
   const ratio = price / fairPrice(session.state, shop, product);
-  const maxRatio = 1 + 0.2 * c.wealth * c.generosity;
+  // On sale days everyone is hunting for a bargain.
+  const maxRatio = 1 + (0.2 * c.wealth * c.generosity) / calendarPriceSense(session.state);
   if (ratio > maxRatio) {
     const outrageous = ratio > maxRatio + 0.3;
     // People know what the competition charges.
@@ -637,7 +646,7 @@ function evaluateShelf(c: Customer): void {
   // The shelf may have been emptied, moved or reassigned while they walked over; look again.
   if (!slot || slot.product !== product || batchQty(slot.batches) <= 0) return;
   c.step++;
-  const price = shop.prices[product];
+  const price = priceFor(shop, product);
   if (!acceptsPrice(c, shop, product, price)) return;
   const spent = c.cart.reduce((a, l) => a + l.qty * l.price, 0);
   let qty = 1;
@@ -685,7 +694,7 @@ function impulseBuy(c: Customer, shop: ShopState, registerId: number): void {
     for (const slot of obj.slots ?? []) {
       const product = slot.product;
       if (!product || batchQty(slot.batches) <= 0 || c.cart.some((l) => l.product === product)) continue;
-      const price = shop.prices[product];
+      const price = priceFor(shop, product);
       const spent = c.cart.reduce((a, l) => a + l.qty * l.price, 0);
       // Impulse buys are small: nothing dear, and only if the money is there.
       if (price > 8 || price > c.budget - spent || price > fairPrice(session.state, shop, product) * 1.4) continue;
@@ -766,7 +775,7 @@ function placeFoodOrder(c: Customer, shop: ShopState, obj: PlacedObject): void {
       unavailable++;
       continue;
     }
-    const price = shop.prices[item];
+    const price = priceFor(shop, item);
     c.cart.push(...lines.map((l) => ({ product: l.product, qty: 1, price: l.price })));
     const ok = acceptsPrice(c, shop, item, price);
     c.cart = [];
@@ -887,7 +896,7 @@ function tilesAround(obj: PlacedObject): number[] {
   return out;
 }
 
-const SERVICE_NAMES: Record<string, string> = { seat: 'seat', ride: 'ride', play: 'table', svc_wash: 'washer', svc_dry: 'dryer', svc_ticket: 'ticket gate', svc_arcade: 'arcade machine', svc_snack: 'snack stall' };
+const SERVICE_NAMES: Record<string, string> = { seat: 'seat', ride: 'ride', play: 'table', svc_wash: 'washer', svc_dry: 'dryer', svc_ticket: 'ticket gate', svc_arcade: 'arcade machine', svc_pinball: 'pinball table', svc_airhockey: 'air hockey table', svc_snack: 'snack stall' };
 
 function goToStation(c: Customer, shop: ShopState, step: Extract<Step, { t: 'use' }>): void {
   const s = session.state;
@@ -954,7 +963,7 @@ function startUsing(c: Customer): void {
   const product = PRODUCTS[step.service];
   let free = !product;
   // Tournament day: the play tables charge an entry fee.
-  let price = product ? shop.prices[step.service] : 0;
+  let price = product ? priceFor(shop, step.service) : 0;
   if (step.service === 'play' && shop.eventDay === dayOf(s.time)) {
     price = rt.tournamentFee;
     free = false;

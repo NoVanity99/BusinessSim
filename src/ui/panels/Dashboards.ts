@@ -24,7 +24,7 @@ interface Bucket extends ShopDayStats {
   label: string;
 }
 
-const CATEGORY_NAMES: Record<string, string> = { cards: 'Card packs', drinks: 'Drinks', fresh: 'Fresh food', frozen: 'Frozen', fuel: 'Fuel', grocery: 'Groceries', household: 'Household', menu: 'Menu', service: 'Services', singles: 'Single cards', snacks: 'Snacks', ingredient: 'Ingredients' };
+const CATEGORY_NAMES: Record<string, string> = { cards: 'Card packs', drinks: 'Drinks', fresh: 'Fresh food', frozen: 'Frozen', fuel: 'Fuel', grocery: 'Groceries', household: 'Household', menu: 'Menu', service: 'Services', singles: 'Single cards', snacks: 'Snacks', ingredient: 'Ingredients', clothing: 'Clothing', electronics: 'Electronics', books: 'Books', pets: 'Pet supplies', health: 'Health' };
 const fmt = (n: number): string => money(Math.round(n));
 const pct = (n: number): string => `${Math.round(n * 100)}%`;
 

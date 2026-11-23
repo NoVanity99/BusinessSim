@@ -95,6 +95,15 @@ export const MIGRATIONS: Migration[] = [
       s.achievements ??= {};
     },
   },
+  {
+    to: 7,
+    name: 'Add advertising campaigns; holidays now follow the calendar',
+    up(s) {
+      s.campaigns ??= [];
+      // Old holiday markers are recreated from the calendar on load.
+      s.events = (s.events ?? []).filter((e: { type: string }) => e.type !== 'holiday');
+    },
+  },
 ];
 
 export const LATEST_SAVE_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.to), 1);

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { seasonOf } from '../../systems/world/seasons';
 import { ATLAS } from '../../art/atlas';
 import { LIGHT_TEX } from '../../art/fxArt';
 import { TILE } from '../../core/constants';
@@ -42,6 +43,7 @@ const mix = (a: number, b: number, t: number): number => {
 export class Atmosphere {
   private dark: Phaser.GameObjects.RenderTexture | null = null;
   private fog: Phaser.GameObjects.Rectangle;
+  private wash: Phaser.GameObjects.Rectangle;
   private rain: Phaser.GameObjects.Particles.ParticleEmitter;
   private snow: Phaser.GameObjects.Particles.ParticleEmitter;
   private res = 0;
@@ -50,6 +52,7 @@ export class Atmosphere {
 
   constructor(private scene: Phaser.Scene) {
     this.fog = scene.add.rectangle(0, 0, 10, 10, 0xdfe6ee, 0).setOrigin(0).setDepth(DEPTH.ghost + 2);
+    this.wash = scene.add.rectangle(0, 0, 10, 10, 0xffffff, 0).setOrigin(0).setDepth(DEPTH.ghost + 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
     this.rain = scene.add.particles(0, 0, ATLAS, {
       frame: 'fx:rain', lifespan: 700, speedY: { min: 900, max: 1150 }, speedX: { min: -160, max: -110 },
       scale: 2, alpha: { start: 0.75, end: 0.4 }, emitting: false,
@@ -72,6 +75,7 @@ export class Atmosphere {
     const h = Math.max(64, Math.ceil(cam.height * q.lightRes));
     if (!this.dark || this.res !== q.lightRes || this.dark.width !== w || this.dark.height !== h) {
       this.dark?.destroy();
+    this.wash.destroy();
       this.dark = this.scene.add.renderTexture(0, 0, w, h).setOrigin(0).setDepth(DEPTH.ghost + 1);
       this.res = q.lightRes;
     }
@@ -172,6 +176,11 @@ export class Atmosphere {
     }
     const fogAlpha = weather === 'fog' ? 0.3 : weather === 'snow' ? 0.08 : 0;
     this.fog.setPosition(view.x, view.y).setSize(view.width, view.height).setFillStyle(0xdfe6ee, fogAlpha).setVisible(fogAlpha > 0);
+    // The season lays a faint colour over everything: warm in summer, amber in autumn, cold in winter.
+    const season = seasonOf(session.state);
+    this.wash.setPosition(view.x, view.y).setSize(view.width, view.height).setFillStyle(Phaser.Display.Color.HexStringToColor(season.tint).color, season.tintAlpha).setVisible(season.tintAlpha > 0)
+      // Winter lightens the scene like a dusting of frost; the other seasons tint it.
+      .setBlendMode(season.id === 'winter' ? Phaser.BlendModes.NORMAL : Phaser.BlendModes.MULTIPLY);
   }
 
   /** A flat tint for the Low setting, where the light layer is off. 0 means none. */

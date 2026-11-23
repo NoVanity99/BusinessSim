@@ -752,5 +752,202 @@
   "color": "#c9c2b4",
   "decor": 0.02,
   "description": "Outdoor paving."
+ },
+ "clothes_rack": {
+  "name": "Clothes Rail",
+  "category": "display",
+  "kind": "shelf",
+  "w": 2,
+  "h": 1,
+  "cost": 220,
+  "sprite": "clothesrack",
+  "color": "#c2c2c2",
+  "slots": 2,
+  "slotCapacity": 10,
+  "accepts": [
+   "ambient"
+  ],
+  "decor": 0.0,
+  "description": "A rail of hangers. Holds two lines of clothing."
+ },
+ "shoe_wall": {
+  "name": "Shoe and Accessory Wall",
+  "category": "display",
+  "kind": "shelf",
+  "w": 2,
+  "h": 1,
+  "cost": 260,
+  "sprite": "shelf",
+  "color": "#a97c50",
+  "slots": 3,
+  "slotCapacity": 10,
+  "accepts": [
+   "ambient"
+  ],
+  "decor": 0.0,
+  "description": "Shelving for shoes, caps and small accessories."
+ },
+ "bookshelf": {
+  "name": "Bookshelf",
+  "category": "display",
+  "kind": "shelf",
+  "w": 2,
+  "h": 1,
+  "cost": 200,
+  "sprite": "bookshelf",
+  "color": "#8f673f",
+  "slots": 3,
+  "slotCapacity": 16,
+  "accepts": [
+   "ambient"
+  ],
+  "decor": 0.03,
+  "description": "Three shelves of books, comics or magazines."
+ },
+ "display_table": {
+  "name": "Display Table",
+  "category": "display",
+  "kind": "shelf",
+  "w": 2,
+  "h": 1,
+  "cost": 380,
+  "sprite": "displaytable",
+  "color": "#e6eef8",
+  "slots": 2,
+  "slotCapacity": 6,
+  "accepts": [
+   "ambient"
+  ],
+  "decor": 0.05,
+  "description": "A lit table for electronics customers can try. Holds two products, a few of each.",
+  "light": 1,
+  "power": 1
+ },
+ "accessory_wall": {
+  "name": "Accessory Wall",
+  "category": "display",
+  "kind": "shelf",
+  "w": 1,
+  "h": 1,
+  "cost": 180,
+  "sprite": "rack",
+  "color": "#8c8f96",
+  "slots": 3,
+  "slotCapacity": 16,
+  "accepts": [
+   "ambient"
+  ],
+  "decor": 0.0,
+  "description": "Pegboard for chargers, games and small gadgets."
+ },
+ "pet_shelf": {
+  "name": "Pet Supplies Shelf",
+  "category": "display",
+  "kind": "shelf",
+  "w": 2,
+  "h": 1,
+  "cost": 180,
+  "sprite": "shelf",
+  "color": "#a97c50",
+  "slots": 2,
+  "slotCapacity": 16,
+  "accepts": [
+   "ambient"
+  ],
+  "decor": 0.0,
+  "description": "Shelving for pet food, treats and toys."
+ },
+ "med_shelf": {
+  "name": "Pharmacy Shelf",
+  "category": "display",
+  "kind": "shelf",
+  "w": 2,
+  "h": 1,
+  "cost": 210,
+  "sprite": "medshelf",
+  "color": "#e6eef8",
+  "slots": 3,
+  "slotCapacity": 20,
+  "accepts": [
+   "ambient"
+  ],
+  "decor": 0.0,
+  "description": "Clean white shelving for medicines and toiletries."
+ },
+ "mannequin": {
+  "name": "Mannequin",
+  "category": "decor",
+  "kind": "decor",
+  "w": 1,
+  "h": 1,
+  "cost": 90,
+  "sprite": "mannequin",
+  "color": "#e8c9a0",
+  "decor": 0.12,
+  "description": "Shows off the range. Lifts the mood of everyone who walks in."
+ },
+ "fitting_room": {
+  "name": "Fitting Room",
+  "category": "decor",
+  "kind": "decor",
+  "w": 1,
+  "h": 1,
+  "cost": 240,
+  "sprite": "fitting",
+  "color": "#b07cc6",
+  "decor": 0.2,
+  "description": "Somewhere to try things on. Makes a clothing shop feel like a proper one."
+ },
+ "pizza_oven": {
+  "name": "Pizza Oven",
+  "category": "kitchen",
+  "kind": "cookstation",
+  "w": 1,
+  "h": 1,
+  "cost": 1400,
+  "sprite": "pizzaoven",
+  "color": "#a8614b",
+  "decor": 0,
+  "description": "A stone oven. Bakes one pizza at a time.",
+  "station": "pizzaoven",
+  "power": 6,
+  "breakChance": 0.003,
+  "repairCost": 90
+ },
+ "pinball": {
+  "name": "Pinball Table",
+  "category": "attractions",
+  "kind": "service",
+  "w": 1,
+  "h": 1,
+  "cost": 620,
+  "sprite": "pinball",
+  "color": "#e58f4f",
+  "decor": 0,
+  "description": "Flippers, bumpers and a lot of noise. Players love it.",
+  "service": "svc_pinball",
+  "capacity": 1,
+  "fun": 7,
+  "breakChance": 0.008,
+  "repairCost": 50,
+  "power": 2
+ },
+ "air_hockey": {
+  "name": "Air Hockey Table",
+  "category": "attractions",
+  "kind": "service",
+  "w": 2,
+  "h": 1,
+  "cost": 900,
+  "sprite": "airhockey",
+  "color": "#59b6d8",
+  "decor": 0,
+  "description": "Two players at a time.",
+  "service": "svc_airhockey",
+  "capacity": 2,
+  "fun": 8,
+  "breakChance": 0.008,
+  "repairCost": 50,
+  "power": 2
  }
 }

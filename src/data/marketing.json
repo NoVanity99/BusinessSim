@@ -1,0 +1,93 @@
+{
+  "_comment": "Advertising campaigns. demand multiplies how strongly a shop pulls people in; reach is the share of residents who hear about it each day (and start out thinking well of it); loyalty and priceCut change how customers behave while it runs. scope \"company\" campaigns cover every shop.",
+  "campaigns": {
+    "flyers": {
+      "name": "Flyers",
+      "scope": "shop",
+      "cost": 120,
+      "days": 3,
+      "demand": 1.15,
+      "reach": 0.03,
+      "unlockLevel": 1,
+      "description": "Leaflets through doors nearby. Cheap, brief, and it works."
+    },
+    "poster": {
+      "name": "Bus Stop Posters",
+      "scope": "shop",
+      "cost": 380,
+      "days": 7,
+      "demand": 1.2,
+      "reach": 0.04,
+      "unlockLevel": 2,
+      "description": "Posters around the neighbourhood for a week."
+    },
+    "coupons": {
+      "name": "Discount Coupons",
+      "scope": "shop",
+      "cost": 250,
+      "days": 4,
+      "demand": 1.3,
+      "reach": 0.05,
+      "priceCut": 0.1,
+      "unlockLevel": 2,
+      "description": "Coupon holders pay 10% less. Brings in bargain hunters and wins some of them for good; you earn less on each sale while it runs."
+    },
+    "social": {
+      "name": "Social Media Push",
+      "scope": "shop",
+      "cost": 450,
+      "days": 5,
+      "demand": 1.25,
+      "reach": 0.08,
+      "personas": [
+        "student",
+        "tourist",
+        "impulse",
+        "foodie"
+      ],
+      "unlockLevel": 3,
+      "description": "Reaches students, tourists and impulse buyers far better than paper does. Your review rating matters more while it runs."
+    },
+    "loyalty": {
+      "name": "Loyalty Card",
+      "scope": "shop",
+      "cost": 600,
+      "days": 14,
+      "demand": 1.05,
+      "reach": 0.0,
+      "loyalty": 1.5,
+      "unlockLevel": 3,
+      "description": "Stamp cards. Customers become regulars sooner and stay loyal against cheaper rivals."
+    },
+    "radio": {
+      "name": "Radio Advert",
+      "scope": "company",
+      "cost": 1400,
+      "days": 5,
+      "demand": 1.2,
+      "reach": 0.1,
+      "unlockLevel": 4,
+      "description": "Every shop you own, heard all over the city."
+    },
+    "billboard": {
+      "name": "Billboard",
+      "scope": "company",
+      "cost": 2600,
+      "days": 14,
+      "demand": 1.15,
+      "reach": 0.06,
+      "unlockLevel": 5,
+      "description": "Two weeks on the main road. Slow, steady, city-wide."
+    },
+    "tv": {
+      "name": "TV Campaign",
+      "scope": "company",
+      "cost": 6500,
+      "days": 7,
+      "demand": 1.4,
+      "reach": 0.2,
+      "unlockLevel": 7,
+      "description": "The whole city sees it. Expensive, and nothing else comes close."
+    }
+  }
+}

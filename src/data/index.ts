@@ -12,6 +12,8 @@ import eventsJson from './events.json';
 import weatherJson from './weather.json';
 import personasJson from './personas.json';
 import rivalsJson from './rivals.json';
+import seasonsJson from './seasons.json';
+import marketingJson from './marketing.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -169,6 +171,8 @@ export interface ShopTypeDef {
   supplies: string[];
   /** Services every customer uses, in order (service flow). */
   plan?: string[];
+  /** Customers pick a few of the shop's services as they please instead of following `plan` in order. */
+  planFree?: boolean;
   /** Optional services customers may use after shopping. */
   after?: string[];
   /** How strongly decor raises the prices customers accept. */
@@ -303,13 +307,26 @@ export interface LoanOffer {
   unlockLevel: number;
 }
 
+/** A day of the year when the city behaves differently. */
+export interface HolidayDef {
+  /** Day of the year, 1 to 28. */
+  day: number;
+  name: string;
+  crowd: number;
+  /** Demand multipliers per shop type. */
+  demand: Record<string, number>;
+  /** Above 1, shoppers are choosier about prices that day. */
+  priceSense?: number;
+  description: string;
+}
+
 export interface EventsConfig {
   loans: LoanOffer[];
   maxLoans: number;
   overdraftDailyRate: number;
   /** Cash level at which the bank pulls the plug. */
   bankruptcyCash: number;
-  holidays: { everyDays: number; offset: number; name: string; crowd: number }[];
+  holidays: HolidayDef[];
   chances: { inspectionPerDay: number; viralPerDay: number; shortagePerDay: number };
   inspection: { dirtLimit: number; fineMin: number; fineMax: number };
   theft: { thiefPerHour: number; vandalPerHour: number; seenBase: number; seenGuard: number; seenCameras: number; seenPerStaff: number; seenStaffMax: number; cameraRecover: number };
@@ -433,3 +450,43 @@ export interface RivalConfig {
 }
 
 export const RIVALS = rivalsJson as unknown as RivalConfig;
+
+export interface SeasonDef {
+  id: string;
+  name: string;
+  icon: string;
+  crowd: number;
+  /** Multiplier on each weather kind's odds. */
+  weather: Record<string, number>;
+  demand: Record<string, number>;
+  products: Record<string, number>;
+  /** Colour wash over the city and its strength. */
+  tint: string;
+  tintAlpha: number;
+  /** Foliage colour. */
+  trees: string;
+  description: string;
+}
+
+export const SEASONS = seasonsJson as unknown as { daysPerSeason: number; seasons: SeasonDef[] };
+
+export interface CampaignDef {
+  name: string;
+  scope: 'shop' | 'company';
+  cost: number;
+  days: number;
+  /** Multiplier on interest in the shop while it runs. */
+  demand: number;
+  /** Share of residents who hear about it each day. */
+  reach: number;
+  /** Only these personas are reached, if given. */
+  personas?: string[];
+  /** Share off prices for customers. */
+  priceCut?: number;
+  /** Multiplier on how fast customers become loyal. */
+  loyalty?: number;
+  unlockLevel: number;
+  description: string;
+}
+
+export const MARKETING = marketingJson as unknown as { campaigns: Record<string, CampaignDef> };

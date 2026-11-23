@@ -12,6 +12,13 @@
     "coffee": ["Coffee House", "Espresso"],
     "laundromat": ["Wash & Go", "Laundry"],
     "gas": ["Fuel Stop"],
+    "drugstore": ["Pharmacy", "Chemist"],
+    "bookstore": ["Books", "Book Nook"],
+    "clothing": ["Fashion", "Outfitters"],
+    "pizza": ["Pizza", "Pizzeria"],
+    "petshop": ["Pets", "Pet Corner"],
+    "arcade": ["Arcade", "Game Zone"],
+    "electronics": ["Electronics", "Tech"],
     "default": ["Store", "Outlet"]
   },
   "startCash": [5000, 9000],

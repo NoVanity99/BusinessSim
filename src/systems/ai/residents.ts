@@ -1,4 +1,5 @@
 import { LOOK_COUNT } from '../../art/looks';
+import { couponCut, loyaltyBoost } from '../marketing/marketing';
 import { allRivalShops, rivalOpenNow, rivalUtility, type RivalShop } from '../rivals/rivals';
 import { rt } from './runtime';
 import { bus } from '../../core/events';
@@ -140,7 +141,7 @@ export function priceIndex(s: GameState, shop: ShopState): number {
     sum += shop.prices[p] / fairPrice(s, shop, p);
     n++;
   }
-  return n ? sum / n : 1;
+  return n ? (sum / n) * (1 - couponCut(s, shop)) : 1;
 }
 
 export const shopRating = (shop: ShopState): number => (shop.reviews.length ? shop.reviews.reduce((a, r) => a + r.stars, 0) / shop.reviews.length : 0);
@@ -162,8 +163,9 @@ export function shopUtility(s: GameState, r: Resident | null, persona: string, s
   u -= (priceIndex(s, shop) - 1) * 3 * p.priceSense;
   u += (shopDemandMult(s, shop) - 1) * 1.5;
   if (mem) {
-    u += mem.score * 1.3 * p.loyalty;
-    if (isRegular(mem)) u += 0.7 * p.loyalty;
+    const scheme = loyaltyBoost(s, shop);
+    u += mem.score * 1.3 * p.loyalty * scheme;
+    if (isRegular(mem)) u += 0.7 * p.loyalty * scheme;
     // Once badly let down, most people do not come back.
     if (mem.score < -0.5) u -= 2;
   }
@@ -232,6 +234,8 @@ export function afterVisit(s: GameState, shop: ShopState, c: Customer): void {
     m.visits++;
     // Recent visits count for more than old ones; a first impression counts in full.
     m.score = m.visits === 1 ? feeling : clamp(m.score * 0.6 + feeling * 0.4, -1, 1);
+    // A loyalty card makes a good visit count for more.
+    if (feeling > 0) m.score = clamp(m.score + 0.08 * (loyaltyBoost(s, shop) - 1) * 2, -1, 1);
     m.lastDay = dayOf(s.time);
     if (!wasRegular && isRegular(m)) bus.emit('regular:gained', { shopId: shop.id, name: r.name });
     // Their need is met if they actually got something.

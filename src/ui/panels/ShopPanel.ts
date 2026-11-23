@@ -1,4 +1,7 @@
 import { bus } from '../../core/events';
+import { campaignCost, isRunning, startCampaign } from '../../systems/marketing/marketing';
+import { nextHoliday } from '../../systems/world/seasons';
+import { MARKETING } from '../../data';
 import { canRedo, canUndo, redo, undo } from '../../systems/build/history';
 import { applyTemplate, deleteTemplate, loadTemplates, previewTemplate, saveTemplate, templatesFor } from '../../systems/build/templates';
 import { frameCanvas } from '../thumb';
@@ -594,8 +597,30 @@ function upgradesTab(s: GameState, shop: ShopState): Tab {
   const body = h('div');
   const update = (): void => {
     if (body.querySelector(':active')) return;
+    const day = dayOf(s.time);
+    const coming = nextHoliday(s);
     setChildren(
       body,
+      h('div.section', 'Advertising'),
+      coming && (coming.holiday.demand[shop.type] ?? 1) > 1 && h('div.note', { style: { margin: '0 0 6px' } }, `${coming.holiday.name} is in ${coming.inDays} day${coming.inDays === 1 ? '' : 's'}: a good time for a campaign.`),
+      ...Object.entries(MARKETING.campaigns).map(([id, d]) => {
+        const running = isRunning(s, id, d.scope === 'company' ? 0 : shop.id);
+        const locked = s.level < d.unlockLevel;
+        const cost = campaignCost(s, id);
+        return h(
+          'div.person',
+          { class: running ? 'running' : '' },
+          h('div.head', h('span', { style: { fontWeight: '600' } }, d.name), h('span.dim', d.scope === 'company' ? 'every shop' : 'this shop')),
+          h('div.sub', { style: { marginBottom: '6px' } }, d.description),
+          h(
+            'div.line',
+            h('span.dim', `${d.days} days · +${Math.round((d.demand - 1) * 100)}% interest${d.priceCut ? ` · ${Math.round(d.priceCut * 100)}% off` : ''}`),
+            h('span', { style: { flex: '1' } }),
+            running ? h('span.good', `Running, ${running.untilDay - day + 1} day${running.untilDay - day === 0 ? '' : 's'} left`) : h('button.primary', { disabled: locked || s.money < cost, onclick: () => startCampaign(s, id, shop) }, locked ? `Needs level ${d.unlockLevel}` : `Run for ${money(cost)}`),
+          ),
+        );
+      }),
+      h('div.section', 'Upgrades'),
       ...upgradesFor(shop).map(([id, d]) => {
         const level = upgradeLevel(s, shop.id, id);
         const maxed = level >= d.maxLevel;
@@ -617,7 +642,7 @@ function upgradesTab(s: GameState, shop: ShopState): Tab {
 
 // ---------- Panel ----------
 
-const TABS = { overview: 'Overview', build: 'Build', stock: 'Stock', prices: 'Prices', staff: 'Staff', upgrades: 'Upgrades' } as const;
+const TABS = { overview: 'Overview', build: 'Build', stock: 'Stock', prices: 'Prices', staff: 'Staff', upgrades: 'Grow' } as const;
 type TabId = keyof typeof TABS;
 
 export function ShopPanel(): { el: HTMLElement; destroy(): void } {
@@ -677,6 +702,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     bus.on('money:changed', refresh),
     bus.on('tool:changed', refresh),
     bus.on('build:history', refresh),
+    bus.on('marketing:changed', refresh),
     bus.on('time:hour', refresh),
     bus.on('staff:changed', refresh),
     bus.on('review:posted', refresh),

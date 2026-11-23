@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { seasonOf } from '../../systems/world/seasons';
+import { bus } from '../../core/events';
 import { ATLAS, SCALE } from '../../art/atlas';
 import { TILE } from '../../core/constants';
 import { quality } from '../../core/settings';
@@ -27,6 +29,14 @@ export class CityProps {
   private birds: Bird[] = [];
   private clock = 0;
   private lampsLit = false;
+
+  /** Foliage follows the season: green, deeper green, amber, then frosted. */
+  private tintTrees(): void {
+    const season = seasonOf(session.state);
+    // Tints multiply, so the summer green is left as drawn and the others are pulled toward their colour.
+    const tint = season.id === 'spring' ? 0xdfffd9 : season.id === 'summer' ? 0xffffff : Phaser.Display.Color.HexStringToColor(season.id === 'autumn' ? '#ffb46a' : '#bfe0f0').color;
+    for (const t of this.trees) if (t.img.scene) t.img.setTint(tint);
+  }
 
   constructor(private scene: Phaser.Scene, private atmosphere: Atmosphere) {
     const { city } = session;
@@ -59,6 +69,8 @@ export class CityProps {
       const img = scene.add.image(sig.x * TILE, sig.y * TILE, ATLAS, 'signal:off').setOrigin(0).setScale(SCALE).setDepth(DEPTH.npcs + sig.y / 1000);
       this.signals.push({ img, index: sig.index });
     }
+    this.tintTrees();
+    bus.on('season:changed', () => this.tintTrees());
   }
 
   update(realDt: number): void {

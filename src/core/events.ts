@@ -56,6 +56,8 @@ export interface GameEvents {
   'camera:pan': { x: number; y: number };
   'notes:changed': void;
   achievement: string;
+  'marketing:changed': void;
+  'season:changed': string;
   /** Add to a lifetime counter. */
   stat: { stat: string; by?: number };
   /** Show the help window. */

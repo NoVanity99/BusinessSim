@@ -2,11 +2,103 @@
   "minHours": 3,
   "maxHours": 9,
   "kinds": {
-    "sunny":  { "name": "Sunny",    "icon": "☀",  "weight": 5,   "crowd": 1.0,  "demand": {}, "description": "A fine day. Business as usual." },
-    "cloudy": { "name": "Cloudy",   "icon": "☁",  "weight": 3,   "crowd": 0.95, "demand": {}, "description": "Overcast. A little quieter on the streets." },
-    "rain":   { "name": "Rain",     "icon": "🌧", "weight": 2,   "crowd": 0.7,  "demand": { "coffee": 1.35, "funpark": 0.35, "fastfood": 1.1, "laundromat": 0.9, "cardshop": 1.2 }, "products": { "m_tea": 1.5, "m_latte": 1.3 }, "description": "People hurry indoors. Cafés and card shops fill up; the park empties." },
-    "fog":    { "name": "Fog",      "icon": "🌫", "weight": 0.8, "crowd": 0.85, "demand": { "coffee": 1.15, "funpark": 0.7 }, "description": "Hard to see far. Fewer passers-by notice your shops." , "notice": 0.7 },
-    "snow":   { "name": "Snow",     "icon": "❄",  "weight": 0.7, "crowd": 0.6,  "demand": { "coffee": 1.5, "funpark": 0.15, "gas": 0.8, "fastfood": 1.15 }, "products": { "m_tea": 1.6, "m_latte": 1.4, "icecream": 0.3, "soda": 0.6 }, "description": "Few people brave it, and those who do want something hot." },
-    "heat":   { "name": "Heatwave", "icon": "🔥", "weight": 0.9, "crowd": 0.9,  "dayOnly": true, "demand": { "funpark": 1.6, "coffee": 0.75, "convenience": 1.15 }, "products": { "icecream": 2.2, "water": 1.8, "soda": 1.6, "m_shake": 1.6, "m_cola": 1.5, "m_tea": 0.5 }, "description": "Scorching. Cold drinks, ice cream and the water park are in demand." }
+    "sunny": {
+      "name": "Sunny",
+      "icon": "☀",
+      "weight": 5,
+      "crowd": 1.0,
+      "demand": {},
+      "description": "A fine day. Business as usual."
+    },
+    "cloudy": {
+      "name": "Cloudy",
+      "icon": "☁",
+      "weight": 3,
+      "crowd": 0.95,
+      "demand": {},
+      "description": "Overcast. A little quieter on the streets."
+    },
+    "rain": {
+      "name": "Rain",
+      "icon": "🌧",
+      "weight": 2,
+      "crowd": 0.7,
+      "demand": {
+        "coffee": 1.35,
+        "funpark": 0.35,
+        "fastfood": 1.1,
+        "laundromat": 0.9,
+        "cardshop": 1.2,
+        "arcade": 1.4,
+        "bookstore": 1.25,
+        "pizza": 1.15
+      },
+      "products": {
+        "m_tea": 1.5,
+        "m_latte": 1.3
+      },
+      "description": "People hurry indoors. Cafés and card shops fill up; the park empties."
+    },
+    "fog": {
+      "name": "Fog",
+      "icon": "🌫",
+      "weight": 0.8,
+      "crowd": 0.85,
+      "demand": {
+        "coffee": 1.15,
+        "funpark": 0.7
+      },
+      "description": "Hard to see far. Fewer passers-by notice your shops.",
+      "notice": 0.7
+    },
+    "snow": {
+      "name": "Snow",
+      "icon": "❄",
+      "weight": 0.7,
+      "crowd": 0.6,
+      "demand": {
+        "coffee": 1.5,
+        "funpark": 0.15,
+        "gas": 0.8,
+        "fastfood": 1.15,
+        "arcade": 1.2,
+        "drugstore": 1.2
+      },
+      "products": {
+        "m_tea": 1.6,
+        "m_latte": 1.4,
+        "icecream": 0.3,
+        "soda": 0.6,
+        "scarf": 2.0,
+        "jacket": 1.6,
+        "coldmedicine": 1.6,
+        "tissues": 1.5
+      },
+      "description": "Few people brave it, and those who do want something hot."
+    },
+    "heat": {
+      "name": "Heatwave",
+      "icon": "🔥",
+      "weight": 0.9,
+      "crowd": 0.9,
+      "dayOnly": true,
+      "demand": {
+        "funpark": 1.6,
+        "coffee": 0.75,
+        "convenience": 1.15
+      },
+      "products": {
+        "icecream": 2.2,
+        "water": 1.8,
+        "soda": 1.6,
+        "m_shake": 1.6,
+        "m_cola": 1.5,
+        "m_tea": 0.5,
+        "sunscreen": 2.5,
+        "sunglasses": 1.8,
+        "cap": 1.6
+      },
+      "description": "Scorching. Cold drinks, ice cream and the water park are in demand."
+    }
   }
 }

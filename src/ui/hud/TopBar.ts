@@ -1,4 +1,7 @@
 import { SPEEDS } from '../../core/constants';
+import { dayOfSeason, holidaysOn, nextHoliday, seasonOf } from '../../systems/world/seasons';
+import { SEASONS } from '../../data';
+import { dayOf } from '../../systems/time/clock';
 import { bus } from '../../core/events';
 import { money } from '../../core/format';
 import { session } from '../../core/state';
@@ -26,10 +29,19 @@ export function TopBar(openNotifications: () => void): { el: HTMLElement; destro
   const repEl = h('div.stat', { tip: 'Average reputation across your businesses that serve customers.' });
   const dateEl = h('div.date');
   const weatherEl = h('div.weather');
+  const seasonEl = h('div.season');
   const refreshWeather = (): void => {
     const w = weatherDef(s);
     weatherEl.replaceChildren(icon(WEATHER_ICON[s.weather.kind] ?? 'sun', 18), h('span', w.name));
     weatherEl.dataset.tip = w.description;
+  };
+  const refreshSeason = (): void => {
+    const season = seasonOf(s);
+    const today = holidaysOn(dayOf(s.time));
+    const next = nextHoliday(s);
+    seasonEl.replaceChildren(icon(season.icon, 18), h('span', today.length ? today[0].name : season.name));
+    seasonEl.classList.toggle('holiday', today.length > 0);
+    seasonEl.dataset.tip = `${season.name}, day ${dayOfSeason(s)} of ${SEASONS.daysPerSeason}. ${season.description}${today.length ? `\n\nToday: ${today.map((x) => `${x.name}. ${x.description}`).join(' ')}` : ''}${next ? `\n\nNext: ${next.holiday.name} in ${next.inDays} day${next.inDays === 1 ? '' : 's'}.` : ''}`;
   };
 
   const badge = h('span.badge');
@@ -108,17 +120,19 @@ export function TopBar(openNotifications: () => void): { el: HTMLElement; destro
     bus.on('time:hour', refreshRep),
     bus.on('shop:created', refreshRep),
     bus.on('weather:changed', refreshWeather),
+    bus.on('time:day', refreshSeason),
     bus.on('notes:changed', refreshBell),
   ];
   refreshLevel();
   refreshRep();
   refreshWeather();
+  refreshSeason();
   paint();
   refreshTime();
   refreshSpeed();
   refreshBell();
 
-  const el = h('div.topbar', h('div.company', { tip: 'Your company' }, s.companyName), moneyEl, levelEl, repEl, h('div.spacer'), weatherEl, h('div.when', dateEl, clockEl), h('div.speed', ...speedBtns), bell);
+  const el = h('div.topbar', h('div.company', { tip: 'Your company' }, s.companyName), moneyEl, levelEl, repEl, h('div.spacer'), seasonEl, weatherEl, h('div.when', dateEl, clockEl), h('div.speed', ...speedBtns), bell);
   return {
     el,
     destroy: () => {

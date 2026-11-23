@@ -1,4 +1,7 @@
 import { bus, toast } from '../../core/events';
+import { dayOfYear, holidaysOn, seasonOnDay } from '../world/seasons';
+import { SEASONS } from '../../data';
+import { adDemand } from '../marketing/marketing';
 import { clamp, money } from '../../core/format';
 import { rand } from '../../core/rng';
 import { shopById, type GameState } from '../../core/state';
@@ -43,7 +46,7 @@ const customerShops = (s: GameState): ShopState[] => s.shops.filter((sh) => SHOP
 
 /** How strongly events are pulling customers toward or away from one shop. */
 export function shopDemandMult(s: GameState, shop: ShopState): number {
-  let m = 1 + upgradeLevel(s, shop.id, 'localAds') * 0.15;
+  let m = 1 + upgradeLevel(s, shop.id, 'localAds') * 0.15 + (adDemand(s, shop) - 1);
   for (const e of s.events) {
     if (e.shopId !== shop.id) continue;
     if (e.type === 'viralGood') m *= EVENTS.viral.goodMult;
@@ -52,19 +55,26 @@ export function shopDemandMult(s: GameState, shop: ShopState): number {
   return m;
 }
 
-/** Recompute the crowd multiplier from today's holidays. */
+/** Announce today's holidays and give a day's warning of the ones worth stocking up for. */
 function applyHolidays(s: GameState): void {
   const day = dayOf(s.time);
-  let crowd = 1;
-  for (const h of EVENTS.holidays) {
-    if (day % h.everyDays !== h.offset % h.everyDays) continue;
-    crowd = Math.max(crowd, h.crowd);
-    if (!s.events.some((e) => e.type === 'holiday' && e.untilDay === day && e.label === h.name)) {
-      s.events.push({ type: 'holiday', untilDay: day, label: h.name });
-      news(s, `${h.name} today! The streets will be busier than usual.`, 'good');
-    }
+  for (const h of holidaysOn(day)) {
+    if (s.events.some((e) => e.type === 'holiday' && e.untilDay === day && e.label === h.name)) continue;
+    s.events.push({ type: 'holiday', untilDay: day, label: h.name });
+    news(s, `${h.name} today. ${h.description}`, 'good');
   }
-  rt.crowdMult = crowd;
+  for (const h of holidaysOn(day + 1)) {
+    const mine = Object.keys(h.demand).filter((type) => h.demand[type] > 1 && s.shops.some((sh) => sh.type === type));
+    if (mine.length) news(s, `${h.name} is tomorrow. Expect more custom at your ${mine.map((type) => SHOP_TYPES[type].name.toLowerCase()).join(' and ')}: stock up tonight.`, 'info');
+  }
+  // The season turning is news too.
+  if (dayOfYear(day) % SEASONS.daysPerSeason === 1 && day > 1) {
+    const season = seasonOnDay(day);
+    news(s, `${season.name} has arrived. ${season.description}`, 'info');
+    bus.emit('season:changed', season.id);
+  }
+  // Crowd and demand are read from the calendar directly; nothing else multiplies them now.
+  rt.crowdMult = 1;
 }
 
 function startViral(s: GameState): void {

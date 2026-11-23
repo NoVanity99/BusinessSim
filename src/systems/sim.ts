@@ -8,6 +8,7 @@ import { rebuildLot } from './ai/grid';
 import { onCrook } from './events/events';
 import { clearHistory } from './build/history';
 import { installAchievements } from './progress/achievements';
+import { marketingDaily } from './marketing/marketing';
 import { initVehicles, syncVending, updateVehicles } from './ai/vehicles';
 import { updateProduction } from './shop/production';
 import { updateStaff } from './staff/agents';
@@ -112,6 +113,7 @@ export function installSim(): () => void {
       staffDaily(s);
       eventsDaily(s);
       rivalsDaily(s);
+      marketingDaily(s);
       const income = Object.values(closed.income).reduce((a, b) => a + (b ?? 0), 0);
       const expense = Object.values(closed.expense).reduce((a, b) => a + (b ?? 0), 0);
       if (rent + utilities > 0 || income > 0) {

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.8.0 (unreleased) - Overhaul phase 7: seasons, marketing and seven new businesses
+
+- **Seven new kinds of business**, each with its own products, furniture, sprites and a starter layout:
+  - **Drug Store** (level 3): medicines and toiletries; cold remedies sell in winter, sunscreen in summer.
+  - **Bookstore** (level 3): novels, comics, magazines and stationery for browsers who like a pleasant shop.
+  - **Clothing Store** (level 4): high margins and strong seasons, with rails, a shoe wall, mannequins and a fitting room.
+  - **Pizza Place** (level 4): pizzas baked to order, one per oven at a time.
+  - **Pet Shop** (level 5): owners come back like clockwork, so regulars matter most here.
+  - **Arcade** (level 5): cabinets, pinball and air hockey paid per game, with snacks on the side.
+  - **Electronics Store** (level 6): expensive stock on lit display tables, and a favourite of thieves.
+- Residents have three new needs (something new, the chemist, pet supplies) and every persona has tastes among the new products. Rivals can open the new kinds of shop too.
+- **Seasons**: a year is four seasons of seven days. Each changes the weather (snow only in winter, heatwaves in summer), how many people are out, which businesses they want and what they buy, and gives the city its own light and foliage. The top bar shows the season.
+- **Holidays** now fall on fixed days of the year: Spring Fair, Summer Festival, Back to School, the Harvest Sale (shoppers hunt bargains), Winter Holidays and New Year, each lifting particular businesses. You are warned the day before so you can stock up.
+- **Marketing** (in a shop's Grow tab, with its upgrades): flyers, posters, discount coupons, a social media push aimed at students and tourists, a loyalty card that makes regulars faster and stickier, and company-wide radio, billboard and TV campaigns. Campaigns raise interest while they run and leave residents who heard them thinking better of the shop.
+- Messages now appear at the bottom centre, clear of the map.
+- Save format 7 (adds campaigns). Older saves upgrade automatically.
+
 ## 1.7.0 (unreleased) - Overhaul phase 6: interface, part two
 
 - **Build catalogue**: furniture is shown with its picture, can be searched and filtered by category, and each entry's tooltip gives its size, cost and effects.

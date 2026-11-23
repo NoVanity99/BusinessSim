@@ -443,5 +443,343 @@
   ],
   "demand": 0.07,
   "destination": 0.6
+ },
+ "drugstore": {
+  "name": "Drug Store",
+  "description": "Medicines, toiletries and everyday health. Steady custom all year, more in winter when colds go round.",
+  "color": "#59b6d8",
+  "flow": "retail",
+  "licenseCost": 900,
+  "unlockLevel": 3,
+  "minArea": 40,
+  "defaultHours": [
+   8,
+   21
+  ],
+  "baseStorage": 120,
+  "defaultFloor": "floor_tile",
+  "furniture": [
+   "med_shelf",
+   "shelf",
+   "rack",
+   "fridge",
+   "register",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "painkillers",
+   "vitamins",
+   "coldmedicine",
+   "bandages",
+   "shampoo",
+   "toothpaste",
+   "sunscreen",
+   "tissues",
+   "toiletpaper",
+   "water"
+  ],
+  "supplies": [],
+  "roles": [
+   "cashier",
+   "stocker",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.04
+ },
+ "bookstore": {
+  "name": "Bookstore",
+  "description": "Novels, comics, magazines and stationery. Quiet, loyal customers who like a pleasant shop to browse in.",
+  "color": "#c2504d",
+  "flow": "retail",
+  "licenseCost": 900,
+  "unlockLevel": 3,
+  "minArea": 40,
+  "defaultHours": [
+   9,
+   20
+  ],
+  "baseStorage": 150,
+  "defaultFloor": "floor_wood",
+  "furniture": [
+   "bookshelf",
+   "rack",
+   "register",
+   "bench",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "novel",
+   "comic",
+   "magazine",
+   "textbook",
+   "notebook",
+   "puzzle",
+   "cookbook",
+   "newspaper"
+  ],
+  "supplies": [],
+  "roles": [
+   "cashier",
+   "stocker",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.025,
+  "decorWeight": 2,
+  "destination": 0.25
+ },
+ "clothing": {
+  "name": "Clothing Store",
+  "description": "Fashion with big margins and seasonal swings: coats and scarves in winter, caps and sunglasses in summer.",
+  "color": "#b07cc6",
+  "flow": "retail",
+  "licenseCost": 1500,
+  "unlockLevel": 4,
+  "minArea": 56,
+  "defaultHours": [
+   10,
+   20
+  ],
+  "baseStorage": 120,
+  "defaultFloor": "floor_wood",
+  "furniture": [
+   "clothes_rack",
+   "shoe_wall",
+   "mannequin",
+   "fitting_room",
+   "register",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "tshirt",
+   "jeans",
+   "jacket",
+   "sneakers",
+   "cap",
+   "socks",
+   "scarf",
+   "sunglasses"
+  ],
+  "supplies": [],
+  "roles": [
+   "cashier",
+   "stocker",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.04,
+  "decorWeight": 2,
+  "destination": 0.3
+ },
+ "pizza": {
+  "name": "Pizza Place",
+  "description": "Pizzas baked to order. One oven bakes one pizza at a time, so add ovens before the dinner rush.",
+  "color": "#e8b84a",
+  "flow": "counter",
+  "licenseCost": 1600,
+  "unlockLevel": 4,
+  "minArea": 56,
+  "defaultHours": [
+   11,
+   23
+  ],
+  "baseStorage": 200,
+  "defaultFloor": "floor_tile",
+  "furniture": [
+   "counter",
+   "pizza_oven",
+   "drinks",
+   "table",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "m_margherita",
+   "m_pepperoni",
+   "m_funghi",
+   "m_garlicbread",
+   "m_cola"
+  ],
+  "supplies": [
+   "pizzadough",
+   "tomatosauce",
+   "mozzarella",
+   "pepperoni",
+   "mushrooms",
+   "syrup"
+  ],
+  "roles": [
+   "cashier",
+   "cook",
+   "cleaner",
+   "manager",
+   "mechanic"
+  ],
+  "demand": 0.06,
+  "destination": 0.15
+ },
+ "petshop": {
+  "name": "Pet Shop",
+  "description": "Food, toys and supplies for pets. Owners come back like clockwork, so regulars matter here more than anywhere.",
+  "color": "#c9a36a",
+  "flow": "retail",
+  "licenseCost": 1400,
+  "unlockLevel": 5,
+  "minArea": 40,
+  "defaultHours": [
+   9,
+   19
+  ],
+  "baseStorage": 160,
+  "defaultFloor": "floor_tile",
+  "furniture": [
+   "pet_shelf",
+   "shelf",
+   "rack",
+   "register",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "petfood",
+   "cattreats",
+   "pettoy",
+   "leash",
+   "catlitter",
+   "aquarium",
+   "petbed"
+  ],
+  "supplies": [],
+  "roles": [
+   "cashier",
+   "stocker",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.025,
+  "destination": 0.3
+ },
+ "arcade": {
+  "name": "Arcade",
+  "description": "Cabinets, pinball and air hockey, paid per game. Snacks sell on the side. Busy after school, at weekends and when it rains.",
+  "color": "#9085e9",
+  "flow": "service",
+  "licenseCost": 2200,
+  "unlockLevel": 5,
+  "minArea": 56,
+  "defaultHours": [
+   11,
+   23
+  ],
+  "baseStorage": 80,
+  "defaultFloor": "floor_concrete",
+  "furniture": [
+   "arcade",
+   "pinball",
+   "air_hockey",
+   "rack",
+   "fridge",
+   "register",
+   "bench",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "svc_arcade",
+   "svc_pinball",
+   "svc_airhockey",
+   "chips",
+   "candy",
+   "soda",
+   "energy"
+  ],
+  "supplies": [],
+  "plan": [
+   "svc_arcade",
+   "svc_pinball",
+   "svc_airhockey"
+  ],
+  "planFree": true,
+  "roles": [
+   "cashier",
+   "cleaner",
+   "mechanic",
+   "manager",
+   "security"
+  ],
+  "demand": 0.035,
+  "destination": 0.45
+ },
+ "electronics": {
+  "name": "Electronics Store",
+  "description": "Phones, laptops, consoles and gadgets. Expensive stock, thin margins on the big items and fat ones on accessories. Thieves love it.",
+  "color": "#3a7bd5",
+  "flow": "retail",
+  "licenseCost": 3500,
+  "unlockLevel": 6,
+  "minArea": 56,
+  "defaultHours": [
+   10,
+   20
+  ],
+  "baseStorage": 100,
+  "defaultFloor": "floor_tile",
+  "furniture": [
+   "display_table",
+   "accessory_wall",
+   "shelf",
+   "register",
+   "storage_rack",
+   "plant",
+   "lamp",
+   "rug",
+   "bin"
+  ],
+  "products": [
+   "phone",
+   "headphones",
+   "charger",
+   "laptop",
+   "console",
+   "videogame",
+   "speaker",
+   "batteries"
+  ],
+  "supplies": [],
+  "roles": [
+   "cashier",
+   "stocker",
+   "cleaner",
+   "manager",
+   "security"
+  ],
+  "demand": 0.025,
+  "destination": 0.4
  }
 }

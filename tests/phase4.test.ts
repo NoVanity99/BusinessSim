@@ -154,6 +154,7 @@ describe('rival companies', () => {
     migrateState(old, 4);
     expect(old.rivals).toEqual([]);
     expect(old.offers).toEqual([]);
-    expect((old.events as { type: string }[]).map((e) => e.type)).toEqual(['holiday']);
+    expect((old.events as { type: string }[]).map((e) => e.type)).toEqual([]);
+    expect(old.campaigns).toEqual([]);
   });
 });

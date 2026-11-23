@@ -555,3 +555,15 @@ kbd { display: inline-block; min-width: 18px; padding: 1px 6px; margin-left: 3px
 .overlay-legend { left: 216px; bottom: 62px; }
 .toasts { left: 66px; bottom: 62px; }
 table.grid th { text-align: right; }
+
+.topbar .season { display: flex; align-items: center; gap: 6px; font-size: 13.5px; white-space: nowrap; }
+.topbar .season .icon { color: var(--accent); }
+.topbar .season.holiday { color: var(--warn); font-weight: 600; }
+.topbar .season.holiday .icon { color: var(--warn); }
+.person.running { border-color: var(--accent); }
+.tabs button { font-size: 12.5px; padding: 6px 1px; }
+.lot-panel { max-height: calc(var(--vh) - 80px); overflow-y: auto; }
+
+.toasts { left: 50%; bottom: 14px; transform: translateX(-50%); align-items: center; }
+.toast { max-width: 460px; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
