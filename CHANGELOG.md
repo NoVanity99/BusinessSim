@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.7.0 (unreleased) - Overhaul phase 6: interface, part two
+
+- **Build catalogue**: furniture is shown with its picture, can be searched and filtered by category, and each entry's tooltip gives its size, cost and effects.
+- **Rows**: drag while placing furniture to lay out a whole row in one go.
+- **Copy tool** (C): click a piece to get another just like it, facing the same way and with the same shelf labels.
+- **Undo and redo** (Ctrl+Z, Ctrl+Y) for everything you build, move, sell, paint or demolish. Undoing a purchase refunds it in full; a row, a template or a painted stroke is one step.
+- **Layout templates**: every kind of business has a starter layout you can build with one click, and you can save any shop's layout (shelf labels included) to build again in another shop of the same kind. Saved templates are shared across save games and are mirrored for lots that face the other way.
+- **Stock screen** (K): every shop's stock in one table with what is out or running low, how fast each product sells and how long it will last, a one-click top-up to three days' cover, and ordering without opening each shop.
+- **Staff screen**: portraits, and a 24-hour timeline per person. Drag a shift to move it or drag its ends to resize it; a cover row per shop shows hours with nobody on, or nobody who serves customers.
+- **Overlays**: theft risk (value on open shelves against guards and cameras, which now also decides how often thieves come) and shop reach (where the customers of a shop live, regulars highlighted). Overlay buttons have moved to a bar beside the map.
+- **Tutorial**: the getting-started list now points at the control to use next and covers hiring and the new screens. It can be switched back on in Settings.
+- **Controls and help** window (F1, sidebar or pause menu).
+- **Interface size**: automatic scaling from the window height, so the interface is readable at 1080p, 1440p and on ultrawide screens, or pick a size from 85% to 175%. New window sizes 2560×1080 and 3440×1440.
+- **Colour-blind friendly colours**: an option that replaces green and red with blue and orange in buttons, meters, build outlines, lot borders and schedules.
+- **Animated main menu**: the city drifts past behind the menu with people out walking.
+- **Achievements and statistics**: 22 achievements with XP rewards and progress bars, and lifetime statistics, both in the Company window.
+- Save format 6 (adds statistics and achievements). Older saves upgrade automatically.
+
 ## 1.6.0 (unreleased) - Overhaul phase 5: interface, part one
 
 - **New look**: one theme across every panel (colours, spacing, shadows, focus rings, scrollbars) and a single set of line icons in place of emoji.

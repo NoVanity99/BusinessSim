@@ -1,5 +1,5 @@
 import { isElectron } from '../../core/platform';
-import { ACTIONS, applyDisplay, DEFAULT_KEYS, keyLabel, QUALITY, RESOLUTIONS, saveSettings, settings, type Action, type Quality } from '../../core/settings';
+import { ACTIONS, applyDisplay, DEFAULT_KEYS, effectiveUiScale, keyLabel, QUALITY, RESOLUTIONS, saveSettings, settings, UI_SCALES, type Action, type Quality } from '../../core/settings';
 import { sfx } from '../../systems/audio/audio';
 import { h, setChildren } from '../dom';
 import { APP_VERSION } from '../../core/platform';
@@ -96,7 +96,19 @@ export function SettingsView(onBack: () => void): HTMLElement {
           ...(Object.keys(QUALITY) as Quality[]).map((q) => h('option', { value: q, selected: settings.quality === q }, QUALITY[q].label)),
         ),
       ),
+      h(
+        'div.kv',
+        { tip: 'How big panels, text and buttons are. Automatic picks a size from the height of the window, so the interface stays readable at 1080p, 1440p and on ultrawide screens.' },
+        h('span.k', 'Interface size'),
+        h(
+          'select',
+          { onchange: (e: Event) => { settings.uiScale = +(e.target as HTMLSelectElement).value; saveSettings(); render(); } },
+          ...UI_SCALES.map((v) => h('option', { value: v, selected: settings.uiScale === v }, v === 0 ? `Automatic (${Math.round(effectiveUiScale() * 100)}%)` : `${Math.round(v * 100)}%`)),
+        ),
+      ),
+      h('label.check', { tip: 'Uses blue and orange instead of green and red wherever colour means good or bad: buttons, meters, build outlines, lot borders and overlays.' }, h('input', { type: 'checkbox', checked: settings.colorblind, onchange: (e: Event) => { settings.colorblind = (e.target as HTMLInputElement).checked; saveSettings(); } }), 'Colour-blind friendly colours'),
       h('div.section', 'Game'),
+      h('label.check', { tip: 'Shows the getting-started steps again in your next game.' }, h('input', { type: 'checkbox', checked: !settings.tutorialDone, onchange: (e: Event) => { settings.tutorialDone = !(e.target as HTMLInputElement).checked; saveSettings(); } }), 'Show the tutorial'),
       h('label.check', h('input', { type: 'checkbox', checked: settings.autosave, onchange: (e: Event) => { settings.autosave = (e.target as HTMLInputElement).checked; saveSettings(); } }), 'Autosave every morning at 06:00'),
       h('div.section', 'Version and updates'),
       h('div.kv', h('span.k', 'Installed version'), h('span.v', `v${APP_VERSION}`)),

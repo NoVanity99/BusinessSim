@@ -87,6 +87,14 @@ export const MIGRATIONS: Migration[] = [
       s.events = (s.events ?? []).filter((e: { type: string }) => e.type !== 'rival');
     },
   },
+  {
+    to: 6,
+    name: 'Add lifetime statistics and achievements',
+    up(s) {
+      s.stats ??= {};
+      s.achievements ??= {};
+    },
+  },
 ];
 
 export const LATEST_SAVE_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.to), 1);

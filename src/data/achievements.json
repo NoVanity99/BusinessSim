@@ -1,0 +1,27 @@
+{
+  "_comment": "Achievements. 'stat' names a lifetime counter or a computed figure (see systems/progress/achievements.ts); 'at' is the value that unlocks it; 'xp' is the reward.",
+  "list": [
+    { "id": "first_sale",     "name": "Open for business",  "description": "Serve your first customer.",              "stat": "served",      "at": 1,      "xp": 20 },
+    { "id": "served_100",     "name": "Busy day",           "description": "Serve 100 customers.",                    "stat": "served",      "at": 100,    "xp": 60 },
+    { "id": "served_1000",    "name": "Household name",     "description": "Serve 1,000 customers.",                  "stat": "served",      "at": 1000,   "xp": 200 },
+    { "id": "served_10000",   "name": "The whole city",     "description": "Serve 10,000 customers.",                 "stat": "served",      "at": 10000,  "xp": 600 },
+    { "id": "revenue_10k",    "name": "Five figures",       "description": "Take $10,000 in total.",                  "stat": "revenue",     "at": 10000,  "xp": 100 },
+    { "id": "revenue_100k",   "name": "Six figures",        "description": "Take $100,000 in total.",                 "stat": "revenue",     "at": 100000, "xp": 400 },
+    { "id": "shops_3",        "name": "Chain",              "description": "Run three businesses at once.",           "stat": "shops",       "at": 3,      "xp": 120 },
+    { "id": "shops_6",        "name": "Empire",             "description": "Run six businesses at once.",             "stat": "shops",       "at": 6,      "xp": 400 },
+    { "id": "types_4",        "name": "Diversified",        "description": "Run four different kinds of business.",   "stat": "shopTypes",   "at": 4,      "xp": 250 },
+    { "id": "staff_10",       "name": "Employer",           "description": "Have ten people on the payroll.",         "stat": "staff",       "at": 10,     "xp": 150 },
+    { "id": "regulars_25",    "name": "Familiar faces",     "description": "Have 25 regular customers.",              "stat": "regulars",    "at": 25,     "xp": 150 },
+    { "id": "regulars_100",   "name": "Part of the family", "description": "Have 100 regular customers.",             "stat": "regulars",    "at": 100,    "xp": 400 },
+    { "id": "five_star_10",   "name": "Rave reviews",       "description": "Collect ten five-star reviews.",          "stat": "fiveStars",   "at": 10,     "xp": 150 },
+    { "id": "thief_1",        "name": "Stop, thief!",       "description": "Have a guard catch a shoplifter.",        "stat": "thieves",     "at": 1,      "xp": 60 },
+    { "id": "thief_20",       "name": "Crime does not pay", "description": "Catch 20 shoplifters.",                   "stat": "thieves",     "at": 20,     "xp": 250 },
+    { "id": "buyout_1",       "name": "Hostile takeover",   "description": "Buy out a rival shop.",                   "stat": "buyouts",     "at": 1,      "xp": 200 },
+    { "id": "top_company",    "name": "Top of the table",   "description": "Be worth more than every rival company, after day 7.", "stat": "leading", "at": 1, "xp": 300 },
+    { "id": "worth_50k",      "name": "Comfortable",        "description": "Reach a net worth of $50,000.",           "stat": "netWorth",    "at": 50000,  "xp": 200 },
+    { "id": "worth_250k",     "name": "Tycoon",             "description": "Reach a net worth of $250,000.",          "stat": "netWorth",    "at": 250000, "xp": 600 },
+    { "id": "debt_free",      "name": "Debt free",          "description": "Pay off a loan in full.",                 "stat": "loansRepaid", "at": 1,      "xp": 100 },
+    { "id": "day_30",         "name": "Here to stay",       "description": "Stay in business for 30 days.",           "stat": "day",         "at": 30,     "xp": 200 },
+    { "id": "level_max",      "name": "Master of trade",    "description": "Reach the highest company level.",        "stat": "level",       "at": 12,     "xp": 0 }
+  ]
+}

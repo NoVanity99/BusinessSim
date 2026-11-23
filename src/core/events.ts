@@ -55,6 +55,13 @@ export interface GameEvents {
   /** Centre the camera on a tile position. */
   'camera:pan': { x: number; y: number };
   'notes:changed': void;
+  achievement: string;
+  /** Add to a lifetime counter. */
+  stat: { stat: string; by?: number };
+  /** Show the help window. */
+  'help:open': void;
+  /** A shop's undo history changed. Payload: shop id. */
+  'build:history': number;
   'minimap:toggle': void;
   /** Open one of the sidebar windows, optionally on a particular shop. */
   'window:open': { id: string; shopId?: number };

@@ -1,26 +1,25 @@
 import { bus } from '../../core/events';
+import { ACHIEVEMENTS, STAT_LABELS, statValue } from '../../systems/progress/achievements';
+import { staffScreen, stockScreen } from './Screens';
 import { icon } from '../icons';
 import { markAllRead, notificationsWindow } from '../notify';
 import { dash, empireOverview, shopDashboard } from './Dashboards';
-import { companyValue, matchOffer } from '../../systems/rivals/rivals';
+import { companyValue } from '../../systems/rivals/rivals';
 import { money } from '../../core/format';
-import { session, shopById } from '../../core/state';
-import { selectLot, selectStaff, setOverlay, ui, type Overlay } from '../../core/uiState';
+import { session } from '../../core/state';
+import { selectLot, setOverlay, ui, type Overlay } from '../../core/uiState';
 import { EVENTS } from '../../data';
 import { canTakeLoan, dailyLoanCost, loanRate, repayLoan, takeLoan } from '../../systems/economy/loans';
 import { levelProgress } from '../../systems/progress/level';
 import { buyUpgrade, COMPANY, upgradeCost, upgradeLevel, upgradesFor } from '../../systems/progress/upgrades';
-import { DIFFICULTIES, EMPLOYEES, SHOP_TYPES } from '../../data';
-import { rt } from '../../systems/ai/runtime';
+import { DIFFICULTIES, SHOP_TYPES } from '../../data';
 import { sum, type DayLedger } from '../../systems/economy/finance';
 import { netWorth, netWorthParts } from '../../systems/economy/networth';
-import { dailyWageBill } from '../../systems/staff/staff';
 import { DAY_NAMES } from '../../systems/time/clock';
 import { lineChart, SERIES_COLORS } from '../charts';
 import { h, setChildren } from '../dom';
-import { roleTag } from './staffWidgets';
 
-export type WindowId = 'businesses' | 'dashboard' | 'finances' | 'staff' | 'company' | 'news';
+export type WindowId = 'businesses' | 'dashboard' | 'stock' | 'finances' | 'staff' | 'company' | 'news';
 
 const LABELS: Record<string, string> = {
   sales: 'Sales', services: 'Services', wholesale: 'Wholesale', propertySale: 'Property sales', loan: 'Loans taken', refund: 'Refunds', other: 'Other',
@@ -84,35 +83,6 @@ function finances(): HTMLElement {
   );
 }
 
-// ---------- Staff ----------
-
-function staff(focus: (lotId: number) => void): HTMLElement {
-  const s = session.state;
-  const rows = s.staff.map((e) => {
-    const shop = e.shopId !== null ? shopById(s, e.shopId) : undefined;
-    return h(
-      'tr.clickable',
-      { onclick: () => { if (shop) focus(shop.lotId); selectStaff(e.id); } },
-      h('td', e.name),
-      h('td', roleTag(e.role)),
-      h('td', shop?.name ?? ''),
-      h('td', `${e.shift[0]}–${e.shift[1]}`),
-      h('td', { class: e.energy < 30 ? 'warn' : '' }, `${Math.round(e.energy)}%`),
-      h('td', { class: e.morale < 30 ? 'bad' : '' }, `${Math.round(e.morale)}%`),
-      h('td', money(Math.round(dailyWageBill(e)))),
-      h('td', { class: s.offers.some((o) => o.staffId === e.id) ? 'warn' : 'dim' }, s.offers.some((o) => o.staffId === e.id) ? h('button.primary', { onclick: (ev: Event) => { ev.stopPropagation(); matchOffer(s, e.id); }, tip: 'A rival has made them an offer. Match it or they leave at midnight.' }, `Match ${money(s.offers.find((o) => o.staffId === e.id)!.wage)}/h`) : rt.staff.get(e.id)?.activity ?? 'Off shift'),
-    );
-  });
-  const total = s.staff.reduce((a, e) => a + dailyWageBill(e), 0);
-  return h(
-    'div.scroll',
-    s.staff.length === 0
-      ? h('div.note', { style: { marginTop: '0' } }, `Nobody works for you yet. Hire from the Staff tab of a business. ${Object.keys(EMPLOYEES.roles).length} roles exist; each business lists the ones it can use.`)
-      : h('table.grid', h('tr', h('th', 'Name'), h('th', 'Role'), h('th', 'Business'), h('th', 'Shift'), h('th', 'Energy'), h('th', 'Morale'), h('th', 'Per day'), h('th', 'Now')), ...rows),
-    s.staff.length > 0 && h('div.kv.totals', h('span.k', 'Total wage bill'), h('span.v', `${money(Math.round(total))} / day`)),
-  );
-}
-
 // ---------- Company ----------
 
 function company(): HTMLElement {
@@ -131,7 +101,7 @@ function company(): HTMLElement {
     next.length > 0 && h('div.note', { style: { marginTop: '0' } }, `Coming up: ${next.map((t) => `${t.name} (level ${t.unlockLevel})`).join(', ')}.`),
     h('div.section', 'Rival companies'),
     h(
-      'table.table',
+      'table.grid',
       h('tr', h('th', 'Company'), h('th', 'Shops'), h('th', 'Worth'), h('th', 'Style')),
       h('tr', h('td', h('span.tag', { style: { background: 'var(--accent)' } }, s.companyName)), h('td', `${s.shops.length}`), h('td', money(Math.round(worth))), h('td', { class: 'dim' }, 'You')),
       ...s.rivals.map((c) =>
@@ -144,6 +114,22 @@ function company(): HTMLElement {
         ),
       ),
     ),
+    h('div.section', `Achievements (${Object.keys(s.achievements).length}/${ACHIEVEMENTS.length})`),
+    h(
+      'div.achievements',
+      ...ACHIEVEMENTS.map((a) => {
+        const got = s.achievements[a.id];
+        const value = statValue(s, a.stat);
+        return h(
+          'div.achievement',
+          { class: got ? 'got' : '', tip: `${a.description}${got ? `\nUnlocked on day ${got}` : a.at > 1 ? `\n${Math.min(a.at, Math.floor(value)).toLocaleString()} of ${a.at.toLocaleString()}` : ''}${a.xp ? `\nReward: ${a.xp} XP` : ''}` },
+          icon(got ? 'trophy' : 'star', 16),
+          h('div', h('div.name', a.name), !got && a.at > 1 && h('div.meter', h('div', { style: { width: `${Math.min(100, (value / a.at) * 100)}%`, background: 'var(--warn)' } }))),
+        );
+      }),
+    ),
+    h('div.section', 'Lifetime statistics'),
+    h('div.statgrid', ...Object.entries(STAT_LABELS).map(([k, label]) => h('div.kv', h('span.k', label), h('span.v', k === 'revenue' ? money(Math.round(s.stats[k] ?? 0)) : Math.round(s.stats[k] ?? 0).toLocaleString()))), h('div.kv', h('span.k', 'Days in business'), h('span.v', String(statValue(s, 'day'))))),
     h('div.section', 'Company-wide upgrades'),
     ...upgradesFor(null).map(([id, d]) => {
       const level = upgradeLevel(s, COMPANY, id);
@@ -172,13 +158,15 @@ function company(): HTMLElement {
 
 // ---------- Host ----------
 
-const TITLES: Record<WindowId, string> = { businesses: 'Your businesses', dashboard: 'Shop dashboard', finances: 'Finances', staff: 'Staff', company: 'Company', news: 'Notifications' };
+const TITLES: Record<WindowId, string> = { businesses: 'Your businesses', dashboard: 'Shop dashboard', stock: 'Stock', finances: 'Finances', staff: 'Staff', company: 'Company', news: 'Notifications' };
 /** Windows that hold charts are wider, and are not rebuilt while the pointer is over them. */
-const WIDE: WindowId[] = ['businesses', 'dashboard', 'finances'];
+const WIDE: WindowId[] = ['businesses', 'dashboard', 'finances', 'stock', 'staff'];
 
 const OVERLAYS: Record<Overlay, { icon: string; name: string; tip: string; low: string; high: string; ramp: string }> = {
   traffic: { icon: 'feet', name: 'Foot traffic', tip: 'Where people have been walking over the last few hours.', low: 'Quiet', high: 'Busy', ramp: 'linear-gradient(90deg, rgba(57,135,229,0.08), rgba(57,135,229,0.9))' },
   clean: { icon: 'broom', name: 'Cleanliness', tip: 'How clean each of your businesses is.', low: 'Filthy', high: 'Spotless', ramp: 'linear-gradient(90deg, #d95926, #8f9bb0, #3987e5)' },
+  theft: { icon: 'shield', name: 'Theft risk', tip: 'How tempting each shop is to shoplifters: the value on open shelves, less whatever guards and cameras put them off.', low: 'Safe', high: 'At risk', ramp: 'linear-gradient(90deg, #3987e5, #8f9bb0, #d95926)' },
+  reach: { icon: 'target', name: 'Shop reach', tip: 'Where your customers live. Each dot is a resident who has been to the selected shop (or any of your shops if none is selected); bright dots are regulars. The ring holds four fifths of them.', low: 'Has visited', high: 'Regular', ramp: 'linear-gradient(90deg, rgba(57,135,229,0.35), #3987e5)' },
   happy: { icon: 'smile', name: 'Customer happiness', tip: 'How recent visitors felt when they left each business.', low: 'Unhappy', high: 'Delighted', ramp: 'linear-gradient(90deg, #d95926, #8f9bb0, #3987e5)' },
 };
 
@@ -190,9 +178,10 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
   const buttons: Record<WindowId, HTMLButtonElement> = {
     businesses: h('button', { tip: 'Your businesses (B)\nEvery shop you own, totals and the company ranking', onclick: () => toggle('businesses') }, icon('shop')),
     dashboard: h('button', { tip: 'Shop dashboard\nCharts for one business: takings, customers, best sellers, busiest hours', onclick: () => toggle('dashboard') }, icon('dashboard')),
+    stock: h('button', { tip: 'Stock\nEvery shop\'s stock, what is running out, and reordering', onclick: () => toggle('stock') }, icon('box')),
     finances: h('button', { tip: 'Finances (F)\nIncome, expenses and net worth', onclick: () => toggle('finances') }, icon('chart')),
     staff: h('button', { tip: 'Staff (T)\nEveryone on your payroll', onclick: () => toggle('staff') }, icon('people')),
-    company: h('button', { tip: 'Company\nLevel, rivals, company upgrades and bank loans', onclick: () => toggle('company') }, icon('trophy')),
+    company: h('button', { tip: 'Company\nLevel, rivals, achievements, statistics, upgrades and bank loans', onclick: () => toggle('company') }, icon('trophy')),
     news: h('button', { style: { display: 'none' } }),
   };
   const openDashboard = (shopId: number): void => {
@@ -219,7 +208,7 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     const scroll = shownId === open ? win.querySelector('.scroll')?.scrollTop ?? 0 : 0;
     shownId = open;
     const again = (): void => render(true);
-    const body = open === 'businesses' ? empireOverview(jump, openDashboard) : open === 'dashboard' ? shopDashboard(again, jump) : open === 'finances' ? finances() : open === 'staff' ? staff(jump) : open === 'company' ? company() : notificationsWindow(again);
+    const body = open === 'businesses' ? empireOverview(jump, openDashboard) : open === 'dashboard' ? shopDashboard(again, jump) : open === 'finances' ? finances() : open === 'stock' ? stockScreen(again, jump) : open === 'staff' ? staffScreen(again, jump) : open === 'company' ? company() : notificationsWindow(again);
     setChildren(win, h('h3', h('span', TITLES[open]), h('button.close', { onclick: () => toggle(open!) }, '×')), body);
     body.scrollTop = scroll;
   };
@@ -232,8 +221,8 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
   }
 
   // Live numbers without rebuilding on every sale: refresh twice a second while open.
-  const timer = window.setInterval(() => open && (open === 'staff' || open === 'company') && render(), 500);
-  const slow = window.setInterval(() => open && (open === 'businesses' || open === 'dashboard') && render(), 4000);
+  const timer = window.setInterval(() => open && open === 'company' && render(), 500);
+  const slow = window.setInterval(() => open && (open === 'businesses' || open === 'dashboard' || open === 'stock' || open === 'staff') && render(), 4000);
 
   const legend = h('div.panel.overlay-legend', { style: { display: 'none' } });
   const overlayBtns = (Object.keys(OVERLAYS) as Overlay[]).map((id) => h('button', { tip: `${OVERLAYS[id].name} overlay\n${OVERLAYS[id].tip}`, onclick: () => setOverlay(ui.overlay === id ? null : id) }, icon(OVERLAYS[id].icon)));
@@ -244,12 +233,13 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     if (o) setChildren(legend, h('b', o.name), h('div.ramp', { style: { background: o.ramp } }), h('div.ends', h('span', o.low), h('span', o.high)));
   };
   const offs = [bus.on('overlay:changed', renderOverlay), bus.on('notes:changed', () => open === 'news' && render()),
+    bus.on('orders:changed', () => open === 'stock' && render()),
     bus.on('window:open', ({ id, shopId }) => {
       if (id === 'dashboard' && shopId !== undefined) return openDashboard(shopId);
       open = id as WindowId;
       render(true);
     }), bus.on('time:hour', () => open === 'finances' && render()), bus.on('lot:selected', (id) => { if (id !== null && open) { open = null; render(true); } })];
-  const el = h('div', h('div.sidebar', buttons.businesses, buttons.dashboard, buttons.finances, buttons.staff, buttons.company, h('div.gap'), ...overlayBtns, h('div.gap'), h('button', { tip: 'Menu (Esc)\nSave, load, settings', onclick: openMenu }, icon('menu'))), win, legend);
+  const el = h('div', h('div.sidebar', buttons.businesses, buttons.dashboard, buttons.stock, buttons.finances, buttons.staff, buttons.company, h('div.gap'), h('button', { tip: 'Controls and help (F1)', onclick: () => bus.emit('help:open') }, icon('help')), h('button', { tip: 'Menu (Esc)\nSave, load, settings', onclick: openMenu }, icon('menu'))), h('div.overlay-bar', { tip: 'Map overlays' }, ...overlayBtns), win, legend);
   el.style.pointerEvents = 'none';
   for (const child of Array.from(el.children) as HTMLElement[]) child.style.pointerEvents = 'auto';
   return {

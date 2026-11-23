@@ -278,6 +278,7 @@ export function buyOut(s: GameState, shop: RivalShop): boolean {
   if (shopOnLot(s, shop.lotId) || !tryPay(s, price, 'property')) return false;
   company.cash += price;
   company.shops.splice(company.shops.indexOf(shop), 1);
+  bus.emit('stat', { stat: 'buyouts' });
   news(s, `You bought out ${shop.name} for ${money(price)}. The lot is free.`, 'good');
   bus.emit('rivals:changed');
   bus.emit('lot:changed', shop.lotId);

@@ -1,10 +1,11 @@
 import { bus } from './events';
 
-export type Overlay = 'traffic' | 'clean' | 'happy';
+export type Overlay = 'traffic' | 'clean' | 'happy' | 'theft' | 'reach';
 
 export type Tool =
-  | { type: 'place'; def: string; rot: number; movingId?: number }
+  | { type: 'place'; def: string; rot: number; movingId?: number; /** Shelf assignments to give each copy. */ products?: (string | null)[] }
   | { type: 'move' }
+  | { type: 'copy' }
   | { type: 'sell' };
 
 /** Transient interface state. Not saved. */

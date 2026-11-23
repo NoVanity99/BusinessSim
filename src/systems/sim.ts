@@ -6,6 +6,8 @@ import { initAi, onShopLayoutChanged, sendCrook, thiefCaught, updateAi } from '.
 import { ensureRivals, rivalsDaily } from './rivals/rivals';
 import { rebuildLot } from './ai/grid';
 import { onCrook } from './events/events';
+import { clearHistory } from './build/history';
+import { installAchievements } from './progress/achievements';
 import { initVehicles, syncVending, updateVehicles } from './ai/vehicles';
 import { updateProduction } from './shop/production';
 import { updateStaff } from './staff/agents';
@@ -49,6 +51,8 @@ export function installSim(): () => void {
   const s = session.state;
   if (!s.candidates.length) refreshCandidates(s, 0);
   ensureRivals(s);
+  // Undo history belongs to the session that made it.
+  clearHistory();
   onCrook((shop, kind) => sendCrook(shop, kind));
   initAi();
   initVehicles();
@@ -58,6 +62,7 @@ export function installSim(): () => void {
 
   const offs = [
     installProgress(s),
+    installAchievements(s),
     // Any change to a shop's walls or furniture changes where people can walk and queue.
     bus.on('shop:changed', (id) => {
       const lotId = s.shops.find((sh) => sh.id === id)?.lotId;

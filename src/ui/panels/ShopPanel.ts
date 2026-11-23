@@ -1,4 +1,9 @@
 import { bus } from '../../core/events';
+import { canRedo, canUndo, redo, undo } from '../../systems/build/history';
+import { applyTemplate, deleteTemplate, loadTemplates, previewTemplate, saveTemplate, templatesFor } from '../../systems/build/templates';
+import { frameCanvas } from '../thumb';
+import { furnFrame } from '../../art/furnitureArt';
+import { footprint } from '../../entities/Shop';
 import { money } from '../../core/format';
 import { session, shopOnLot, type GameState } from '../../core/state';
 import { selectLot, setTool, ui } from '../../core/uiState';
@@ -145,36 +150,92 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
 
 // ---------- Build ----------
 
+/** What the build catalogue is filtered to; kept while the panel stays open. */
+const catalog = { search: '', category: 'all' };
+
 function buildTab(s: GameState, shop: ShopState): Tab {
   const type = SHOP_TYPES[shop.type];
   const body = h('div');
   const ids = [...Object.keys(FURNITURE).filter((id) => FURNITURE[id].category === 'structure'), ...type.furniture];
   const categories = [...new Set(ids.map((id) => FURNITURE[id].category))];
   const buttons = new Map<string, HTMLButtonElement>();
-  const moveBtn = h('button', { onclick: () => setTool(ui.tool?.type === 'move' ? null : { type: 'move' }), tip: 'Click a piece of furniture to pick it up, then click to put it down.' }, 'Move');
-  const sellBtn = h('button', { onclick: () => setTool(ui.tool?.type === 'sell' ? null : { type: 'sell' }), tip: `Click furniture to sell it for ${Math.round(ECONOMY.build.sellBackShare * 100)}% of its price, or a wall or door to knock it down.` }, 'Sell / Demolish');
+  const toolBtn = (tool: 'move' | 'copy' | 'sell', label: string, tip: string): HTMLButtonElement => h('button', { onclick: () => setTool(ui.tool?.type === tool ? null : { type: tool }), tip }, label);
+  const moveBtn = toolBtn('move', 'Move', 'Click a piece of furniture to pick it up, then click to put it down.');
+  const copyBtn = toolBtn('copy', 'Copy', 'Click a piece of furniture to get another one just like it, facing the same way and with the same shelf labels. (C)');
+  const sellBtn = toolBtn('sell', 'Sell', `Click furniture to sell it for ${Math.round(ECONOMY.build.sellBackShare * 100)}% of its price, or a wall or door to knock it down.`);
+  const undoBtn = h('button', { onclick: () => undo(shop.id), tip: 'Undo the last build action (Ctrl+Z). Undoing a purchase refunds it in full.' }, '↶ Undo');
+  const redoBtn = h('button', { onclick: () => redo(shop.id), tip: 'Redo (Ctrl+Y)' }, '↷ Redo');
+  const grid = h('div.catalog');
+  const empty = h('div.dim', { style: { fontSize: '13px', display: 'none' } }, 'Nothing matches.');
+  const search = h('input', { type: 'text', placeholder: 'Search furniture…', value: catalog.search, oninput: (e: Event) => { catalog.search = (e.target as HTMLInputElement).value; filter(); } });
+  const chipFor = (id: string, label: string): HTMLButtonElement => h('button.chip', { onclick: () => { catalog.category = id; filter(); } }, label);
+  const chips = [chipFor('all', 'All'), ...categories.map((c) => chipFor(c, c[0].toUpperCase() + c.slice(1)))];
+  const chipIds = ['all', ...categories];
 
-  body.append(h('div.row', moveBtn, sellBtn));
-  for (const cat of categories) {
-    const grid = h('div.palette');
-    for (const id of ids.filter((i) => FURNITURE[i].category === cat)) {
-      const d = FURNITURE[id];
-      const btn = h(
-        'button',
-        {
-          tip: `${d.description}${d.decor ? `\nDecor ${d.decor > 0 ? '+' : ''}${d.decor}` : ''}${d.power ? `\nPower use ${d.power}` : ''}`,
-          onclick: () => setTool(ui.tool?.type === 'place' && ui.tool.def === id && ui.tool.movingId === undefined ? null : { type: 'place', def: id, rot: 0 }),
-        },
-        h('span.swatch', { style: { background: d.color } }),
-        h('span.name', d.name),
-        h('span.cost', money(buildCost(s, id))),
-      );
-      buttons.set(id, btn);
-      grid.append(btn);
-    }
-    body.append(h('div.section', cat), grid);
+  for (const id of ids) {
+    const d = FURNITURE[id];
+    const frame = d.kind === 'floor' ? `floor:${id}` : d.kind === 'wall' ? 'wall' : d.kind === 'door' ? 'door_h' : furnFrame(id, 0);
+    const size = footprint(id, 0);
+    const btn = h(
+      'button',
+      {
+        tip: `${d.name} · ${money(buildCost(s, id))}\n${d.description}${d.category !== 'structure' ? `\nTakes up ${size.w} × ${size.h} tile${size.w * size.h === 1 ? '' : 's'}` : ''}${d.decor ? `\nDecor ${d.decor > 0 ? '+' : ''}${d.decor}` : ''}${d.power ? `\nPower use ${d.power}` : ''}`,
+        onclick: () => setTool(ui.tool?.type === 'place' && ui.tool.def === id && ui.tool.movingId === undefined ? null : { type: 'place', def: id, rot: 0 }),
+      },
+      frameCanvas(frame, 40),
+      h('span.name', d.name),
+      h('span.cost', money(buildCost(s, id))),
+    );
+    buttons.set(id, btn);
+    grid.append(btn);
   }
-  body.append(h('div.note', 'Click to place. Drag to paint floors and walls. R rotates. Right-click or Esc puts the tool away. The yellow square shows where customers stand.'));
+
+  function filter(): void {
+    const q = catalog.search.trim().toLowerCase();
+    let shown = 0;
+    buttons.forEach((btn, id) => {
+      const d = FURNITURE[id];
+      const ok = (catalog.category === 'all' || d.category === catalog.category) && (!q || d.name.toLowerCase().includes(q) || d.description.toLowerCase().includes(q) || d.kind.includes(q));
+      btn.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    empty.style.display = shown ? 'none' : 'block';
+    chips.forEach((c, i) => c.classList.toggle('active', chipIds[i] === catalog.category));
+  }
+
+  // Layout templates: the built-in starter, plus any the player has saved for this kind of shop.
+  const templates = h('div');
+  const renderTemplates = (): void => {
+    const list = templatesFor(shop.type);
+    setChildren(
+      templates,
+      ...list.map((t) => {
+        const pv = previewTemplate(s, shop, t);
+        return h(
+          'div.template',
+          h('span.name', { tip: `${t.items.length} pieces: ${[...new Set(t.items.map((it) => FURNITURE[it.def]?.name ?? it.def))].join(', ')}` }, t.name),
+          h('span.dim', pv.fits ? `${pv.fits}/${pv.total} fit · ${money(pv.cost)}` : 'already built or no room'),
+          h('button.primary', { disabled: !pv.fits || s.money < Math.min(pv.cost, 1), onclick: () => { applyTemplate(s, shop, t); renderTemplates(); }, tip: 'Build every piece that fits and that you can afford. One Undo takes it all back.' }, 'Build'),
+          !t.builtIn && h('button', { tip: 'Delete this template', onclick: () => { deleteTemplate(t); renderTemplates(); } }, '×'),
+        );
+      }),
+      h('div.row', { style: { marginTop: '6px' } }, h('button', { disabled: !shop.objects.length, onclick: () => { const name = prompt('Name for this layout:', `${shop.name} layout`); if (name !== null) { saveTemplate(shop, name); renderTemplates(); } }, tip: 'Remember this shop\'s furniture and shelf labels so you can build the same layout in another shop of this kind, in any save.' }, 'Save this layout as a template')),
+    );
+  };
+
+  body.append(
+    h('div.toolrow', moveBtn, copyBtn, sellBtn, h('span', { style: { flex: '1' } }), undoBtn, redoBtn),
+    search,
+    h('div.chips', ...chips),
+    grid,
+    empty,
+    h('div.section', 'Layouts'),
+    templates,
+    h('div.note', 'Click to place, or drag to lay out a row. Drag to paint floors and walls. R rotates. Right-click or Esc puts the tool away. The yellow square shows where customers stand.'),
+  );
+  filter();
+  renderTemplates();
+  void loadTemplates().then(renderTemplates);
 
   const update = (): void => {
     const t = ui.tool;
@@ -183,7 +244,10 @@ function buildTab(s: GameState, shop: ShopState): Tab {
       btn.disabled = s.money < buildCost(s, id);
     });
     moveBtn.classList.toggle('active', t?.type === 'move' || (t?.type === 'place' && t.movingId !== undefined));
+    copyBtn.classList.toggle('active', t?.type === 'copy');
     sellBtn.classList.toggle('active', t?.type === 'sell');
+    undoBtn.disabled = !canUndo(shop.id);
+    redoBtn.disabled = !canRedo(shop.id);
   };
   update();
   return { el: body, update };
@@ -612,6 +676,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     bus.on('market:changed', refresh),
     bus.on('money:changed', refresh),
     bus.on('tool:changed', refresh),
+    bus.on('build:history', refresh),
     bus.on('time:hour', refresh),
     bus.on('staff:changed', refresh),
     bus.on('review:posted', refresh),

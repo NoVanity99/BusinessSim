@@ -1,4 +1,8 @@
 import Phaser from 'phaser';
+import { HelpWindow } from '../ui/screens/Help';
+import { isRegular } from '../systems/ai/residents';
+import { theftRisk } from '../systems/events/events';
+import { signal } from '../core/settings';
 import { bakeCity } from '../art/cityArt';
 import { SPEEDS, TILE } from '../core/constants';
 import { isCodeDown, isDown, onAction } from '../core/input';
@@ -12,7 +16,7 @@ import { AUTOSAVE } from '../systems/save/saves';
 import { bus, toast } from '../core/events';
 import { clamp, money } from '../core/format';
 import { session, shopOnLot } from '../core/state';
-import { resetUi, selectLot, selectNpc, selectObject, selectStaff, ui } from '../core/uiState';
+import { resetUi, selectLot, selectNpc, selectObject, selectStaff, setTool, ui } from '../core/uiState';
 import { StaffInfoPanel } from '../ui/panels/StaffInfoPanel';
 import { rt } from '../systems/ai/runtime';
 import { defOf } from '../entities/Shop';
@@ -30,6 +34,7 @@ import { setSpeed } from '../systems/time/clock';
 import { Atmosphere } from './city/Atmosphere';
 import { CityProps } from './city/CityProps';
 import { RivalViews } from './city/RivalViews';
+import { clearHistory, redo, undo } from '../systems/build/history';
 import { companyOf, rivalOnLot } from '../systems/rivals/rivals';
 import { Effects } from './city/Effects';
 import { clear, h, nightLayer, uiRoot } from '../ui/dom';
@@ -38,7 +43,7 @@ import { LotPanel } from '../ui/panels/LotPanel';
 import { mountNotifications } from '../ui/notify';
 import { Minimap } from '../ui/hud/Minimap';
 import { hideTip, showTip } from '../ui/tooltip';
-import { NEIGHBORHOODS } from '../data';
+import { NEIGHBORHOODS, SHOP_TYPES } from '../data';
 
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 2.5;
@@ -138,6 +143,8 @@ export class CityScene extends Phaser.Scene {
       })(),
       () => (updaterHooks.beforeInstall = null),
       bus.on('overlay:changed', () => this.drawOverlay()),
+      bus.on('lot:selected', () => ui.overlay === 'reach' && this.drawOverlay()),
+      bus.on('time:hour', () => ui.overlay && this.drawOverlay()),
       bus.on('game:won', () => this.showEnding(true)),
       bus.on('game:over', () => this.showEnding(false)),
       bus.on('level:up', () => sfx('good')),
@@ -226,6 +233,8 @@ export class CityScene extends Phaser.Scene {
       onAction('businesses', act(() => this.sidebar.toggle('businesses'))),
       onAction('finances', act(() => this.sidebar.toggle('finances'))),
       onAction('staff', act(() => this.sidebar.toggle('staff'))),
+      onAction('stock', act(() => this.sidebar.toggle('stock'))),
+      onAction('help', () => this.toggleHelp()),
       onAction('notifications', act(() => this.sidebar.toggle('news'))),
       onAction('minimap', act(() => bus.emit('minimap:toggle'))),
       // The menu key backs out of whatever is open, one layer at a time, then pauses.
@@ -239,6 +248,25 @@ export class CityScene extends Phaser.Scene {
         else this.openPauseMenu();
       }),
     );
+
+    // Build shortcuts that are not rebindable: undo, redo and the copy tool.
+    const buildKeys = (e: KeyboardEvent): void => {
+      const target = e.target as HTMLElement | null;
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      const shop = ui.selectedLot !== null ? shopOnLot(session.state, ui.selectedLot) : undefined;
+      if (!shop || paused()) return;
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && e.code === 'KeyZ') {
+        e.preventDefault();
+        if (e.shiftKey) redo(shop.id);
+        else undo(shop.id);
+      } else if (ctrl && e.code === 'KeyY') {
+        e.preventDefault();
+        redo(shop.id);
+      } else if (!ctrl && e.code === 'KeyC' && this.buildTool.active) setTool({ type: 'copy' });
+    };
+    window.addEventListener('keydown', buildKeys);
+    this.cleanups.push(() => window.removeEventListener('keydown', buildKeys), bus.on('shop:removed', (id) => clearHistory(id)), () => clearHistory());
 
     this.input.on('wheel', (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       this.zoomBy(dy > 0 ? 1 / 1.15 : 1.15, p);
@@ -294,6 +322,19 @@ export class CityScene extends Phaser.Scene {
     });
   }
 
+  private helpEl: HTMLElement | null = null;
+
+  /** Show or hide the controls window. The game keeps running underneath. */
+  private toggleHelp(): void {
+    if (this.helpEl) {
+      this.helpEl.remove();
+      this.helpEl = null;
+      return;
+    }
+    this.helpEl = HelpWindow(() => this.toggleHelp());
+    uiRoot().append(this.helpEl);
+  }
+
   private setupHud(): void {
     this.sidebar = Sidebar((lotId) => {
       const lot = session.city.lots[lotId];
@@ -308,6 +349,8 @@ export class CityScene extends Phaser.Scene {
         const lot = session.city.lots[lotId];
         if (lot) this.cameras.main.centerOn((lot.x + lot.w / 2) * TILE, (lot.y + lot.h / 2) * TILE);
       }),
+      bus.on('help:open', () => !this.helpEl && this.toggleHelp()),
+      () => this.helpEl?.remove(),
       bus.on('camera:pan', ({ x, y }) => this.cameras.main.centerOn(x * TILE, y * TILE)),
     );
   }
@@ -351,8 +394,39 @@ export class CityScene extends Phaser.Scene {
       }
       return;
     }
+    if (ui.overlay === 'reach') {
+      // Homes of the people who shop with you, and the area most of them come from.
+      const selected = ui.selectedLot !== null ? shopOnLot(state, ui.selectedLot) : undefined;
+      const shops = selected ? [selected] : state.shops;
+      for (const shop of shops) {
+        const lot = city.lots[shop.lotId];
+        const cx = (lot.x + lot.w / 2) * TILE;
+        const cy = (lot.y + lot.h / 2) * TILE;
+        const dists: number[] = [];
+        for (const r of state.residents) {
+          const m = r.memory[shop.id];
+          if (!m || m.visits <= 0) continue;
+          const hx = ((r.home % city.w) + 0.5) * TILE;
+          const hy = (Math.floor(r.home / city.w) + 0.5) * TILE;
+          dists.push(Math.hypot(hx - cx, hy - cy));
+          const regular = isRegular(m);
+          g.fillStyle(0x10141c, 0.6).fillCircle(hx, hy, regular ? 9 : 7);
+          g.fillStyle(0x3987e5, regular ? 1 : 0.45).fillCircle(hx, hy, regular ? 7 : 5);
+        }
+        dists.sort((a, b) => a - b);
+        if (dists.length >= 3) g.lineStyle(3, 0x3987e5, 0.7).strokeCircle(cx, cy, dists[Math.floor(dists.length * 0.8)]);
+        g.lineStyle(3, 0xffffff, 0.9).strokeRect(lot.x * TILE, lot.y * TILE, lot.w * TILE, lot.h * TILE);
+      }
+      return;
+    }
     for (const shop of state.shops) {
       const lot = city.lots[shop.lotId];
+      if (ui.overlay === 'theft') {
+        if (SHOP_TYPES[shop.type].flow !== 'retail') continue;
+        g.fillStyle(this.diverging(1 - theftRisk(state, shop)), 0.6).fillRect(lot.x * TILE, lot.y * TILE, lot.w * TILE, lot.h * TILE);
+        g.lineStyle(3, 0xffffff, 0.8).strokeRect(lot.x * TILE, lot.y * TILE, lot.w * TILE, lot.h * TILE);
+        continue;
+      }
       const t = ui.overlay === 'clean' ? 1 - shop.dirt / 100 : clamp(((shop.moodAvg ?? 60) - 25) / 60, 0, 1);
       g.fillStyle(this.diverging(t), 0.6).fillRect(lot.x * TILE, lot.y * TILE, lot.w * TILE, lot.h * TILE);
       g.lineStyle(3, 0xffffff, 0.8).strokeRect(lot.x * TILE, lot.y * TILE, lot.w * TILE, lot.h * TILE);
@@ -530,7 +604,7 @@ export class CityScene extends Phaser.Scene {
     for (const lot of city.lots) {
       if (!lot.rentable || rivalOnLot(state, lot.id)) continue;
       const own = state.lots[lot.id];
-      const color = own ? 0x4fc3a1 : 0xf2d24b;
+      const color = own ? signal().mine : signal().free;
       const x = lot.x * TILE;
       const y = lot.y * TILE;
       const w = lot.w * TILE;

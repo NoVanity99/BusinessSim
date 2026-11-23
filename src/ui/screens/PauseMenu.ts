@@ -1,4 +1,5 @@
 import { isElectron, platform } from '../../core/platform';
+import { bus } from '../../core/events';
 import { h, setChildren } from '../dom';
 import { SaveList } from './SaveList';
 import { SettingsView } from './Settings';
@@ -24,6 +25,7 @@ export function PauseMenu(actions: PauseActions): HTMLElement {
         h('button', { onclick: () => sub('Save Game', SaveList('save', (slot) => { actions.onSave(slot); main(); }, main)) }, 'Save Game'),
         h('button', { onclick: () => sub('Load Game', SaveList('load', actions.onLoad, main)) }, 'Load Game'),
         h('button', { onclick: () => sub('Settings', SettingsView(main)) }, 'Settings'),
+        h('button', { onclick: () => { actions.onResume(); bus.emit('help:open'); } }, 'Controls and help'),
         h('button', { onclick: () => { if (confirm('Return to the main menu? Unsaved progress will be lost.')) actions.onQuitToMenu(); } }, 'Quit to Main Menu'),
         isElectron && h('button', { onclick: () => { if (confirm('Quit the game? Unsaved progress will be lost.')) void platform?.quit(); } }, 'Quit to Desktop'),
       ),

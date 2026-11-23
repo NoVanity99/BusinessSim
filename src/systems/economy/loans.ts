@@ -49,6 +49,7 @@ export function repayLoan(s: GameState, loanId: number, amount: number): boolean
   loan.balance -= amount;
   if (loan.balance < 0.5) {
     s.loans.splice(s.loans.indexOf(loan), 1);
+    bus.emit('stat', { stat: 'loansRepaid' });
     toast(`${loan.name} paid off.`, 'good');
   }
   bus.emit('loans:changed');
@@ -65,6 +66,7 @@ export function loansDaily(s: GameState): void {
     loan.balance -= capital;
     if (loan.balance < 0.5) {
       s.loans.splice(s.loans.indexOf(loan), 1);
+      bus.emit('stat', { stat: 'loansRepaid' });
       toast(`${loan.name} paid off.`, 'good');
     }
   }

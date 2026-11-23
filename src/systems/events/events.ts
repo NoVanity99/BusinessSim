@@ -106,6 +106,19 @@ function healthInspection(s: GameState): void {
   }
 }
 
+/** 0-1: how attractive a shop is to shoplifters right now. Drives both the overlay and how often they come. */
+export function theftRisk(s: GameState, shop: ShopState): number {
+  let value = 0;
+  for (const o of shop.objects) {
+    if (defOf(o).kind !== 'shelf') continue;
+    for (const sl of o.slots ?? []) if (sl.product) value += batchQty(sl.batches) * (shop.prices[sl.product] ?? 0);
+  }
+  if (value <= 0) return 0;
+  const cameras = upgradeLevel(s, shop.id, 'cameras') > 0;
+  const guard = s.staff.some((e) => e.shopId === shop.id && e.role === 'security' && onDuty(s, e));
+  return clamp((0.35 + Math.min(0.65, value / 2500)) * (cameras ? 0.7 : 1) * (guard ? 0.55 : 1), 0, 1);
+}
+
 /** Every so often someone comes in to steal or cause trouble. Guards and cameras put most of them off. */
 function crooks(s: GameState): void {
   for (const shop of s.shops) {
@@ -115,7 +128,8 @@ function crooks(s: GameState): void {
     const guard = s.staff.some((e) => e.shopId === shop.id && e.role === 'security' && onDuty(s, e));
     const deterred = (cameras ? 0.7 : 1) * (guard ? 0.55 : 1);
     const stocked = shop.objects.some((o) => defOf(o).kind === 'shelf' && (o.slots ?? []).some((sl) => sl.product && batchQty(sl.batches) > 0));
-    if (flow === 'retail' && stocked && rand.chance(EVENTS.theft.thiefPerHour * deterred)) emitCrook(shop, 'steal');
+    // Shops with more on the shelves and less protection draw more thieves.
+    if (flow === 'retail' && stocked && rand.chance(EVENTS.theft.thiefPerHour * 1.6 * theftRisk(s, shop))) emitCrook(shop, 'steal');
     else if (['retail', 'counter', 'service', 'park'].includes(flow) && rand.chance(EVENTS.theft.vandalPerHour * deterred)) emitCrook(shop, 'vandal');
   }
 }

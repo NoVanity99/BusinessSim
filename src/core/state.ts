@@ -59,6 +59,10 @@ export interface GameState {
   nextRivalShopId: number;
   /** Job offers rivals have made to the player's staff. */
   offers: PoachOffer[];
+  /** Lifetime counters (customers served, takings, thieves caught...). */
+  stats: Record<string, number>;
+  /** Achievement id to the day it was unlocked. */
+  achievements: Record<string, number>;
 }
 
 export interface NewGameOptions {
@@ -99,6 +103,8 @@ export function createNewGame(opts: NewGameOptions): GameState {
     rivals: [],
     nextRivalShopId: 1,
     offers: [],
+    stats: {},
+    achievements: {},
   };
 }
 

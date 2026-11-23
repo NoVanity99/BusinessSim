@@ -158,6 +158,7 @@ export function placeObject(s: GameState, shop: ShopState, lot: LotDef, defId: s
   if (FURNITURE[defId].kind === 'producer') obj.recipe = null;
   if (FURNITURE[defId].kind === 'vending') obj.cash = 0;
   shop.objects.push(obj);
+  bus.emit('stat', { stat: 'built' });
   // The first checkout gets the owner behind it so a new shop can trade straight away.
   if (FURNITURE[defId].kind === 'register' && !s.ownerAt) s.ownerAt = { shopId: shop.id, objectId: obj.id };
   bus.emit('shop:changed', shop.id);
