@@ -2,6 +2,7 @@ import { money } from '../../core/format';
 import { APP_VERSION, isElectron, platform } from '../../core/platform';
 import { latestSave } from '../../systems/save/saves';
 import { h } from '../dom';
+import { UpdateNotice } from '../hud/UpdateNotice';
 
 export interface MainMenuActions {
   onNewGame(): void;
@@ -21,6 +22,7 @@ export function MainMenu(actions: MainMenuActions): HTMLElement {
   });
   return h(
     'div.screen',
+    UpdateNotice().el,
     h('h1', 'BusinessSim'),
     h('div.tagline', 'From one tiny shop to a city-wide empire'),
     h(

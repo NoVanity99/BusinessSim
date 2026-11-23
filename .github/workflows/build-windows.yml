@@ -1,9 +1,10 @@
 name: Build Windows exe
 
+# Test build on every push. Nothing is published; tagged releases are handled by release.yml.
+
 on:
   push:
     branches: [main, 'claude/**']
-    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -23,6 +24,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: BusinessSim-windows
-          path: release/*.exe
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
           if-no-files-found: error
           retention-days: 14

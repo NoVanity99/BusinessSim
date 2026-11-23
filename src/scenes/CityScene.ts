@@ -7,6 +7,8 @@ import { installAutosave, loadGame, saveGame } from '../systems/save/saves';
 import { PauseMenu } from '../ui/screens/PauseMenu';
 import { Sidebar } from '../ui/panels/Windows';
 import { Guide } from '../ui/hud/Guide';
+import { onUpdateState, updaterHooks } from '../systems/update/updater';
+import { AUTOSAVE } from '../systems/save/saves';
 import { bus, toast } from '../core/events';
 import { clamp, money } from '../core/format';
 import { session, shopOnLot } from '../core/state';
@@ -97,6 +99,8 @@ export class CityScene extends Phaser.Scene {
     this.setupCamera();
     this.setupInput();
     this.setupHud();
+    // If the player restarts to update mid-game, their progress goes into the autosave first.
+    updaterHooks.beforeInstall = () => saveGame(AUTOSAVE, true);
 
     this.cleanups.push(
       bus.on('lot:changed', () => this.drawLots()),
@@ -107,6 +111,19 @@ export class CityScene extends Phaser.Scene {
       }),
       installSim(),
       installAutosave(),
+      // Updates never interrupt play: one quiet toast per stage, and the details wait in Settings.
+      (() => {
+        let last = '';
+        return onUpdateState((u) => {
+          const key = `${u.status}:${u.version ?? ''}`;
+          if (key === last) return;
+          last = key;
+          if (u.status === 'available' && !u.autoDownload) toast(`Update v${u.version} is available. See Settings in the pause menu when you have a moment.`, 'info');
+          if (u.status === 'available' && u.portable && u.autoDownload) toast(`Version ${u.version} is out. See Settings in the pause menu for the download.`, 'info');
+          if (u.status === 'downloaded') toast(`Update v${u.version} is ready. It installs when you quit, or restart from Settings.`, 'good');
+        });
+      })(),
+      () => (updaterHooks.beforeInstall = null),
       bus.on('overlay:changed', () => this.drawOverlay()),
       bus.on('game:won', () => this.showEnding(true)),
       bus.on('game:over', () => this.showEnding(false)),

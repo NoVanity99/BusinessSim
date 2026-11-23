@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
+import { initUpdater } from './updater';
 
 const DEV_URL = process.env.VITE_DEV_SERVER_URL;
 let win: BrowserWindow | null = null;
@@ -110,6 +111,7 @@ if (!app.requestSingleInstanceLock()) {
   });
   void app.whenReady().then(() => {
     registerIpc();
+    initUpdater(() => win);
     createWindow();
   });
   app.on('window-all-closed', () => app.quit());

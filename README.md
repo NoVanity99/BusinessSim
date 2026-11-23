@@ -6,9 +6,30 @@ Built with TypeScript, Phaser 3, Vite and Electron. All art and sound is generat
 
 **Version 1.0.0.** See [CHANGELOG.md](CHANGELOG.md) for what each milestone added.
 
-## Playing
+## Download and install
 
-Run `BusinessSim-Portable-<version>.exe`, or install with `BusinessSim-Setup-<version>.exe`. Nothing else needs to be installed. The files are unsigned, so Windows SmartScreen warns on first run: choose "More info", then "Run anyway".
+1. Go to the [latest release](https://github.com/NoVanity99/BusinessSim/releases/latest).
+2. Download **`BusinessSim-Setup-<version>.exe`** and run it.
+3. Windows SmartScreen will say "Windows protected your PC", because the build is not code-signed yet. Click **More info**, then **Run anyway**.
+4. Choose where to install. The installer adds desktop and Start Menu shortcuts and an uninstaller. Nothing else needs to be installed.
+
+There is also **`BusinessSim-Portable-<version>.exe`**, a single file that runs without installing. The portable version does not update itself: it tells you when a new version is out and opens the download page.
+
+Saves and settings live in `%APPDATA%\BusinessSim` and survive updates and uninstalling.
+
+### Updates
+
+The installed game looks for a new release a few seconds after the main menu appears, and again every four hours while it runs. It never interrupts play.
+
+- On the main menu a notice shows **Update available: vX.Y.Z** with **View changes** (the release notes) and **Download**, then a progress bar.
+- When the download is done, choose **Restart to update** (your game is autosaved first) or **Later**, which installs it the next time you quit.
+- If an update is found while you are playing, you only get a small toast.
+- **Settings** shows the installed version, a **Check for updates** button, and a **Download updates automatically** toggle (on by default; with it on, the download starts by itself and you are only asked about restarting).
+- With no internet, or if GitHub is unreachable, you get a short message and carry on playing.
+- Updater activity is logged to `%APPDATA%\BusinessSim\logs\updater.log`.
+- Development runs (`npm run dev`, `npm start`) never check for updates.
+
+## Playing
 
 A checklist in the game walks you through your first shop. The short version:
 
@@ -56,6 +77,53 @@ Five manual slots plus an autosave at 06:00 each game day.
 - Desktop: `%APPDATA%\BusinessSim\saves\*.json`
 - Browser dev mode: `localStorage` keys prefixed `businesssim:`
 
+## Releasing a new version
+
+Releases are built by GitHub Actions (`.github/workflows/release.yml`) whenever a tag like `v1.0.1` is pushed. The version in `package.json` must match the tag, and the workflow stops with a clear error if it does not.
+
+One command bumps the version, commits, tags and pushes:
+
+```bash
+npm run release
+```
+
+That is a patch bump (1.0.0 to 1.0.1). For anything else:
+
+```bash
+npm run release -- minor
+```
+
+```bash
+npm run release -- 2.0.0
+```
+
+For the very first release, tag the version that is already in `package.json` without bumping it:
+
+```bash
+npm run release -- current
+```
+
+What happens next, in about five minutes:
+
+1. The workflow checks the tag against `package.json`, runs `npm ci` and builds the game.
+2. It creates a draft release with notes generated from the commits since the previous tag.
+3. `electron-builder --publish always` uploads the installer, its `.blockmap`, `latest.yml` and the portable exe, using the built-in `GITHUB_TOKEN`.
+4. It checks all four files are there, then publishes the release and marks it latest.
+
+Installed copies of the game find it on their next check. `latest.yml` and the `.blockmap` are what the updater reads, so do not delete them from a release. To edit the notes players see under "View changes", edit the release description on GitHub.
+
+Doing it by hand instead of `npm run release`: change `version` in `package.json`, run `npm install` to update the lockfile, commit, then `git tag v<version>` and push the branch and the tag.
+
+If a release build fails, fix the problem, delete the tag and the draft release on GitHub, and release again.
+
+### Code signing
+
+Builds are unsigned, so SmartScreen warns on first run and on each new version until enough people have run it. Signing removes that. The configuration is in place but switched off: `electron-builder.yml` has the commented steps, and `release.yml` has two commented `CSC_` lines to enable once you have a certificate and have added it as repository secrets.
+
+### The icon
+
+`build/icon.ico` is a generated placeholder (`npm run icon` recreates it from `scripts/make-icon.mjs`). Replace the file with your own multi-size `.ico` that includes a 256x256 image.
+
 ## Building
 
 Needs Node.js 20 or newer.
@@ -67,8 +135,10 @@ Needs Node.js 20 or newer.
 | `npm run dev:electron` | Run in the Electron window with hot reload |
 | `npm run build` | Type-check and build to `dist/` and `dist-electron/` |
 | `npm start` | Build and launch the desktop app |
-| `npm run dist:win` | Build the Windows installer and portable `.exe` into `release/` |
+| `npm run dist:win` | Build the Windows installer and portable `.exe` into `release/`, without publishing |
 | `npm run dist:win:portable` | Build only the portable `.exe` |
+| `npm run release` | Bump the version, tag and push, which publishes a GitHub release |
+| `npm run icon` | Regenerate the placeholder icon |
 
 To build the Windows executables on a Windows PC:
 
@@ -80,11 +150,9 @@ npm install
 npm run dist:win
 ```
 
-GitHub Actions (`.github/workflows/build-windows.yml`) does the same on a Windows runner for every push to `main`, to `claude/**` branches, and for `v*` tags. Download both files from the run's **Artifacts** section.
+For a test build without releasing, GitHub Actions (`.github/workflows/build-windows.yml`) does the same on a Windows runner for every push to `main` and to `claude/**` branches. Download the files from the run's **Artifacts** section. Builds made this way can check for updates like any other, but only tagged releases are published for players.
 
-From Linux or macOS, `npm run dist:win:portable` cross-builds the portable `.exe`. The installer needs a working Wine, so use a Windows machine or the Actions build for that.
-
-To give the `.exe` a custom icon and version info, put `icon.ico` (256x256) in `build/`, set `signAndEditExecutable: true` in `electron-builder.yml`, and build on Windows.
+From Linux or macOS, `npm run dist:win:portable` cross-builds the portable `.exe` (without the icon embedded, which needs Windows or Wine). The installer also needs Wine, so use a Windows machine or the Actions build for that.
 
 ## Changing the game
 
@@ -114,7 +182,8 @@ A new product or piece of furniture only needs a JSON entry. A new business type
 ## Project layout
 
 ```
-electron/            Electron main process and preload (window, save-file bridge)
+electron/            Electron main process, preload bridge and updater
+scripts/             Release helper and icon generator
 src/main.ts          Phaser config and scene list
 src/scenes/          Boot, menu and city scenes; city/ holds the build tool and world renderers
 src/systems/
@@ -128,6 +197,7 @@ src/systems/
   shop/              Opening hours, kitchens, production, pricing, cards, vending
   staff/             Hiring, shifts, morale, on-site behaviour, manager reordering
   time/              Game clock
+  update/            In-game view of the updater
   audio/             Synthesised sound and music
 src/entities/        Plain data types: shop, customer, employee
 src/data/            JSON definitions and their TypeScript types
@@ -141,6 +211,7 @@ Game state is plain JSON (`src/core/state.ts`), kept separate from rendering, wh
 ## Testing and known limits
 
 - Developed on Linux. The game was exercised by scripted playthroughs in Chromium and in the Electron app on Linux, including saving and loading through the real file bridge. The Windows executables are built and uploaded by GitHub Actions, but nobody has yet played them on a Windows machine.
+- The updater's interface was tested against a simulated update, and its real code was run in a packaged Linux build against this repository (where it correctly reported that no releases exist yet). A real download and install on Windows has not been done; follow the test release steps to confirm it.
 - Sound has not been checked by ear.
 - Balance is a first pass, tuned from single-day simulated runs of each business. Expect to adjust the numbers in `src/data/`.
 - Pedestrians and cars in transit are not saved; the streets repopulate when a game loads.

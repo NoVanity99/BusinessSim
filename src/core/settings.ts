@@ -51,6 +51,8 @@ export interface Settings {
   fullscreen: boolean;
   resolution: string;
   autosave: boolean;
+  /** Download new versions in the background as soon as they are found. */
+  autoDownloadUpdates: boolean;
   keys: Record<Action, string>;
 }
 
@@ -61,6 +63,7 @@ export const settings: Settings = {
   fullscreen: false,
   resolution: 'window',
   autosave: true,
+  autoDownloadUpdates: true,
   keys: { ...DEFAULT_KEYS },
 };
 

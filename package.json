@@ -15,11 +15,13 @@
     "build:electron": "tsc -p electron/tsconfig.json",
     "build": "npm run typecheck && npm run build:web && npm run build:electron",
     "start": "npm run build && electron .",
-    "dist:win": "npm run build && electron-builder --win --x64",
-    "dist:win:portable": "npm run build && electron-builder --win portable --x64"
+    "dist:win": "npm run build && electron-builder --win --x64 --publish never",
+    "dist:win:portable": "npm run build && electron-builder --win portable --x64 --publish never -c.win.signAndEditExecutable=false",
+    "icon": "node scripts/make-icon.mjs",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
-    "phaser": "^3.90.0"
+    "electron-updater": "^6.8.11"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
@@ -27,8 +29,13 @@
     "cross-env": "^10.1.0",
     "electron": "^45.4.1",
     "electron-builder": "^26.18.0",
+    "phaser": "^4.2.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "wait-on": "^9.5.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NoVanity99/BusinessSim.git"
   }
 }

@@ -3,6 +3,7 @@ import { createNewGame, session } from '../core/state';
 import { generateCity } from '../systems/city/generate';
 import { music } from '../systems/audio/audio';
 import { loadGame } from '../systems/save/saves';
+import { startUpdateChecks } from '../systems/update/updater';
 import { clear, h, uiRoot } from '../ui/dom';
 import { MainMenu } from '../ui/screens/MainMenu';
 import { NewGame } from '../ui/screens/NewGame';
@@ -18,6 +19,8 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     music.stop();
     this.showMain();
+    // The menu is on screen; now it is safe to look for updates in the background.
+    startUpdateChecks();
     this.events.once('shutdown', () => clear(uiRoot()));
   }
 

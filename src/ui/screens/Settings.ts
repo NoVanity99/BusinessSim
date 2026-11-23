@@ -2,6 +2,9 @@ import { isElectron } from '../../core/platform';
 import { ACTIONS, applyDisplay, DEFAULT_KEYS, keyLabel, RESOLUTIONS, saveSettings, settings, type Action } from '../../core/settings';
 import { sfx } from '../../systems/audio/audio';
 import { h, setChildren } from '../dom';
+import { APP_VERSION } from '../../core/platform';
+import { checkForUpdates, onUpdateState, setAutoDownload, updateState, updaterAvailable } from '../../systems/update/updater';
+import { updateControls } from '../hud/UpdateNotice';
 
 /** Settings form, used from both the main menu and the pause menu. */
 export function SettingsView(onBack: () => void): HTMLElement {
@@ -41,6 +44,29 @@ export function SettingsView(onBack: () => void): HTMLElement {
   };
   window.addEventListener('keydown', onKey, true);
 
+  // The update block refreshes on its own so a download's progress does not rebuild the whole form.
+  const updates = h('div');
+  const renderUpdates = (): void => {
+    if (updates.querySelector(':active')) return;
+    const s = updateState();
+    if (!updaterAvailable() || !s) {
+      setChildren(updates, h('div.note', { style: { marginTop: '0' } }, 'Automatic updates are part of the installed desktop version.'));
+      return;
+    }
+    const busy = s.status === 'checking' || s.status === 'downloading';
+    setChildren(
+      updates,
+      h('div.update-box', updateControls(s, { compact: false }) ?? h('div.dim', 'No check has run yet.'), s.lastChecked && h('div.dim', { style: { marginTop: '4px' } }, `Last checked ${new Date(s.lastChecked).toLocaleString()}`)),
+      h('div.row', h('button', { disabled: busy || s.status === 'disabled' || s.status === 'downloaded', onclick: checkForUpdates }, s.status === 'checking' ? 'Checking…' : 'Check for updates')),
+      !s.portable &&
+        s.status !== 'disabled' &&
+        h('label.check', { style: { marginTop: '8px' }, tip: 'When on, new versions download in the background as soon as they are found. Nothing installs until you restart or quit.' }, h('input', { type: 'checkbox', checked: settings.autoDownloadUpdates, onchange: (e: Event) => { settings.autoDownloadUpdates = (e.target as HTMLInputElement).checked; saveSettings(); setAutoDownload(settings.autoDownloadUpdates); } }), 'Download updates automatically'),
+      s.portable && h('div.note', 'This is the portable version, which cannot update itself. Use the installer if you want automatic updates.'),
+    );
+  };
+  const offUpdates = onUpdateState(renderUpdates);
+  renderUpdates();
+
   const render = (): void => {
     setChildren(
       body,
@@ -62,6 +88,9 @@ export function SettingsView(onBack: () => void): HTMLElement {
       ),
       h('div.section', 'Game'),
       h('label.check', h('input', { type: 'checkbox', checked: settings.autosave, onchange: (e: Event) => { settings.autosave = (e.target as HTMLInputElement).checked; saveSettings(); } }), 'Autosave every morning at 06:00'),
+      h('div.section', 'Version and updates'),
+      h('div.kv', h('span.k', 'Installed version'), h('span.v', `v${APP_VERSION}`)),
+      updates,
       h('div.section', 'Keys'),
       h(
         'div.keys',
@@ -76,6 +105,7 @@ export function SettingsView(onBack: () => void): HTMLElement {
 
   const close = (): void => {
     window.removeEventListener('keydown', onKey, true);
+    offUpdates();
     onBack();
   };
   return h(

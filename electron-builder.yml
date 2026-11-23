@@ -8,20 +8,53 @@ files:
   - dist-electron/**
   - package.json
 asar: true
+
+# Where releases live. electron-builder uploads here with --publish always, writes
+# latest.yml for the updater, and bakes this into the app (resources/app-update.yml)
+# so the installed game knows where to look for new versions.
+publish:
+  provider: github
+  owner: NoVanity99
+  repo: BusinessSim
+
 win:
+  icon: build/icon.ico
   target:
+    # The installer is the main download and the only build that can update itself.
     - target: nsis
       arch: [x64]
+    # Single-file build for people who do not want to install. It does not auto-update.
     - target: portable
       arch: [x64]
-  # Lets the Windows build cross-compile from Linux/macOS without Wine.
-  # Set to true when building on Windows to embed a custom icon / version info.
-  signAndEditExecutable: false
+
+  # ---- Code signing (disabled) ----
+  # Unsigned builds work, but Windows SmartScreen warns on first run.
+  # To sign releases later:
+  #   1. Buy a code-signing certificate (OV or EV) and export it as a .pfx file.
+  #   2. In the GitHub repo: Settings > Secrets and variables > Actions, add
+  #        CSC_LINK          the .pfx file, base64-encoded
+  #        CSC_KEY_PASSWORD  its password
+  #   3. In .github/workflows/release.yml, uncomment the two CSC_ lines in the
+  #      "Build and upload" step.
+  #   4. Optionally uncomment the settings below.
+  # electron-builder signs automatically whenever CSC_LINK is set; nothing else changes.
+  # signtoolOptions:
+  #   publisherName: Your Company Name
+  #   signingHashAlgorithms: [sha256]
+  #   rfc3161TimeStampServer: http://timestamp.digicert.com
+
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  artifactName: ${productName}-Setup-${version}.${ext}
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
   shortcutName: BusinessSim
+  uninstallDisplayName: BusinessSim
+  # Saves and settings in %APPDATA% survive an uninstall or update.
+  deleteAppDataOnUninstall: false
+  # No spaces in the file name: the updater downloads it by URL.
+  artifactName: ${productName}-Setup-${version}.${ext}
+
 portable:
   artifactName: ${productName}-Portable-${version}.${ext}
-publish: null

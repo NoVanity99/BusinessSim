@@ -14,6 +14,21 @@ contextBridge.exposeInMainWorld('api', {
     isFullscreen: (): Promise<boolean> => ipcRenderer.invoke('window:isFullscreen'),
     setSize: (w: number, h: number): Promise<void> => ipcRenderer.invoke('window:setSize', w, h),
   },
+  updater: {
+    getState: (): Promise<unknown> => ipcRenderer.invoke('updater:getState'),
+    start: (): Promise<void> => ipcRenderer.invoke('updater:start'),
+    check: (): Promise<void> => ipcRenderer.invoke('updater:check'),
+    download: (): Promise<void> => ipcRenderer.invoke('updater:download'),
+    install: (): Promise<void> => ipcRenderer.invoke('updater:install'),
+    setAutoDownload: (on: boolean): Promise<void> => ipcRenderer.invoke('updater:setAutoDownload', !!on),
+    openReleases: (): Promise<void> => ipcRenderer.invoke('updater:openReleases'),
+    /** Subscribe to state changes. Returns an unsubscribe function. */
+    onState: (cb: (state: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, state: unknown): void => cb(state);
+      ipcRenderer.on('updater:state', listener);
+      return () => ipcRenderer.removeListener('updater:state', listener);
+    },
+  },
   quit: (): Promise<void> => ipcRenderer.invoke('app:quit'),
   savesPath: (): Promise<string> => ipcRenderer.invoke('app:savesPath'),
 });
