@@ -1,7 +1,12 @@
 import { bus } from '../../core/events';
 import { money } from '../../core/format';
 import { session, shopById } from '../../core/state';
-import { selectLot, selectStaff } from '../../core/uiState';
+import { selectLot, selectStaff, setOverlay, ui, type Overlay } from '../../core/uiState';
+import { EVENTS } from '../../data';
+import { canTakeLoan, dailyLoanCost, loanRate, repayLoan, takeLoan } from '../../systems/economy/loans';
+import { levelProgress } from '../../systems/progress/level';
+import { buyUpgrade, COMPANY, upgradeCost, upgradeLevel, upgradesFor } from '../../systems/progress/upgrades';
+import { dayOf } from '../../systems/time/clock';
 import { DIFFICULTIES, EMPLOYEES, NEIGHBORHOODS, SHOP_TYPES } from '../../data';
 import { rt } from '../../systems/ai/runtime';
 import { sum, type DayLedger } from '../../systems/economy/finance';
@@ -12,7 +17,7 @@ import { lineChart, SERIES_COLORS } from '../charts';
 import { h, setChildren } from '../dom';
 import { roleTag } from './staffWidgets';
 
-export type WindowId = 'businesses' | 'finances' | 'staff';
+export type WindowId = 'businesses' | 'finances' | 'staff' | 'company' | 'news';
 
 const LABELS: Record<string, string> = {
   sales: 'Sales', services: 'Services', wholesale: 'Wholesale', propertySale: 'Property sales', loan: 'Loans taken', refund: 'Refunds', other: 'Other',
@@ -134,9 +139,76 @@ function staff(focus: (lotId: number) => void): HTMLElement {
   );
 }
 
+// ---------- Company ----------
+
+function company(): HTMLElement {
+  const s = session.state;
+  const worth = netWorth(s, session.city);
+  const goal = DIFFICULTIES[s.difficulty].netWorthGoal;
+  const next = Object.values(SHOP_TYPES).filter((t) => t.unlockLevel > s.level).sort((a, b) => a.unlockLevel - b.unlockLevel);
+  return h(
+    'div.scroll',
+    h(
+      'div.bigstats',
+      h('div', h('div.label', 'Level'), h('div.value', `${s.level}`), h('div.meter', h('div', { style: { width: `${Math.round(levelProgress(s) * 100)}%`, background: 'var(--warn)' } }))),
+      h('div', h('div.label', 'Net worth'), h('div.value', money(Math.round(worth)))),
+      h('div', h('div.label', `Goal ${money(goal)}`), h('div.value', s.won ? 'Reached!' : `${Math.max(0, Math.round((worth / goal) * 100))}%`)),
+    ),
+    next.length > 0 && h('div.note', { style: { marginTop: '0' } }, `Coming up: ${next.map((t) => `${t.name} (level ${t.unlockLevel})`).join(', ')}.`),
+    h('div.section', 'Company-wide upgrades'),
+    ...upgradesFor(null).map(([id, d]) => {
+      const level = upgradeLevel(s, COMPANY, id);
+      const cost = upgradeCost(d, level);
+      const locked = s.level < d.unlockLevel;
+      return h('div.kv', { style: { alignItems: 'center' }, tip: d.description }, h('span.k', `${d.name}${d.maxLevel > 1 ? ` (${level}/${d.maxLevel})` : ''}`), level >= d.maxLevel ? h('span.good', 'Done') : h('button', { disabled: locked || s.money < cost, onclick: () => buyUpgrade(s, COMPANY, id) }, locked ? `Level ${d.unlockLevel}` : money(cost)));
+    }),
+    h('div.section', 'Bank'),
+    ...s.loans.map((l) =>
+      h(
+        'div.kv',
+        { style: { alignItems: 'center' }, tip: `Borrowed ${money(l.principal)} on day ${l.takenDay}. ${(l.dailyRate * 100).toFixed(2)}% interest a day on what is still owed.` },
+        h('span.k', `${l.name}: ${money(Math.round(l.balance))} owed`),
+        h('span.row', h('button', { disabled: s.money < Math.min(1000, l.balance), onclick: () => repayLoan(s, l.id, 1000) }, 'Repay $1,000'), h('button', { disabled: s.money < l.balance, onclick: () => repayLoan(s, l.id, l.balance) }, 'Repay all')),
+      ),
+    ),
+    s.loans.length > 0 && h('div.kv', h('span.k', 'Daily repayments and interest'), h('span.v', money(Math.round(dailyLoanCost(s))))),
+    ...EVENTS.loans.map((o) => {
+      const why = canTakeLoan(s, o);
+      const daily = o.amount / o.days + o.amount * loanRate(s, o);
+      return h('div.kv', { style: { alignItems: 'center' }, tip: `${o.days} daily repayments of capital, plus ${(loanRate(s, o) * 100).toFixed(2)}% interest a day on the balance. First payment about ${money(Math.round(daily))}.` }, h('span.k', `${o.name}: ${money(o.amount)} over ${o.days} days`), h('button', { disabled: !!why, tip: why ?? undefined, onclick: () => takeLoan(s, o) }, why?.startsWith('Needs') ? why : 'Borrow'));
+    }),
+    h('div.note', `Going overdrawn costs ${Math.round(EVENTS.overdraftDailyRate * 100)}% a day. If cash falls to ${money(EVENTS.bankruptcyCash)} the bank closes you down.`),
+  );
+}
+
+// ---------- News ----------
+
+function newsWindow(): HTMLElement {
+  const s = session.state;
+  const today = dayOf(s.time);
+  return h(
+    'div.scroll',
+    h('div.section', 'Happening now'),
+    s.events.length === 0 && h('div.dim', { style: { fontSize: '13px' } }, 'Nothing out of the ordinary.'),
+    ...s.events.map((e) => h('div.kv', h('span.k', e.label), h('span.v', e.untilDay <= today ? 'today' : `${e.untilDay - today} more day${e.untilDay - today === 1 ? '' : 's'}`))),
+    h('div.section', 'Recent news'),
+    s.news.length === 0 && h('div.dim', { style: { fontSize: '13px' } }, 'No news yet.'),
+    ...s.news
+      .slice()
+      .reverse()
+      .map((n) => h(`div.news-item.${n.kind}`, h('span.dim', `Day ${n.day}  `), n.text)),
+  );
+}
+
 // ---------- Host ----------
 
-const TITLES: Record<WindowId, string> = { businesses: 'Businesses', finances: 'Finances', staff: 'Staff' };
+const TITLES: Record<WindowId, string> = { businesses: 'Businesses', finances: 'Finances', staff: 'Staff', company: 'Company', news: 'News' };
+
+const OVERLAYS: Record<Overlay, { icon: string; name: string; tip: string; low: string; high: string; ramp: string }> = {
+  traffic: { icon: '👣', name: 'Foot traffic', tip: 'Where people have been walking over the last few hours.', low: 'Quiet', high: 'Busy', ramp: 'linear-gradient(90deg, rgba(57,135,229,0.08), rgba(57,135,229,0.9))' },
+  clean: { icon: '🧹', name: 'Cleanliness', tip: 'How clean each of your businesses is.', low: 'Filthy', high: 'Spotless', ramp: 'linear-gradient(90deg, #d95926, #8f9bb0, #3987e5)' },
+  happy: { icon: '🙂', name: 'Customer happiness', tip: 'How recent visitors felt when they left each business.', low: 'Unhappy', high: 'Delighted', ramp: 'linear-gradient(90deg, #d95926, #8f9bb0, #3987e5)' },
+};
 
 /** The sidebar and the floating window it opens. `focus` moves the camera to a lot. */
 export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): { el: HTMLElement; destroy(): void; toggle(id: WindowId): void } {
@@ -146,6 +218,8 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     businesses: h('button', { tip: 'Businesses (B)\nEvery shop you own', onclick: () => toggle('businesses') }, '🏪'),
     finances: h('button', { tip: 'Finances (F)\nIncome, expenses and net worth', onclick: () => toggle('finances') }, '📈'),
     staff: h('button', { tip: 'Staff (T)\nEveryone on your payroll', onclick: () => toggle('staff') }, '👥'),
+    company: h('button', { tip: 'Company\nLevel, company upgrades and bank loans', onclick: () => toggle('company') }, '🏆'),
+    news: h('button', { tip: 'News\nEvents and what is happening in the city', onclick: () => toggle('news') }, '📰'),
   };
 
   const jump = (lotId: number): void => {
@@ -162,7 +236,7 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
     if (win.querySelector(':active')) return;
     win.style.display = 'flex';
     win.classList.toggle('narrow', false);
-    const body = open === 'businesses' ? businesses(jump) : open === 'finances' ? finances() : staff(jump);
+    const body = open === 'businesses' ? businesses(jump) : open === 'finances' ? finances() : open === 'staff' ? staff(jump) : open === 'company' ? company() : newsWindow();
     setChildren(win, h('h3', h('span', TITLES[open]), h('button.close', { onclick: () => toggle(open!) }, '×')), body);
   };
 
@@ -172,9 +246,18 @@ export function Sidebar(focus: (lotId: number) => void, openMenu: () => void): {
   }
 
   // Live numbers without rebuilding on every sale: refresh twice a second while open.
-  const timer = window.setInterval(() => open && open !== 'finances' && render(), 500);
-  const offs = [bus.on('time:hour', () => open === 'finances' && render()), bus.on('lot:selected', (id) => { if (id !== null && open) { open = null; render(); } })];
-  const el = h('div', h('div.sidebar', buttons.businesses, buttons.finances, buttons.staff, h('button', { tip: 'Menu (Esc)\nSave, load, settings', onclick: openMenu }, '☰')), win);
+  const timer = window.setInterval(() => open && open !== 'finances' && open !== 'news' && render(), 500);
+
+  const legend = h('div.panel.overlay-legend', { style: { display: 'none' } });
+  const overlayBtns = (Object.keys(OVERLAYS) as Overlay[]).map((id) => h('button', { tip: `${OVERLAYS[id].name} overlay\n${OVERLAYS[id].tip}`, onclick: () => setOverlay(ui.overlay === id ? null : id) }, OVERLAYS[id].icon));
+  const renderOverlay = (): void => {
+    (Object.keys(OVERLAYS) as Overlay[]).forEach((id, i) => overlayBtns[i].classList.toggle('active', ui.overlay === id));
+    const o = ui.overlay ? OVERLAYS[ui.overlay] : null;
+    legend.style.display = o ? 'block' : 'none';
+    if (o) setChildren(legend, h('b', o.name), h('div.ramp', { style: { background: o.ramp } }), h('div.ends', h('span', o.low), h('span', o.high)));
+  };
+  const offs = [bus.on('overlay:changed', renderOverlay), bus.on('news:changed', () => open === 'news' && render()), bus.on('time:hour', () => open === 'finances' && render()), bus.on('lot:selected', (id) => { if (id !== null && open) { open = null; render(); } })];
+  const el = h('div', h('div.sidebar', buttons.businesses, buttons.finances, buttons.staff, buttons.company, buttons.news, h('div.gap'), ...overlayBtns, h('div.gap'), h('button', { tip: 'Menu (Esc)\nSave, load, settings', onclick: openMenu }, '☰')), win, legend);
   el.style.pointerEvents = 'none';
   for (const child of Array.from(el.children) as HTMLElement[]) child.style.pointerEvents = 'auto';
   return {

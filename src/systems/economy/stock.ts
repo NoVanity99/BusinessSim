@@ -56,7 +56,8 @@ export function quoteOrder(s: GameState, lines: OrderLine[], express: boolean): 
   const surcharge = express ? (subtotal - discountAmount) * w.expressSurcharge : 0;
   const deliveryFee = cases > 0 ? w.deliveryFee : 0;
   const total = Math.round((subtotal - discountAmount + surcharge + deliveryFee) * 100) / 100;
-  return { units, cases, subtotal, discount, discountAmount, surcharge, deliveryFee, total, hours: express ? w.expressHours : w.standardHours };
+  const standard = (s.upgrades[0]?.ownFleet ?? 0) > 0 ? w.standardHours / 2 : w.standardHours;
+  return { units, cases, subtotal, discount, discountAmount, surcharge, deliveryFee, total, hours: express ? w.expressHours : standard };
 }
 
 /** Units already ordered for a shop and still on the road. */

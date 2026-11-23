@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0 - Milestone 8: events, progression, upgrades, loans, rivals
+
+- Player level and XP from serving customers, sales, opening businesses and surviving days. Business types unlock at levels 1 to 5; the top bar shows level and average reputation.
+- Upgrades (`src/data/upgrades.json`): per-shop (faster tills, self-checkout, back-room shelving, service contract, energy efficiency, local advertising, security cameras, kitchen upgrade) and company-wide (supplier contract, priority logistics).
+- Bank loans in three sizes with daily interest and repayments, early repayment, and overdraft interest. Debt counts against net worth.
+- Events (`src/data/events.json`): recurring holidays that swell the crowds, rivals opening near your shops, viral reviews good and bad, supply shortages that move prices, health inspections with fines for dirty food businesses, shoplifters (deterred by guards and cameras), and staff with sticky fingers skimming the till.
+- News window with active events and a log; Company window with level, goal, company upgrades and the bank.
+- Map overlays for foot traffic, cleanliness and customer happiness, each with a legend.
+- Reaching the net-worth goal shows a win screen and lets you keep playing; hitting the bankruptcy limit ends the game.
+
 ## 0.7.0 - Milestone 7: eight more business types
 
 Customers now follow a visit plan (buy from shelves, order at a counter, use a machine or attraction, pay), so every business shares one AI.

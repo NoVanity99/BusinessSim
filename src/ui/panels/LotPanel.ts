@@ -41,14 +41,16 @@ export function LotPanel(): { el: HTMLElement; destroy(): void } {
       ? Object.entries(SHOP_TYPES).map(([id, t]) => {
           const cost = setupCost(s, lot, id);
           const tooSmall = lot.w * lot.h < t.minArea;
+          const locked = s.level < t.unlockLevel;
           return h(
             'button.primary',
             {
-              disabled: tooSmall || s.money < cost,
+              disabled: locked || tooSmall || s.money < cost,
+              class: locked ? 'locked' : '',
               tip: `${t.description}\n\nIncludes the licence, a floor, outer walls and a door.${tooSmall ? `\nNeeds at least ${t.minArea} tiles.` : ''}`,
               onclick: () => createShop(s, lot, id),
             },
-            `Open ${t.name} (${money(cost)})`,
+            locked ? `${t.name} (level ${t.unlockLevel})` : `Open ${t.name} (${money(cost)})`,
           );
         })
       : [];
@@ -85,6 +87,7 @@ export function LotPanel(): { el: HTMLElement; destroy(): void } {
     }),
     bus.on('lot:changed', render),
     bus.on('shop:removed', render),
+    bus.on('level:up', render),
     // Re-render only when cash crosses a threshold, so buttons are not replaced mid-click.
     bus.on('money:changed', () => {
       const key = affordKey();

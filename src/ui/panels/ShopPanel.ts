@@ -26,6 +26,8 @@ import { fairPrice } from '../../systems/shop/pricing';
 import { openOrders } from '../../systems/shop/kitchen';
 import { defOf } from '../../entities/Shop';
 import { dayOf } from '../../systems/time/clock';
+import { buyUpgrade, upgradeCost, upgradeLevel, upgradesFor } from '../../systems/progress/upgrades';
+import { shopDemandMult } from '../../systems/events/events';
 
 interface Tab {
   el: HTMLElement;
@@ -92,6 +94,7 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
       h('div.meter', h('div', { style: { width: `${shop.reputation}%`, background: 'var(--accent)' } })),
       h('div.kv', { tip: 'Every visitor leaves a little mess. Dirt puts customers in a bad mood. Bins slow it down; a cleaner removes it.' }, h('span.k', 'Cleanliness'), h('span.v', { class: shop.dirt > 55 ? 'bad' : shop.dirt > 30 ? 'warn' : '' }, `${Math.round(100 - shop.dirt)}%`)),
       shop.dirt > 15 && h('div.actions', { style: { margin: '2px 0 8px' } }, h('button', { disabled: s.money < deepCleanCost(shop), onclick: () => { if (tryPay(s, deepCleanCost(shop), 'maintenance')) { shop.dirt = 0; bus.emit('shop:changed', shop.id); } }, tip: 'Pay a cleaning crew for a one-off scrub.' }, `Deep clean (${money(deepCleanCost(shop))})`)),
+      shopDemandMult(s, shop) !== 1 && h('div.kv', { tip: 'Advertising, rivals and viral reviews change how many passers-by come in.' }, h('span.k', 'Customer interest'), h('span.v', { class: shopDemandMult(s, shop) < 1 ? 'bad' : 'good' }, `${Math.round(shopDemandMult(s, shop) * 100)}%`)),
       h('div.kv', h('span.k', 'Back-room storage'), h('span.v', `${storageUsed(shop)} / ${storageCapacity(shop)} units`)),
       h('div.kv', { tip: 'Charged at midnight: a base fee, floor area and powered equipment.' }, h('span.k', 'Utilities'), h('span.v', `${money(utilityCost(s, shop))} / day`)),
       h('div.kv', h('span.k', 'Wages'), h('span.v', `${money(Math.round(staffOf(s, shop.id).reduce((a, e) => a + dailyWageBill(e), 0)))} / day`)),
@@ -469,9 +472,36 @@ function staffTab(s: GameState, shop: ShopState): Tab {
   return { el: body, update };
 }
 
+// ---------- Upgrades ----------
+
+function upgradesTab(s: GameState, shop: ShopState): Tab {
+  const body = h('div');
+  const update = (): void => {
+    if (body.querySelector(':active')) return;
+    setChildren(
+      body,
+      ...upgradesFor(shop).map(([id, d]) => {
+        const level = upgradeLevel(s, shop.id, id);
+        const maxed = level >= d.maxLevel;
+        const locked = s.level < d.unlockLevel;
+        const cost = upgradeCost(d, level);
+        return h(
+          'div.person',
+          h('div.head', h('span', { style: { fontWeight: '600' } }, d.name), h('span.dim', d.maxLevel > 1 ? `Level ${level} / ${d.maxLevel}` : level ? 'Installed' : '')),
+          h('div.sub', { style: { marginBottom: '6px' } }, d.description),
+          h('div.line', h('span', { style: { flex: '1' } }), maxed ? h('span.good', 'Fully upgraded') : h('button.primary', { disabled: locked || s.money < cost, onclick: () => buyUpgrade(s, shop.id, id) }, locked ? `Needs level ${d.unlockLevel}` : `Buy for ${money(cost)}`)),
+        );
+      }),
+      h('div.note', 'These apply to this business only. Company-wide upgrades are in the Company window.'),
+    );
+  };
+  update();
+  return { el: body, update };
+}
+
 // ---------- Panel ----------
 
-const TABS = { overview: 'Overview', build: 'Build', stock: 'Stock', prices: 'Prices', staff: 'Staff' } as const;
+const TABS = { overview: 'Overview', build: 'Build', stock: 'Stock', prices: 'Prices', staff: 'Staff', upgrades: 'Upgrades' } as const;
 type TabId = keyof typeof TABS;
 
 export function ShopPanel(): { el: HTMLElement; destroy(): void } {
@@ -491,7 +521,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     }
     const current = shop;
     el.style.display = 'flex';
-    tab = { overview: overviewTab, build: buildTab, stock: stockTab, prices: pricesTab, staff: staffTab }[tabId](s, current);
+    tab = { overview: overviewTab, build: buildTab, stock: stockTab, prices: pricesTab, staff: staffTab, upgrades: upgradesTab }[tabId](s, current);
     const name = h('input', { type: 'text', value: current.name, maxLength: 28, style: { flex: '1', minWidth: '0', fontWeight: '600' }, tip: 'Rename this business' });
     name.addEventListener('change', () => {
       current.name = name.value.trim() || current.name;
@@ -532,6 +562,7 @@ export function ShopPanel(): { el: HTMLElement; destroy(): void } {
     bus.on('tool:changed', refresh),
     bus.on('time:hour', refresh),
     bus.on('staff:changed', refresh),
+    bus.on('upgrades:changed', refresh),
   ];
   return { el, destroy: () => offs.forEach((off) => off()) };
 }

@@ -67,7 +67,7 @@ export function updateKitchens(dt: number): { customerId: number; minutes: numbe
           stations[station]--;
         }
         item.started = true;
-        item.left -= dt * cooks[cook++];
+        item.left -= dt * cooks[cook++] * (1 + (session.state.upgrades[shop.id]?.fastKitchen ?? 0) * 0.2);
         if (item.left <= 0 && station) {
           // Heavy use wears equipment out.
           const obj = shop.objects.find((o) => !o.broken && defOf(o).kind === 'cookstation' && defOf(o).station === station);

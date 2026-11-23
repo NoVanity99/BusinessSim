@@ -21,7 +21,8 @@ const multOf = (s: GameState, product: string): number => s.market.mult[product]
 
 /** What the wholesaler charges per unit right now. */
 export function wholesalePrice(s: GameState, product: string): number {
-  return PRODUCTS[product].wholesale * multOf(s, product) * DIFFICULTIES[s.difficulty].costMult;
+  const contract = 1 - (s.upgrades[0]?.bulkContract ?? 0) * 0.04;
+  return PRODUCTS[product].wholesale * multOf(s, product) * DIFFICULTIES[s.difficulty].costMult * contract;
 }
 
 /** The retail price customers consider normal right now. */

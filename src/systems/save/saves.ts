@@ -84,6 +84,14 @@ function migrate(s: GameState): GameState {
   s.candidates ??= [];
   s.nextPersonId ??= 1;
   s.upgrades ??= {};
+  s.xp ??= 0;
+  s.level ??= 1;
+  s.loans ??= [];
+  s.nextLoanId ??= 1;
+  s.events ??= [];
+  s.news ??= [];
+  s.won ??= false;
+  s.bankrupt ??= false;
   for (const shop of s.shops) {
     shop.dirt ??= 0;
     shop.autoReorder ??= true;

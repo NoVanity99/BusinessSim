@@ -73,6 +73,10 @@ export interface ShopState {
   eventDay?: number;
   /** Factory: sell finished goods to the wholesale market as they are made. */
   autoSell?: boolean;
+  /** Extra storage from upgrades. */
+  storageBonus?: number;
+  /** Running average of how visitors felt on leaving, 0-100. */
+  moodAvg?: number;
   today: ShopDayStats;
   yesterday: ShopDayStats;
 }
@@ -134,8 +138,9 @@ export function objectAt(shop: ShopState, x: number, y: number): PlacedObject | 
 
 export const batchQty = (batches: StockBatch[] | undefined): number => (batches ? batches.reduce((a, b) => a + b.qty, 0) : 0);
 
-export function storageCapacity(shop: ShopState): number {
-  let cap = SHOP_TYPES[shop.type].baseStorage;
+/** `bonus` is extra capacity from upgrades, supplied by callers that know the game state. */
+export function storageCapacity(shop: ShopState, bonus = shop.storageBonus ?? 0): number {
+  let cap = SHOP_TYPES[shop.type].baseStorage + bonus;
   for (const o of shop.objects) cap += defOf(o).storage ?? 0;
   return cap;
 }

@@ -7,6 +7,8 @@ import shopsJson from './shops.json';
 import economyJson from './economy.json';
 import populationJson from './population.json';
 import employeesJson from './employees.json';
+import upgradesJson from './upgrades.json';
+import eventsJson from './events.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -269,3 +271,43 @@ export interface EmployeeConfig {
 }
 
 export const EMPLOYEES = employeesJson as EmployeeConfig;
+
+export interface UpgradeDef {
+  name: string;
+  description: string;
+  /** Cost of the first level; each further level costs 60% more. */
+  cost: number;
+  maxLevel: number;
+  unlockLevel: number;
+  /** Shop flows it applies to (per-shop upgrades). */
+  flows?: string[];
+  /** Bought once for the whole company. */
+  company?: boolean;
+}
+
+export interface LoanOffer {
+  id: string;
+  name: string;
+  amount: number;
+  dailyRate: number;
+  days: number;
+  unlockLevel: number;
+}
+
+export interface EventsConfig {
+  loans: LoanOffer[];
+  maxLoans: number;
+  overdraftDailyRate: number;
+  /** Cash level at which the bank pulls the plug. */
+  bankruptcyCash: number;
+  holidays: { everyDays: number; offset: number; name: string; crowd: number }[];
+  chances: { shopliftPerHourPerShop: number; inspectionPerDay: number; rivalPerDay: number; viralPerDay: number; shortagePerDay: number };
+  inspection: { dirtLimit: number; fineMin: number; fineMax: number };
+  rival: { minDays: number; maxDays: number; demandMult: number; minDay: number };
+  viral: { days: number; goodMult: number; badMult: number };
+  shortage: { days: number; priceMult: number };
+  xp: { perCustomer: number; perRevenueDollar: number; perDay: number; perShopOpened: number; base: number; power: number };
+}
+
+export const UPGRADES = upgradesJson as Record<string, UpgradeDef>;
+export const EVENTS = eventsJson as EventsConfig;

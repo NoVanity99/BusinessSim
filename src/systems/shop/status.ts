@@ -18,7 +18,9 @@ export function operatorSpeed(s: GameState, shop: ShopState, obj: PlacedObject):
   if (defOf(obj).kind !== 'register') return 0;
   if (s.ownerAt?.shopId === shop.id && s.ownerAt.objectId === obj.id) return 1;
   const cashier = cashierAt(s, shop.id, obj.id);
-  return cashier ? performance(cashier) : 0;
+  if (cashier) return performance(cashier);
+  // Self-checkout keeps unattended tills working, slowly.
+  return (s.upgrades[shop.id]?.selfCheckout ?? 0) > 0 ? 0.55 : 0;
 }
 
 /** Daily utility bill for one shop: a base charge, floor area, and powered equipment. */
@@ -27,7 +29,8 @@ export function utilityCost(s: GameState, shop: ShopState): number {
   let power = 0;
   for (const o of shop.objects) power += defOf(o).power ?? 0;
   const area = shop.floor.filter(Boolean).length;
-  return Math.round((u.basePerDay + area * u.perTilePerDay + power * u.perPowerUnitPerDay) * DIFFICULTIES[s.difficulty].costMult);
+  const saving = 1 - (s.upgrades[shop.id]?.efficientEnergy ?? 0) * 0.2;
+  return Math.round((u.basePerDay + area * u.perTilePerDay + power * u.perPowerUnitPerDay * saving) * DIFFICULTIES[s.difficulty].costMult);
 }
 
 /** Price of a one-off professional clean, scaled by shop size. */

@@ -1,5 +1,7 @@
 import { bus } from './events';
 
+export type Overlay = 'traffic' | 'clean' | 'happy';
+
 export type Tool =
   | { type: 'place'; def: string; rot: number; movingId?: number }
   | { type: 'move' }
@@ -12,7 +14,8 @@ export const ui: {
   selectedObject: { shopId: number; objectId: number } | null;
   selectedNpc: number | null;
   selectedStaff: number | null;
-} = { tool: null, selectedLot: null, selectedObject: null, selectedNpc: null, selectedStaff: null };
+  overlay: Overlay | null;
+} = { tool: null, selectedLot: null, selectedObject: null, selectedNpc: null, selectedStaff: null, overlay: null };
 
 export function setTool(tool: Tool | null): void {
   ui.tool = tool;
@@ -40,7 +43,13 @@ export function selectStaff(id: number | null): void {
   bus.emit('staff:selected', id);
 }
 
+export function setOverlay(o: Overlay | null): void {
+  ui.overlay = o;
+  bus.emit('overlay:changed', o);
+}
+
 export function resetUi(): void {
+  ui.overlay = null;
   ui.selectedStaff = null;
   ui.selectedNpc = null;
   ui.tool = null;

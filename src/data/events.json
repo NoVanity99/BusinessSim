@@ -1,0 +1,27 @@
+{
+  "loans": [
+    { "id": "small",  "name": "Starter Loan",   "amount": 5000,  "dailyRate": 0.006,  "days": 30, "unlockLevel": 1 },
+    { "id": "medium", "name": "Business Loan",  "amount": 20000, "dailyRate": 0.005,  "days": 40, "unlockLevel": 3 },
+    { "id": "large",  "name": "Expansion Loan", "amount": 75000, "dailyRate": 0.0045, "days": 60, "unlockLevel": 5 }
+  ],
+  "maxLoans": 3,
+  "overdraftDailyRate": 0.02,
+  "bankruptcyCash": -6000,
+  "holidays": [
+    { "everyDays": 7,  "offset": 6,  "name": "Sunday Market",    "crowd": 1.35 },
+    { "everyDays": 14, "offset": 13, "name": "City Festival",    "crowd": 1.7 },
+    { "everyDays": 28, "offset": 20, "name": "Bank Holiday",     "crowd": 1.5 }
+  ],
+  "chances": {
+    "shopliftPerHourPerShop": 0.035,
+    "inspectionPerDay": 0.1,
+    "rivalPerDay": 0.07,
+    "viralPerDay": 0.08,
+    "shortagePerDay": 0.1
+  },
+  "inspection": { "dirtLimit": 45, "fineMin": 250, "fineMax": 700 },
+  "rival": { "minDays": 4, "maxDays": 9, "demandMult": 0.65, "minDay": 5 },
+  "viral": { "days": 2, "goodMult": 1.8, "badMult": 0.6 },
+  "shortage": { "days": 3, "priceMult": 1.5 },
+  "xp": { "perCustomer": 1, "perRevenueDollar": 0.04, "perDay": 10, "perShopOpened": 60, "base": 70, "power": 2.1 }
+}

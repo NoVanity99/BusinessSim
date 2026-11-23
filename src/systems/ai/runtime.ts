@@ -85,6 +85,8 @@ export const rt: {
   crowdMult: number;
   demandMult: Record<string, number>;
   tournamentFee: number;
+  /** Footfall per tile, decayed over time, for the foot-traffic overlay. */
+  heat: Float32Array;
 } = {
   grid: undefined as unknown as Grid,
   customers: [],
@@ -105,6 +107,7 @@ export const rt: {
   crowdMult: 1,
   demandMult: {},
   tournamentFee: 8,
+  heat: new Float32Array(0),
 };
 
 export const regKey = (shopId: number, objectId: number): string => `${shopId}:${objectId}`;

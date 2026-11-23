@@ -28,6 +28,7 @@ export function netWorthParts(s: GameState, city: City): NetWorthParts {
     }
     for (const [p, batches] of Object.entries(shop.storage)) parts.stock += batchQty(batches) * PRODUCTS[p].wholesale;
   }
+  parts.debt = s.loans.reduce((a, l) => a + l.balance, 0);
   return parts;
 }
 

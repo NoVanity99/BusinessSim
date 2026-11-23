@@ -7,6 +7,8 @@ import type { ShopState } from '../entities/Shop';
 import type { Candidate, Employee } from '../entities/Employee';
 import { newMarketState, type MarketState } from '../systems/economy/market';
 import type { Order } from '../systems/economy/stock';
+import type { Loan } from '../systems/economy/loans';
+import type { ActiveEvent, NewsItem } from '../systems/events/events';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
@@ -37,6 +39,15 @@ export interface GameState {
   nextPersonId: number;
   /** Purchased upgrade levels per shop id. */
   upgrades: Record<number, Record<string, number>>;
+  xp: number;
+  level: number;
+  loans: Loan[];
+  nextLoanId: number;
+  events: ActiveEvent[];
+  news: NewsItem[];
+  /** The net-worth goal has been reached (the game carries on). */
+  won: boolean;
+  bankrupt: boolean;
 }
 
 export interface NewGameOptions {
@@ -64,6 +75,14 @@ export function createNewGame(opts: NewGameOptions): GameState {
     candidates: [],
     nextPersonId: 1,
     upgrades: {},
+    xp: 0,
+    level: 1,
+    loans: [],
+    nextLoanId: 1,
+    events: [],
+    news: [],
+    won: false,
+    bankrupt: false,
   };
 }
 

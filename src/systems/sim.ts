@@ -9,6 +9,12 @@ import { expireStock, processDeliveries } from './economy/stock';
 import { utilityCost } from './shop/status';
 import { managerReorder } from './staff/manager';
 import { refreshCandidates, staffDaily, staffHourly } from './staff/staff';
+import { loansDaily } from './economy/loans';
+import { netWorth } from './economy/networth';
+import { eventsDaily, eventsHourly, initEvents } from './events/events';
+import { installProgress } from './progress/level';
+import { DIFFICULTIES, EVENTS } from '../data';
+import { rt } from './ai/runtime';
 
 /**
  * Wires the clock to everything that happens on a schedule.
@@ -17,12 +23,18 @@ import { refreshCandidates, staffDaily, staffHourly } from './staff/staff';
 export function installSim(): () => void {
   const s = session.state;
   if (!s.candidates.length) refreshCandidates(s, 0);
+  initEvents(s);
 
   const offs = [
+    installProgress(s),
     bus.on('time:minute', () => processDeliveries(s)),
     bus.on('time:hour', () => {
       staffHourly(s);
       managerReorder(s);
+      eventsHourly(s);
+      // Footfall fades so the overlay shows recent traffic, not all of history.
+      for (let i = 0; i < rt.heat.length; i++) rt.heat[i] *= 0.82;
+      checkEndings();
     }),
     bus.on('time:day', (day) => {
       const rent = chargeDailyRent(s, session.city);
@@ -33,6 +45,7 @@ export function installSim(): () => void {
         shop.today.costs += u + (s.lots[shop.lotId]?.owner === 'rented' ? rentOf(s, session.city.lots[shop.lotId]) : 0);
       }
       spend(s, utilities, 'utilities');
+      loansDaily(s);
       const closed = closeDay(s, day);
       for (const shop of s.shops) {
         shop.yesterday = shop.today;
@@ -41,6 +54,7 @@ export function installSim(): () => void {
       driftMarket(s);
       expireStock(s);
       staffDaily(s);
+      eventsDaily(s);
       const income = Object.values(closed.income).reduce((a, b) => a + (b ?? 0), 0);
       const expense = Object.values(closed.expense).reduce((a, b) => a + (b ?? 0), 0);
       if (rent + utilities > 0 || income > 0) {
@@ -48,5 +62,17 @@ export function installSim(): () => void {
       }
     }),
   ];
+  /** Winning is a milestone, not the end; bankruptcy is the end. */
+  function checkEndings(): void {
+    if (!s.won && netWorth(s, session.city) >= DIFFICULTIES[s.difficulty].netWorthGoal) {
+      s.won = true;
+      bus.emit('game:won');
+    }
+    if (!s.bankrupt && s.money <= EVENTS.bankruptcyCash) {
+      s.bankrupt = true;
+      bus.emit('game:over');
+    }
+  }
+
   return () => offs.forEach((off) => off());
 }

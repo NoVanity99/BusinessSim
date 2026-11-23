@@ -10,6 +10,7 @@ import { idx, T } from '../city/generate';
 import { earn } from '../economy/finance';
 import { addToStorage, consumeIngredients, hasIngredients, takeFromSlot } from '../economy/stock';
 import { fairPrice } from '../shop/pricing';
+import { shopDemandMult } from '../events/events';
 import { kitchenCanMake, openTicket, updateKitchens } from '../shop/kitchen';
 import { onDuty } from '../staff/staff';
 import { toast } from '../../core/events';
@@ -35,6 +36,7 @@ export function initAi(): void {
   rt.registers = new Map();
   rt.staff = new Map();
   rt.stations = new Map();
+  rt.heat = new Float32Array(city.w * city.h);
   rt.kitchens = new Map();
   rt.spawnDebt = 0;
   rt.spawnPoints = [];
@@ -381,6 +383,7 @@ function leaveShop(c: Customer): void {
     // Each visit nudges reputation; paying customers count for more than window-shoppers.
     const delta = ((c.mood - 50) / 50) * (c.bought ? 0.6 : 0.45);
     shop.reputation = clamp(shop.reputation + delta, 0, 100);
+    shop.moodAvg = (shop.moodAvg ?? 60) * 0.9 + c.mood * 0.1;
     bus.emit('visit:ended', { shopId: shop.id, mood: c.mood, bought: c.bought });
   }
   if (shop && c.cart.length) {
@@ -433,7 +436,7 @@ function considerShops(c: Customer): void {
     c.seen.push(shop.id);
     if (!isOpenNow(s, shop)) continue;
     // Reputation decides how tempting the shop looks from the street.
-    if (!rand.chance(0.2 + 0.7 * (shop.reputation / 100))) continue;
+    if (!rand.chance((0.2 + 0.7 * (shop.reputation / 100)) * shopDemandMult(s, shop))) continue;
     c.seen.pop();
     if (headToShop(c, shop)) return;
     c.seen.push(shop.id);
@@ -1018,6 +1021,7 @@ export function updateAi(dt: number): void {
         c.y = ty;
         c.path.pop();
         dist -= d;
+        rt.heat[n] += 1;
         if ((c.state === 'walk' || c.state === 'leave') && rt.vendingAt.size) passVending(c, n);
         if (c.state === 'walk' && c.need) {
           considerShops(c);

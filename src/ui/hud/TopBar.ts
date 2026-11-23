@@ -4,12 +4,18 @@ import { money } from '../../core/format';
 import { session } from '../../core/state';
 import { clockText, dateText, setSpeed } from '../../systems/time/clock';
 import { h } from '../dom';
+import { SHOP_TYPES } from '../../data';
+import { levelProgress } from '../../systems/progress/level';
 
 /** Money, date/time and speed controls. Returns the element and a cleanup function. */
 export function TopBar(): { el: HTMLElement; destroy(): void } {
   const s = session.state;
   const moneyEl = h('div.money', { tip: 'Cash on hand' });
   const clockEl = h('div.clock');
+  const levelFill = h('div');
+  const levelText = h('span');
+  const levelEl = h('div.level', { tip: 'Earn experience by serving customers, making sales and opening businesses. Levels unlock new business types, upgrades and loans.' }, levelText, h('div.meter', levelFill));
+  const repEl = h('div.stat', { tip: 'Average reputation across your businesses that serve customers.' });
   const dateEl = h('div.date');
 
   const labels: Record<number, [string, string]> = {
@@ -28,9 +34,19 @@ export function TopBar(): { el: HTMLElement; destroy(): void } {
     clockEl.textContent = clockText(s.time);
     dateEl.textContent = dateText(s.time);
   };
+  const refreshLevel = (): void => {
+    levelText.textContent = `Level ${s.level}`;
+    levelFill.style.width = `${Math.round(levelProgress(s) * 100)}%`;
+  };
+  const refreshRep = (): void => {
+    const shops = s.shops.filter((sh) => SHOP_TYPES[sh.type].demand > 0 || SHOP_TYPES[sh.type].carDemand);
+    repEl.replaceChildren(h('span.label', 'Reputation'), shops.length ? String(Math.round(shops.reduce((a, sh) => a + sh.reputation, 0) / shops.length)) : '–');
+  };
   const refreshSpeed = (): void => speedBtns.forEach((b, i) => b.classList.toggle('active', SPEEDS[i] === s.time.speed));
 
-  const offs = [bus.on('money:changed', refreshMoney), bus.on('time:minute', refreshTime), bus.on('time:speed', refreshSpeed)];
+  const offs = [bus.on('money:changed', refreshMoney), bus.on('time:minute', refreshTime), bus.on('time:speed', refreshSpeed), bus.on('xp:changed', refreshLevel), bus.on('time:hour', refreshRep), bus.on('shop:created', refreshRep)];
+  refreshLevel();
+  refreshRep();
   refreshMoney();
   refreshTime();
   refreshSpeed();
@@ -39,6 +55,8 @@ export function TopBar(): { el: HTMLElement; destroy(): void } {
     'div.topbar',
     h('div.company', { tip: 'Your company' }, s.companyName),
     moneyEl,
+    levelEl,
+    repEl,
     h('div.spacer'),
     dateEl,
     clockEl,

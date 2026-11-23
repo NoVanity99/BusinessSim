@@ -32,6 +32,14 @@ export interface GameEvents {
   'world:bubble': { x: number; y: number; text: string; kind: 'good' | 'bad' | 'neutral' };
   'visit:ended': { shopId: number; mood: number; bought: boolean };
   'staff:changed': void;
+  'level:up': number;
+  'xp:changed': void;
+  'upgrades:changed': void;
+  'loans:changed': void;
+  'news:changed': void;
+  'game:won': void;
+  'game:over': void;
+  'overlay:changed': string | null;
   'staff:removed': number;
   'staff:selected': number | null;
   'object:selected': { shopId: number; objectId: number } | null;

@@ -36,6 +36,10 @@ export function setupCost(s: GameState, lot: LotDef, typeId: string): number {
 export function createShop(s: GameState, lot: LotDef, typeId: string): ShopState | null {
   const type = SHOP_TYPES[typeId];
   if (!s.lots[lot.id] || shopOnLot(s, lot.id)) return null;
+  if (s.level < type.unlockLevel) {
+    toast(`${type.name} unlocks at level ${type.unlockLevel}.`, 'bad');
+    return null;
+  }
   if (lot.w * lot.h < type.minArea) {
     toast(`A ${type.name} needs at least ${type.minArea} tiles.`, 'bad');
     return null;

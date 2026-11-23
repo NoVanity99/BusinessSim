@@ -57,6 +57,8 @@ export class CityScene extends Phaser.Scene {
   private buildTool!: BuildTool;
   private selGfx!: Phaser.GameObjects.Graphics;
   private npcViews!: NpcViews;
+  private overlayGfx!: Phaser.GameObjects.Graphics;
+  private overlayTimer = 0;
   private frame = 0;
   /** Remembers where each shop stood so its tiles can be freed when it is removed. */
   private shopLots = new Map<number, number>();
@@ -80,6 +82,7 @@ export class CityScene extends Phaser.Scene {
     this.lotGfx = this.add.graphics().setDepth(DEPTH.lots);
     this.hoverGfx = this.add.graphics().setDepth(DEPTH.lots);
     this.selGfx = this.add.graphics().setDepth(DEPTH.ghost);
+    this.overlayGfx = this.add.graphics().setDepth(DEPTH.bars + 1);
     this.shopViews = new ShopViews(this);
     this.buildTool = new BuildTool(this);
     for (const shop of state.shops) this.shopViews.sync(shop.id);
@@ -102,6 +105,10 @@ export class CityScene extends Phaser.Scene {
       }),
       installSim(),
       installAutosave(),
+      bus.on('overlay:changed', () => this.drawOverlay()),
+      bus.on('game:won', () => this.showEnding(true)),
+      bus.on('game:over', () => this.showEnding(false)),
+      bus.on('level:up', () => sfx('good')),
       bus.on('sale', ({ x, y }) => sfx('register', this.audibility(x, y))),
       bus.on('door:enter', ({ shopId }) => {
         const lot = session.city.lots[this.shopLots.get(shopId) ?? -1];
@@ -262,6 +269,65 @@ export class CityScene extends Phaser.Scene {
     const y = ty * TILE;
     if (x < v.x - 200 || y < v.y - 200 || x > v.right + 200 || y > v.bottom + 200) return 0;
     return clamp(cam.zoom, 0.25, 1);
+  }
+
+  // ---------- Overlays ----------
+
+  /** Blend between two colours; t in 0-1. */
+  private mix(a: number, b: number, t: number): number {
+    const ch = (shift: number): number => Math.round(((a >> shift) & 255) + (((b >> shift) & 255) - ((a >> shift) & 255)) * t);
+    return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+  }
+
+  /** Orange for bad, grey in the middle, blue for good. */
+  private diverging(t: number): number {
+    return t < 0.5 ? this.mix(0xd95926, 0x8f9bb0, t * 2) : this.mix(0x8f9bb0, 0x3987e5, (t - 0.5) * 2);
+  }
+
+  private drawOverlay(): void {
+    const g = this.overlayGfx;
+    g.clear();
+    if (!ui.overlay) return;
+    const { city, state } = session;
+    if (ui.overlay === 'traffic') {
+      let max = 1;
+      for (let i = 0; i < rt.heat.length; i++) if (rt.heat[i] > max) max = rt.heat[i];
+      for (let i = 0; i < rt.heat.length; i++) {
+        const v = rt.heat[i] / max;
+        if (v < 0.03) continue;
+        // Square-root scale so quiet streets still register next to the busiest corner.
+        g.fillStyle(0x3987e5, 0.1 + 0.75 * Math.sqrt(v)).fillRect((i % city.w) * TILE, Math.floor(i / city.w) * TILE, TILE, TILE);
+      }
+      return;
+    }
+    for (const shop of state.shops) {
+      const lot = city.lots[shop.lotId];
+      const t = ui.overlay === 'clean' ? 1 - shop.dirt / 100 : clamp(((shop.moodAvg ?? 60) - 25) / 60, 0, 1);
+      g.fillStyle(this.diverging(t), 0.6).fillRect(lot.x * TILE, lot.y * TILE, lot.w * TILE, lot.h * TILE);
+      g.lineStyle(3, 0xffffff, 0.8).strokeRect(lot.x * TILE, lot.y * TILE, lot.w * TILE, lot.h * TILE);
+    }
+  }
+
+  private showEnding(won: boolean): void {
+    const s = session.state;
+    setSpeed(s.time, 0);
+    const close = (): void => {
+      el.remove();
+      if (won) setSpeed(s.time, 1);
+      else this.scene.start('Menu');
+    };
+    const el = h(
+      'div.overlay',
+      h(
+        'div.panel.window',
+        { style: { position: 'relative', width: '460px' } },
+        h('h2', won ? 'You made it!' : 'Bankrupt'),
+        h('div.modal-text', won ? `${s.companyName} has reached its net-worth goal. The city is yours. You can keep playing for as long as you like.` : `${s.companyName} has run out of money and credit, and the bank has closed the business. Load an earlier save or start again.`),
+        h('div.row', { style: { justifyContent: 'flex-end' } }, h('button.primary', { onclick: close }, won ? 'Keep playing' : 'Back to the main menu')),
+      ),
+    );
+    uiRoot().append(el);
+    sfx(won ? 'good' : 'error');
   }
 
   // ---------- Pause menu ----------
@@ -455,6 +521,12 @@ export class CityScene extends Phaser.Scene {
     if (this.frame === 0) for (const shop of session.state.shops) if (shop.objects.some((o) => defOf(o).kind === 'producer' && (o.progress ?? 0) > 0)) this.shopViews.markStockDirty(shop.id);
     this.npcViews.update(dt);
     this.shopViews.flush();
+    // Overlays read live data; refresh about once a second.
+    this.overlayTimer += dt;
+    if (ui.overlay && this.overlayTimer > 1) {
+      this.overlayTimer = 0;
+      this.drawOverlay();
+    }
     this.night.style.opacity = (darkness(hourFloat(session.state.time)) * 0.55).toFixed(3);
   }
 }
