@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { furnitureTexture } from '../../art/sprites';
+import { ATLAS, SCALE } from '../../art/atlas';
+import { furnFrame } from '../../art/furnitureArt';
 import { TILE } from '../../core/constants';
 import { bus, toast } from '../../core/events';
 import { session, shopOnLot } from '../../core/state';
@@ -21,8 +22,8 @@ export class BuildTool {
   private painting = false;
   private painted = false;
 
-  constructor(private scene: Phaser.Scene) {
-    this.ghost = scene.add.image(0, 0, '__DEFAULT').setDepth(DEPTH.ghost).setVisible(false).setAlpha(0.75);
+  constructor(scene: Phaser.Scene) {
+    this.ghost = scene.add.image(0, 0, ATLAS, 'wall').setOrigin(0).setScale(SCALE).setDepth(DEPTH.ghost).setVisible(false).setAlpha(0.8);
     this.gfx = scene.add.graphics().setDepth(DEPTH.ghost);
     bus.on('tool:changed', () => this.refresh());
   }
@@ -143,7 +144,9 @@ export class BuildTool {
 
     if (t.type === 'place' && isStructure(t.def)) {
       const ok = inLot(lot, tx, ty) && session.state.money >= buildCost(session.state, t.def);
-      g.fillStyle(ok ? 0x4fc3a1 : 0xe5605a, 0.45).fillRect(tx * TILE, ty * TILE, TILE, TILE);
+      const kind = FURNITURE[t.def].kind;
+      this.ghost.setFrame(kind === 'floor' ? `floor:${t.def}` : kind === 'door' ? 'door_h' : 'wall').setPosition(tx * TILE, ty * TILE).setTint(ok ? 0xffffff : 0xff8888).setVisible(true);
+      g.fillStyle(ok ? 0x4fc3a1 : 0xe5605a, 0.2).fillRect(tx * TILE, ty * TILE, TILE, TILE);
       g.lineStyle(2, ok ? 0x4fc3a1 : 0xe5605a, 1).strokeRect(tx * TILE, ty * TILE, TILE, TILE);
       return;
     }
@@ -154,10 +157,9 @@ export class BuildTool {
       const ok = checkPlace(shop, lot, t.def, x, y, t.rot, t.movingId).ok;
       const color = ok ? 0x4fc3a1 : 0xe5605a;
       this.ghost
-        .setTexture(furnitureTexture(this.scene, t.def))
-        .setPosition((x + w / 2) * TILE, (y + h / 2) * TILE)
-        .setAngle(t.rot * 90)
-        .setTint(ok ? 0xffffff : 0xff8888)
+        .setFrame(furnFrame(t.def, t.rot))
+        .setPosition(x * TILE, y * TILE)
+        .setTint(ok ? 0xbfffe0 : 0xff8888)
         .setVisible(true);
       g.lineStyle(2, color, 1).strokeRect(x * TILE, y * TILE, w * TILE, h * TILE);
       // Mark where customers will stand, and warn if that spot is blocked.

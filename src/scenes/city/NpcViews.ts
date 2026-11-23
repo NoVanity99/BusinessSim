@@ -5,11 +5,11 @@ import { money } from '../../core/format';
 import { ui } from '../../core/uiState';
 import { rt } from '../../systems/ai/runtime';
 import { session } from '../../core/state';
+import { carFrame, CAR_KINDS, charFrame, type Dir } from '../../art/actorArt';
+import { ATLAS, SCALE } from '../../art/atlas';
 import { EMPLOYEES } from '../../data';
 import { DEPTH } from './ShopViews';
 
-const SHIRTS = ['#d9534f', '#5aa9e6', '#f2b84b', '#7cc576', '#b07cc6', '#e8edf5', '#3d4450', '#e58f4f'];
-const SKINS = ['#f1d3b3', '#c99a6b', '#8a5a3c'];
 const BUBBLE_SECONDS = 3.2;
 const MAX_BUBBLES = 36;
 
@@ -29,20 +29,22 @@ export class NpcViews {
   private staffSprites = new Map<number, Phaser.GameObjects.Image>();
   private carSprites = new Map<number, Phaser.GameObjects.Image>();
   private bubbles: Bubble[] = [];
+  private motion = new Map<string, { x: number; y: number; dir: Dir; phase: number; still: number }>();
   private ring: Phaser.GameObjects.Graphics;
   private offs: (() => void)[];
 
   constructor(private scene: Phaser.Scene) {
-    this.makeTextures();
-    this.ring = scene.add.graphics().setDepth(DEPTH.npcs - 1);
+    this.ring = scene.add.graphics().setDepth(DEPTH.npcs + 3);
     this.offs = [
       bus.on('npc:removed', (id) => {
         this.sprites.get(id)?.destroy();
         this.sprites.delete(id);
+        this.motion.delete(`c${id}`);
       }),
       bus.on('staff:removed', (id) => {
         this.staffSprites.get(id)?.destroy();
         this.staffSprites.delete(id);
+        this.motion.delete(`s${id}`);
       }),
       bus.on('car:removed', (id) => {
         const img = this.carSprites.get(id);
@@ -66,89 +68,29 @@ export class NpcViews {
     this.offs.forEach((off) => off());
   }
 
-  /** Procedural people: a shirt-coloured body with a head. Replace `npc_<n>` textures to reskin. */
-  private makeTextures(): void {
-    for (let i = 0; i < SHIRTS.length * SKINS.length; i++) {
-      const key = `npc_${i}`;
-      if (this.scene.textures.exists(key)) continue;
-      const tex = this.scene.textures.createCanvas(key, 22, 22)!;
-      const ctx = tex.getContext();
-      const shirt = SHIRTS[i % SHIRTS.length];
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.beginPath();
-      ctx.ellipse(12, 13, 8, 7, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#1c222c';
-      ctx.beginPath();
-      ctx.arc(11, 11, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = shirt;
-      ctx.beginPath();
-      ctx.arc(11, 11, 6.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = SKINS[Math.floor(i / SHIRTS.length)];
-      ctx.beginPath();
-      ctx.arc(11, 10, 4, 0, Math.PI * 2);
-      ctx.fill();
-      tex.refresh();
-    }
-  }
-
-  /** Staff wear their role colour with a dark cap so they stand out from customers. */
-  private staffTexture(role: string): string {
-    const key = `staff_${role}`;
-    if (this.scene.textures.exists(key)) return key;
-    const tex = this.scene.textures.createCanvas(key, 24, 24)!;
-    const ctx = tex.getContext();
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.beginPath();
-    ctx.ellipse(13, 14, 9, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(12, 12, 9.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = EMPLOYEES.roles[role]?.color ?? '#4fc3a1';
-    ctx.beginPath();
-    ctx.arc(12, 12, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#f1d3b3';
-    ctx.beginPath();
-    ctx.arc(12, 11, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#20262f';
-    ctx.beginPath();
-    ctx.arc(12, 10, 4.5, Math.PI, 0);
-    ctx.fill();
-    tex.refresh();
-    return key;
-  }
-
-  /** Cars point right in their texture and are rotated to their heading. Look 99 is the delivery van. */
-  private carTexture(look: number): string {
-    const key = `car_${look}`;
-    if (this.scene.textures.exists(key)) return key;
-    const van = look === 99;
-    const w = van ? 34 : 28;
-    const tex = this.scene.textures.createCanvas(key, w + 4, 20)!;
-    const ctx = tex.getContext();
-    const body = van ? '#f2f2f2' : ['#d9534f', '#5aa9e6', '#f2b84b', '#e8edf5', '#3d4450', '#7cc576'][look % 6];
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.beginPath();
-    ctx.roundRect(3, 4, w, 14, 4);
-    ctx.fill();
-    ctx.fillStyle = body;
-    ctx.beginPath();
-    ctx.roundRect(1, 2, w, 14, 4);
-    ctx.fill();
-    ctx.fillStyle = '#20262f';
-    ctx.fillRect(w - 9, 4, 5, 10);
-    if (van) {
-      ctx.fillStyle = '#d9534f';
-      ctx.fillRect(5, 5, 14, 8);
-    } else ctx.fillRect(5, 4, 4, 10);
-    tex.refresh();
-    return key;
+  /**
+   * Point a walking sprite the way it is moving and step its walk cycle.
+   * `key` identifies the mover so its last position and facing are remembered between frames.
+   */
+  private animate(img: Phaser.GameObjects.Image, key: string, base: number, x: number, y: number, realDt: number): void {
+    let m = this.motion.get(key);
+    if (!m) this.motion.set(key, (m = { x, y, dir: 'down', phase: 0, still: 0 }));
+    const dx = x - m.x;
+    const dy = y - m.y;
+    const moved = Math.abs(dx) + Math.abs(dy) > 0.002;
+    if (moved) {
+      // Prefer the dominant axis so diagonal walkers do not flicker between facings.
+      m.dir = Math.abs(dx) > Math.abs(dy) * 1.2 ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
+      m.phase += realDt * 7;
+      m.still = 0;
+    } else m.still += realDt;
+    m.x = x;
+    m.y = y;
+    // Two walk frames alternate; standing still for a moment returns to the idle frame.
+    const frame = m.still > 0.15 ? 0 : 1 + (Math.floor(m.phase) % 2);
+    img.setFrame(charFrame(base, m.dir, frame));
+    img.setPosition(x * TILE, y * TILE);
+    img.setDepth(DEPTH.npcs + y / 1000);
   }
 
   private addBubble(anchor: { id: number; x: number; y: number; rise: number }, text: string, color: string, bg: string): void {
@@ -186,35 +128,46 @@ export class NpcViews {
     for (const c of rt.customers) {
       let img = this.sprites.get(c.id);
       if (!img) {
-        img = this.scene.add.image(0, 0, `npc_${c.look}`).setDepth(DEPTH.npcs);
+        img = this.scene.add.image(0, 0, ATLAS, charFrame(c.look, 'down', 0)).setScale(SCALE).setOrigin(0.5, 0.75);
         this.sprites.set(c.id, img);
       }
-      img.setPosition((c.x + c.ox) * TILE, (c.y + c.oy) * TILE);
+      this.animate(img, `c${c.id}`, c.look, c.x + c.ox, c.y + c.oy, realDt);
     }
 
+    // A small badge in the role's colour floats over each employee so staff stand out from customers.
+    const badges: { x: number; y: number; color: number }[] = [];
     for (const a of rt.staff.values()) {
       let img = this.staffSprites.get(a.id);
       if (!img) {
-        const role = session.state.staff.find((e) => e.id === a.id)?.role ?? 'cashier';
-        img = this.scene.add.image(0, 0, this.staffTexture(role)).setDepth(DEPTH.npcs + 1);
+        img = this.scene.add.image(0, 0, ATLAS, charFrame(0, 'down', 0)).setScale(SCALE).setOrigin(0.5, 0.75);
         this.staffSprites.set(a.id, img);
       }
-      img.setPosition(a.x * TILE, a.y * TILE);
+      const person = session.state.staff.find((e) => e.id === a.id);
+      // Mechanics get the hard-hat character; everyone else keeps the look they were hired with.
+      this.animate(img, `s${a.id}`, person?.role === 'mechanic' ? 3 : person?.look ?? 0, a.x, a.y, realDt);
+      if (person) badges.push({ x: a.x * TILE, y: a.y * TILE - 30, color: Phaser.Display.Color.HexStringToColor(EMPLOYEES.roles[person.role]?.color ?? '#ffffff').color });
     }
 
     for (const car of rt.cars) {
       let img = this.carSprites.get(car.id);
       if (!img) {
-        img = this.scene.add.image(0, 0, this.carTexture(car.look)).setDepth(DEPTH.npcs + 2);
+        img = this.scene.add.image(0, 0, ATLAS, carFrame('red', 'right')).setScale(SCALE).setOrigin(0.5, 0.7);
         this.carSprites.set(car.id, img);
       }
       // Keep to the right-hand side of the road while driving.
       const lane = car.state === 'drive' ? 0.5 : 0;
-      img.setPosition((car.x - Math.sin(car.heading) * lane) * TILE, (car.y + Math.cos(car.heading) * lane) * TILE);
-      img.setRotation(car.heading);
+      const cx = car.x - Math.sin(car.heading) * lane;
+      const cy = car.y + Math.cos(car.heading) * lane;
+      // Four drawn views: pick the one nearest the heading.
+      const c = Math.cos(car.heading);
+      const s = Math.sin(car.heading);
+      const dir: Dir = Math.abs(c) >= Math.abs(s) ? (c >= 0 ? 'right' : 'left') : s >= 0 ? 'down' : 'up';
+      const kind = car.look === 99 ? 'white' : CAR_KINDS[car.look % CAR_KINDS.length];
+      img.setFrame(carFrame(kind, dir)).setPosition(cx * TILE, cy * TILE).setDepth(DEPTH.npcs + 1 + cy / 1000);
     }
 
     this.ring.clear();
+    for (const b of badges) this.ring.fillStyle(0x10141c, 1).fillRect(b.x - 5, b.y - 1, 10, 8).fillStyle(b.color, 1).fillRect(b.x - 3, b.y + 1, 6, 4);
     const sel = ui.selectedNpc !== null ? rt.byId.get(ui.selectedNpc) : undefined;
     if (sel) this.ring.lineStyle(2, 0xffffff, 1).strokeCircle((sel.x + sel.ox) * TILE, (sel.y + sel.oy) * TILE, 12);
     const selStaff = ui.selectedStaff !== null ? rt.staff.get(ui.selectedStaff) : undefined;
@@ -232,7 +185,7 @@ export class NpcViews {
         continue;
       }
       const lift = b.rise * (1 - b.ttl / BUBBLE_SECONDS);
-      if (c) b.text.setPosition((c.x + c.ox) * TILE, (c.y + c.oy) * TILE - 12);
+      if (c) b.text.setPosition((c.x + c.ox) * TILE, (c.y + c.oy) * TILE - 22);
       else b.text.setPosition(b.x, b.y - lift);
       b.text.setScale(scale).setAlpha(Math.min(1, b.ttl * 2));
     }

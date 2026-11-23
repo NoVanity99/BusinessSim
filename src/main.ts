@@ -16,7 +16,8 @@ const game = new Phaser.Game({
     width: window.innerWidth,
     height: window.innerHeight,
   },
-  render: { antialias: true, roundPixels: false },
+  // Pixel art: nearest-neighbour sampling and whole-pixel positions keep it crisp.
+  render: { pixelArt: true, antialias: false, roundPixels: true },
   disableContextMenu: true,
   scene: [BootScene, MenuScene, CityScene],
 });

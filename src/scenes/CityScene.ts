@@ -526,7 +526,7 @@ export class CityScene extends Phaser.Scene {
     this.frame = (this.frame + 1) % 30;
     if (this.frame === 0) for (const shop of session.state.shops) if (shop.objects.some((o) => defOf(o).kind === 'producer' && (o.progress ?? 0) > 0)) this.shopViews.markStockDirty(shop.id);
     this.npcViews.update(dt);
-    this.shopViews.flush();
+    this.shopViews.flush(dt);
     this.stepTimer -= dt * session.state.time.speed;
     if (this.stepTimer <= 0 && cam.zoom >= 1.3 && session.state.time.speed > 0) {
       this.stepTimer = 0.32;

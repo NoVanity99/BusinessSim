@@ -8,6 +8,7 @@ import { addXp } from '../systems/progress/level';
 import { updateAi } from '../systems/ai/customers';
 import { updateVehicles } from '../systems/ai/vehicles';
 import { updateStaff } from '../systems/staff/agents';
+import { bus } from './events';
 import { session } from './state';
 import { selectLot } from './uiState';
 
@@ -15,4 +16,4 @@ import { selectLot } from './uiState';
  * Handles for automated tests and console tinkering (window.__dbg).
  * Nothing in the game itself depends on this.
  */
-export const debugApi = { session, rt, createShop, placeObject, rentLot, addToStorage, assignSlot, fillObject, hire, refreshCandidates, eventsDaily, eventsHourly, addXp, selectLot, updateAi, updateVehicles, updateStaff };
+export const debugApi = { session, bus, rt, createShop, placeObject, rentLot, addToStorage, assignSlot, fillObject, hire, refreshCandidates, eventsDaily, eventsHourly, addXp, selectLot, updateAi, updateVehicles, updateStaff };

@@ -2,7 +2,7 @@
 
 A top-down 2D business tycoon game for Windows. You start nearly broke with one tiny shop, and grow into a city-wide empire of nine kinds of business, watched over by a few hundred simulated customers who walk in, browse, queue, buy, complain and leave.
 
-Built with TypeScript, Phaser 3, Vite and Electron. All art and sound is generated in code, so the game has no asset files.
+Built with TypeScript, Phaser 3, Vite and Electron. The art is 32×32 pixel art built on Kenney's CC0 packs, with the gaps drawn in code to match; all sound is synthesised.
 
 **Version 1.0.0.** See [CHANGELOG.md](CHANGELOG.md) for what each milestone added.
 
@@ -175,11 +175,21 @@ Almost everything is data. Edit the JSON in `src/data/` and rebuild.
 
 A new product or piece of furniture only needs a JSON entry. A new business type needs an entry in `shops.json` using one of the existing flows (`retail`, `counter`, `service`, `park`, `depot`, `factory`); a genuinely new flow needs code in `src/systems/ai/customers.ts`.
 
-### Replacing the placeholder art
+### Changing the art
 
-- **Furniture**: preload an image under the texture key `furn_<furniture id>` before the city scene starts and the procedural painter in `src/art/sprites.ts` is skipped. Draw it facing south, sized footprint × 32 px.
-- **People and cars**: texture keys `npc_0` to `npc_23`, `staff_<role>`, `car_0` to `car_5` and `car_99` (the van), created in `src/scenes/city/NpcViews.ts`.
-- **Ground and buildings**: `drawTile` and `drawBuilding` in `src/art/cityArt.ts`.
+The game is clean 32×32 pixel art, authored at 16 px per tile and drawn at 2×. All world art is packed into one texture atlas when the game starts (`src/art/atlas.ts`), from two sources:
+
+- Tiles cut from Kenney's CC0 packs in `art-src/kenney/` (see [CREDITS.md](CREDITS.md)).
+- Sprites painted in code in the same style, for everything the packs do not cover.
+
+| To change | Edit |
+| --- | --- |
+| Ground, streets, roofs, building fronts | `src/art/worldArt.ts` (which tiles and recolours), `src/art/cityArt.ts` (how the city is laid out from them) |
+| Furniture, machines, floors, walls, doors | `src/art/furnitureArt.ts`: one painter per `sprite` id in `furniture.json`, drawn once per facing, plus animation frames |
+| People and cars | `src/art/actorArt.ts` |
+
+To use your own image for a sprite, load it in `BootScene.preload()` and blit it inside the painter registered under the same frame name; nothing else needs to know. A new piece of furniture with no painter still appears, as a plain crate in its data colour.
+
 - **Sound**: the `SFX` table and `music` object in `src/systems/audio/audio.ts`.
 
 ## Project layout

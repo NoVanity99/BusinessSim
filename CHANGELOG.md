@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.0 (unreleased) - Overhaul phase 1: art pipeline and world
+
+The game is now pixel art: 32×32 tiles in one consistent style, built on Kenney's CC0 "RPG Urban Pack" and "Roguelike Indoors" with everything else drawn in code to match.
+
+- **Texture atlas**: all world art is packed into a single texture at startup, so the renderer draws it in a few batches. Tiles are authored at 16 px and shown at 2× with crisp nearest-neighbour scaling.
+- **City**: tiled streets with kerbs, lane markings and zebra crossings, pavements, grass, trees, sand and water; other buildings have tiled roofs recoloured per neighbourhood and, where they face the camera, a front wall with a door and windows.
+- **Every object has a sprite**, drawn for each of its four facings so you can see which side customers use: shelves, racks, fridges, freezers, display cases, checkouts, order counters, grills, fryers, drinks and espresso machines, ovens, washers, dryers, benches, tables, play tables, vats, bottling lines, fuel pumps, tanks, car washes, repair bays, vending machines, gates, slides, pools, carousels, bumper cars, arcade cabinets, stalls, fountains, plants, lamps, rugs and bins.
+- **Goods are visible**: each shelf section shows packs in the product's colour, fewer as it sells down, and a red tag when it is empty.
+- **Machines animate while in use**: washer and dryer drums turn, ovens glow, vats stir, bottles move along the line, carousels spin, pool water ripples.
+- **Interiors are open to view**: shops have low block walls and no roof, so everything inside is visible at any zoom.
+- **People and cars** use the pack's characters and vehicles: six characters with walk cycles in four directions, cars with four drawn views in six colours. Staff carry a small badge in their role colour. (Full character variety comes in phase 2.)
+- Broken machines show an out-of-order badge; dirty shops show litter; producers show a progress bar.
+
 ## 1.1.0 (unreleased) - Overhaul phase 0: foundations
 
 First step of the 2.0 overhaul. Nothing looks different yet; this makes the later phases safe.

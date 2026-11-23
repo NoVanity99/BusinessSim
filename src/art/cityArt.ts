@@ -1,12 +1,13 @@
 import { TILE } from '../core/constants';
 import { NEIGHBORHOODS } from '../data';
 import { idx, T, type City, type LotDef } from '../systems/city/generate';
-import { ROOFS, WORLD } from './palette';
+import { blit } from './atlas';
+import { ROOF_COLORS } from './worldArt';
 
 /**
- * Procedural ground and building art, painted onto 2D canvases.
- * To use real sprites later, replace `drawTile` / `drawBuilding` with atlas blits;
- * nothing else in the game depends on how these pixels are produced.
+ * Bakes the static city (ground, streets, other people's buildings) into chunk textures.
+ * Everything is drawn from atlas frames, so restyling the city means changing the frames
+ * registered in worldArt.ts, not this file.
  */
 
 /** Cheap deterministic per-tile noise in [0, 1). */
@@ -16,141 +17,79 @@ function hash(x: number, y: number, k = 0): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-function speckle(ctx: CanvasRenderingContext2D, tx: number, ty: number, px: number, py: number, color: string, n: number): void {
-  ctx.fillStyle = color;
-  for (let i = 0; i < n; i++) {
-    const sx = Math.floor(hash(tx, ty, i * 2 + 1) * (TILE - 3));
-    const sy = Math.floor(hash(tx, ty, i * 2 + 2) * (TILE - 3));
-    ctx.fillRect(px + sx, py + sy, 3, 2);
-  }
-}
+const CURB = '#7a77a4';
 
 export function drawTile(ctx: CanvasRenderingContext2D, city: City, tx: number, ty: number, px: number, py: number): void {
   const t = city.tiles[idx(city, tx, ty)];
   const at = (x: number, y: number): number => (x < 0 || y < 0 || x >= city.w || y >= city.h ? -1 : city.tiles[idx(city, x, y)]);
+  const roadish = (v: number): boolean => v === T.Road || v === T.Crosswalk;
   switch (t) {
-    case T.Road: {
-      ctx.fillStyle = WORLD.road;
-      ctx.fillRect(px, py, TILE, TILE);
-      // Dashed centre line on the seam between the two lanes. Intersections get none
-      // because there every neighbour is road.
-      const roadish = (v: number): boolean => v === T.Road || v === T.Crosswalk;
-      ctx.fillStyle = WORLD.roadLine;
-      if (!roadish(at(tx, ty - 1)) && roadish(at(tx, ty + 1)) && tx % 2 === 0) ctx.fillRect(px + 6, py + TILE - 1, 20, 2);
-      if (!roadish(at(tx - 1, ty)) && roadish(at(tx + 1, ty)) && ty % 2 === 0) ctx.fillRect(px + TILE - 1, py + 6, 2, 20);
+    case T.Road:
+      // A dash on the seam between the two lanes; none inside intersections.
+      if (!roadish(at(tx, ty - 1)) && roadish(at(tx, ty + 1)) && tx % 2 === 0) blit(ctx, 'road_dash_h', px, py);
+      else if (!roadish(at(tx - 1, ty)) && roadish(at(tx + 1, ty)) && ty % 2 === 0) blit(ctx, 'road_dash_v', px, py);
+      else blit(ctx, 'road', px, py);
+      break;
+    case T.Crosswalk:
+      blit(ctx, at(tx, ty - 1) === T.Crosswalk || at(tx, ty + 1) === T.Crosswalk ? 'cross_a' : 'cross_b', px, py);
+      break;
+    case T.Sidewalk: {
+      blit(ctx, 'pave', px, py);
+      // Kerb along any edge that meets the road.
+      ctx.fillStyle = CURB;
+      if (roadish(at(tx, ty - 1))) ctx.fillRect(px, py, TILE, 2);
+      if (roadish(at(tx, ty + 1))) ctx.fillRect(px, py + TILE - 2, TILE, 2);
+      if (roadish(at(tx - 1, ty))) ctx.fillRect(px, py, 2, TILE);
+      if (roadish(at(tx + 1, ty))) ctx.fillRect(px + TILE - 2, py, 2, TILE);
       break;
     }
-    case T.Crosswalk: {
-      ctx.fillStyle = WORLD.road;
-      ctx.fillRect(px, py, TILE, TILE);
-      ctx.fillStyle = WORLD.crosswalk;
-      const alongX = at(tx, ty - 1) === T.Crosswalk || at(tx, ty + 1) === T.Crosswalk;
-      for (let i = 0; i < 4; i++) {
-        if (alongX) ctx.fillRect(px + 4, py + 2 + i * 8, TILE - 8, 4);
-        else ctx.fillRect(px + 2 + i * 8, py + 4, 4, TILE - 8);
-      }
-      break;
-    }
-    case T.Sidewalk:
-      ctx.fillStyle = WORLD.sidewalk;
-      ctx.fillRect(px, py, TILE, TILE);
-      ctx.fillStyle = WORLD.sidewalkLine;
-      ctx.fillRect(px, py, TILE, 1);
-      ctx.fillRect(px, py, 1, TILE);
-      break;
     case T.Lot:
-      ctx.fillStyle = WORLD.lot;
-      ctx.fillRect(px, py, TILE, TILE);
-      speckle(ctx, tx, ty, px, py, WORLD.lotLine, 3);
+      blit(ctx, 'lot', px, py);
       break;
     case T.Building:
-      ctx.fillStyle = WORLD.sidewalk;
-      ctx.fillRect(px, py, TILE, TILE);
+      blit(ctx, 'pave', px, py);
       break;
     case T.Path:
-      ctx.fillStyle = WORLD.path;
-      ctx.fillRect(px, py, TILE, TILE);
+      blit(ctx, 'path', px, py);
       break;
     case T.Sand:
-      ctx.fillStyle = WORLD.sand;
-      ctx.fillRect(px, py, TILE, TILE);
-      speckle(ctx, tx, ty, px, py, '#d9c688', 2);
+      blit(ctx, 'sand', px, py);
       break;
     case T.Water:
-      ctx.fillStyle = WORLD.water;
-      ctx.fillRect(px, py, TILE, TILE);
-      ctx.fillStyle = WORLD.waterLight;
-      if (hash(tx, ty) > 0.45) ctx.fillRect(px + Math.floor(hash(tx, ty, 3) * 16), py + Math.floor(hash(tx, ty, 4) * 26), 12, 2);
+      blit(ctx, 'water', px, py);
       break;
-    case T.Park:
     case T.Tree:
-    case T.Grass:
-    default: {
-      ctx.fillStyle = t === T.Park ? WORLD.park : WORLD.grass;
-      ctx.fillRect(px, py, TILE, TILE);
-      speckle(ctx, tx, ty, px, py, WORLD.grassDark, 3);
-      if (t === T.Tree) {
-        ctx.fillStyle = WORLD.trunkShadow;
-        ctx.beginPath();
-        ctx.ellipse(px + 18, py + 20, 12, 10, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = WORLD.tree;
-        ctx.beginPath();
-        ctx.arc(px + 16, py + 16, 12, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = WORLD.treeLight;
-        ctx.beginPath();
-        ctx.arc(px + 13, py + 13, 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+      blit(ctx, `tree_${Math.floor(hash(tx, ty) * 3)}`, px, py);
+      break;
+    default:
+      blit(ctx, 'grass', px, py);
   }
 }
 
-/** Roof of a non-player building, drawn in pixel coords relative to the canvas origin. */
+/** A non-player building: tiled roof, plus a wall with door and windows if it faces the camera. */
 export function drawBuilding(ctx: CanvasRenderingContext2D, lot: LotDef, ox: number, oy: number): void {
   const style = NEIGHBORHOODS[lot.district].buildingStyle;
-  const [roof, roofDark, detail] = (ROOFS[style] ?? ROOFS.house)[lot.style % 4];
+  const key = ROOF_COLORS[style] ? style : 'house';
+  const variant = lot.style % 4;
   // The yard strip sits at the back of the lot.
-  const x = lot.x * TILE - ox + 3;
-  const y = (lot.front === 'n' ? lot.y : lot.y + 1) * TILE - oy + 3;
-  const w = lot.w * TILE - 6;
-  const h = (lot.h - 1) * TILE - 6;
-
-  ctx.fillStyle = WORLD.shadow;
-  ctx.fillRect(x + 4, y + 4, w, h);
-  ctx.fillStyle = roofDark;
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = roof;
-  ctx.fillRect(x + 3, y + 3, w - 6, h - 6);
-
-  if (style === 'house') {
-    // Ridge line and a chimney.
-    ctx.fillStyle = roofDark;
-    ctx.fillRect(x + 3, y + h / 2 - 1, w - 6, 3);
-    ctx.fillStyle = detail;
-    ctx.fillRect(x + w - 22, y + 12, 8, 8);
-  } else if (style === 'office' || style === 'resort') {
-    // Skylights / rooftop units in a grid.
-    ctx.fillStyle = detail;
-    for (let gy = y + 12; gy + 10 < y + h - 8; gy += 26) {
-      for (let gx = x + 12; gx + 14 < x + w - 8; gx += 28) ctx.fillRect(gx, gy, 14, 10);
+  const top = lot.front === 'n' ? lot.y : lot.y + 1;
+  const rows = lot.h - 1;
+  // Buildings that face south show their front wall along the bottom row.
+  const roofRows = lot.front === 's' ? rows - 1 : rows;
+  const ridge = Math.floor((roofRows - 1) / 2);
+  for (let y = 0; y < roofRows; y++) {
+    const ry = y === 0 ? 0 : y === roofRows - 1 ? 3 : y === ridge ? 1 : 2;
+    for (let x = 0; x < lot.w; x++) {
+      const rx = x === 0 ? 0 : x === lot.w - 1 ? 2 : 1;
+      blit(ctx, `roof_${key}${variant}_${rx}${ry}`, (lot.x + x) * TILE - ox, (top + y) * TILE - oy);
     }
-  } else if (style === 'warehouse') {
-    ctx.fillStyle = roofDark;
-    for (let gx = x + 14; gx < x + w - 6; gx += 14) ctx.fillRect(gx, y + 3, 2, h - 6);
-    ctx.fillStyle = detail;
-    ctx.fillRect(x + 10, y + 10, 16, 12);
-  } else {
-    ctx.fillStyle = detail;
-    ctx.fillRect(x + 8, y + 8, w - 16, 3);
-    ctx.fillRect(x + 8, y + h - 11, w - 16, 3);
   }
-
-  // Door mat on the street side, hinting where residents come and go.
-  ctx.fillStyle = '#4a3b2f';
-  const doorX = x + Math.floor(w / 2) - 7;
-  ctx.fillRect(doorX, lot.front === 'n' ? y - 1 : y + h - 3, 14, 4);
+  if (lot.front !== 's') return;
+  const door = Math.floor(lot.w / 2);
+  for (let x = 0; x < lot.w; x++) {
+    const piece = x === door ? '_door' : x % 2 === door % 2 ? '' : '_win';
+    blit(ctx, `facade_${key}${piece}`, (lot.x + x) * TILE - ox, (top + roofRows) * TILE - oy);
+  }
 }
 
 export const CHUNK_TILES = 32;
@@ -169,6 +108,7 @@ export function bakeCity(scene: Phaser.Scene, city: City): { key: string; tx: nu
       if (scene.textures.exists(key)) scene.textures.remove(key);
       const tex = scene.textures.createCanvas(key, cw * TILE, ch * TILE)!;
       const ctx = tex.getContext();
+      ctx.imageSmoothingEnabled = false;
       for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) drawTile(ctx, city, cx + x, cy + y, x * TILE, y * TILE);
       // Buildings can straddle chunk borders; draw any that overlap and let the canvas clip.
       for (const lot of city.lots) {
