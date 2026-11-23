@@ -54,7 +54,7 @@
    "manager",
    "security"
   ],
-  "demand": 0.13
+  "demand": 0.19
  },
  "coffee": {
   "name": "Coffee Shop & Bakery",
@@ -148,7 +148,7 @@
    "mechanic",
    "manager"
   ],
-  "demand": 0.06
+  "demand": 0.11
  },
  "fastfood": {
   "name": "Fast Food Restaurant",
@@ -249,7 +249,7 @@
    "manager",
    "security"
   ],
-  "demand": 0.06,
+  "demand": 0.07,
   "destination": 0.45
  },
  "gas": {
@@ -304,7 +304,7 @@
    "manager",
    "security"
   ],
-  "demand": 0.05,
+  "demand": 0.07,
   "carDemand": 1,
   "shellDepth": 0.45,
   "forecourtFloor": "floor_paving"
@@ -504,7 +504,7 @@
    "manager",
    "security"
   ],
-  "demand": 0.04
+  "demand": 0.06
  },
  "bookstore": {
   "name": "Bookstore",
@@ -549,9 +549,10 @@
    "manager",
    "security"
   ],
-  "demand": 0.025,
+  "demand": 0.045,
   "decorWeight": 2,
-  "destination": 0.25
+  "destination": 0.25,
+  "basket": 0.8
  },
  "clothing": {
   "name": "Clothing Store",
@@ -599,7 +600,8 @@
   ],
   "demand": 0.04,
   "decorWeight": 2,
-  "destination": 0.3
+  "destination": 0.3,
+  "basket": 0.65
  },
  "pizza": {
   "name": "Pizza Place",
@@ -648,7 +650,7 @@
    "manager",
    "mechanic"
   ],
-  "demand": 0.06,
+  "demand": 0.095,
   "destination": 0.15
  },
  "petshop": {
@@ -693,15 +695,16 @@
    "manager",
    "security"
   ],
-  "demand": 0.025,
-  "destination": 0.3
+  "demand": 0.05,
+  "destination": 0.3,
+  "basket": 0.8
  },
  "arcade": {
   "name": "Arcade",
   "description": "Cabinets, pinball and air hockey, paid per game. Snacks sell on the side. Busy after school, at weekends and when it rains.",
   "color": "#9085e9",
   "flow": "service",
-  "licenseCost": 2200,
+  "licenseCost": 1500,
   "unlockLevel": 5,
   "minArea": 56,
   "defaultHours": [
@@ -747,7 +750,7 @@
    "manager",
    "security"
   ],
-  "demand": 0.035,
+  "demand": 0.09,
   "destination": 0.45
  },
  "electronics": {
@@ -793,8 +796,9 @@
    "manager",
    "security"
   ],
-  "demand": 0.025,
-  "destination": 0.4
+  "demand": 0.04,
+  "destination": 0.4,
+  "basket": 0.6
  },
  "warehouse": {
   "name": "Warehouse",
@@ -967,7 +971,7 @@
    "mechanic",
    "manager"
   ],
-  "demand": 0.03,
+  "demand": 0.04,
   "destination": 0.35
  },
  "bar": {
@@ -975,7 +979,7 @@
   "description": "Drinks poured to order from late afternoon into the small hours. Add a dance floor and a DJ and it becomes the place to be at night.",
   "color": "#8e2f4a",
   "flow": "counter",
-  "licenseCost": 3200,
+  "licenseCost": 2600,
   "unlockLevel": 7,
   "minArea": 64,
   "defaultHours": [
@@ -1022,16 +1026,17 @@
    "manager",
    "security"
   ],
-  "demand": 0.04,
+  "demand": 0.1,
   "decorWeight": 2,
-  "destination": 0.4
+  "destination": 0.4,
+  "rounds": 3
  },
  "cinema": {
   "name": "Movie Theater",
-  "description": "A big screen that seats fourteen at a time, with concessions on the way in. Packed when it rains and at weekends.",
+  "description": "A big screen that seats eighteen at a time, with concessions on the way in. Packed when it rains and at weekends.",
   "color": "#c2504d",
   "flow": "service",
-  "licenseCost": 5500,
+  "licenseCost": 4500,
   "unlockLevel": 8,
   "minArea": 100,
   "defaultHours": [
@@ -1071,7 +1076,7 @@
    "manager",
    "security"
   ],
-  "demand": 0.035,
+  "demand": 0.09,
   "destination": 0.6
  },
  "hotel": {
@@ -1118,7 +1123,7 @@
    "security",
    "mechanic"
   ],
-  "demand": 0.012,
+  "demand": 0.016,
   "decorWeight": 3,
   "destination": 0.8
  },

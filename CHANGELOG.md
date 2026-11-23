@@ -1,12 +1,28 @@
 # Changelog
 
-## 1.11.0 (unreleased) - Overhaul phase 10: six more businesses, events, scenarios and photo mode
+## 2.0.0 - The overhaul
+
+Everything from 1.1.0 to 1.11.0 below ships in this release: new art, lighting and weather; residents with needs, memory and reviews; rival companies; a new interface with dashboards, a minimap and build tools; 14 more kinds of business; seasons, marketing, logistics, franchising, property, investors, tax, insurance, the owner's own life, scenarios, a sandbox and photo mode. Saves from 1.0.0 load and are upgraded automatically (a backup of the original is kept).
+
+This last step rebalanced the game for its new size and checked performance.
+
+- **Rebalanced economy**: every kind of business was measured from its starter layout with a lean team over several simulated days (`npm run balance`), then prices, demand, running costs and stock margins were tuned until each one pays its way and the dearer ones pay back in proportion. Rents are a fifth lower across the city. Service prices (laundry, arcade games, gym sessions, cinema tickets, hotel rooms) and most menus are higher; car margins are far thinner; fuel earns a proper margin.
+- **Customers plan around what a shop sells**: most of a shopping list a shop has never stocked is swapped for things it carries, instead of every visitor asking for something missing. Small shops no longer lose their reputation for not being supermarkets.
+- People set out with roughly enough money for what they mean to buy, so shops selling dearer things (clothes, electronics) get customers who can afford them, and they buy fewer items there.
+- **Full house**: people do not set out for a hotel, cinema or laundromat that has no place free, rather than arriving and leaving unhappy.
+- In a bar most customers stay for another round or two.
+- Staff can stand at wide equipment that backs onto a wall (bar taps, long counters).
+- Fixed the starter bar layout, which blocked its own door. A new test builds every starter layout on every lot it fits and checks that everything in it can be reached from the door.
+- The city is a little busier: 420 residents, and more cars on the road.
+- **Performance** with a full crowd of 420 people: the simulation takes about 0.1 ms a frame and updating sprites about 0.1 ms, so the game's own work is well under a millisecond. (Frame rate on a real graphics card was not measured in development; see the README.)
+
+## 1.11.0 (included in 2.0.0) - Overhaul phase 10: six more businesses, events, scenarios and photo mode
 
 - **Six more kinds of business**, bringing the total to 23:
   - **Gym** (level 6): treadmills, weights and classes paid per session; busiest before and after work.
   - **Food Truck Business** (level 6): trucks you park on any pavement and restock from a depot; they trade hardest at mealtimes.
   - **Bar and Nightclub** (level 7): drinks poured to order into the small hours. Add a dance floor and a DJ booth and guests pay to stay on.
-  - **Movie Theater** (level 8): a screen seating fourteen with concessions on the way in; packed in the rain.
+  - **Movie Theater** (level 8): a screen seating eighteen with concessions on the way in; packed in the rain.
   - **Hotel** (level 9): rooms by the night, mostly for visitors, with breakfast in the morning.
   - **Car Dealership** (level 10): a few sales a day worth thousands each. Customers arrive with finance arranged, and cars are shown as cars on the showroom floor.
 - Four new needs (a night out, a workout, somewhere to stay, a new car) and tastes for every persona; seasons, weather and holidays reach the new businesses too.
@@ -18,7 +34,7 @@
 - **Ten save slots**, each with a small picture of the city as it was when saved.
 - Save format 10. Older saves upgrade automatically.
 
-## 1.10.0 (unreleased) - Overhaul phase 9: property, corporate finance and the owner's life
+## 1.10.0 (included in 2.0.0) - Overhaul phase 9: property, corporate finance and the owner's life
 
 - **Property market**: every district has a price index that drifts from day to day and rises where shops are thriving. Rents and purchase prices follow it. Selling a lot now fetches today's market price less a 4% fee, so property can be bought low and sold high.
 - **Tenants**: an owned lot with no shop on it can be let. The tenant's premises appear on the lot and they pay rent every morning.
@@ -31,7 +47,7 @@
 - The cost of living, insurance, tax, investors' share and tenants' rent all have their own lines in the accounts.
 - Save format 9. Older saves upgrade automatically.
 
-## 1.9.0 (unreleased) - Overhaul phase 8: logistics, production chains and franchising
+## 1.9.0 (included in 2.0.0) - Overhaul phase 8: logistics, production chains and franchising
 
 - **Warehouse** (new business, level 4): a depot with pallet racking for buying in bulk. Orders delivered to a warehouse are 10% cheaper on top of the usual bulk discounts.
 - **Your own deliveries**: build a **Delivery Van Bay** in a warehouse or factory, hire a driver, and choose that site under "Supplied by" in a shop. Vans you can watch on the road then carry what each shop is short of, sharing the load between products, and the shop's manager stops ordering those products from the wholesaler. Each bay is one van; the supplier's panel lists the shops on its round and lets you reorder them.
@@ -42,7 +58,7 @@
 - Fixed a rare error when leaving a game during a season with a colour wash.
 - Save format 8 (adds contracts and franchises). Older saves upgrade automatically.
 
-## 1.8.0 (unreleased) - Overhaul phase 7: seasons, marketing and seven new businesses
+## 1.8.0 (included in 2.0.0) - Overhaul phase 7: seasons, marketing and seven new businesses
 
 - **Seven new kinds of business**, each with its own products, furniture, sprites and a starter layout:
   - **Drug Store** (level 3): medicines and toiletries; cold remedies sell in winter, sunscreen in summer.
@@ -59,7 +75,7 @@
 - Messages now appear at the bottom centre, clear of the map.
 - Save format 7 (adds campaigns). Older saves upgrade automatically.
 
-## 1.7.0 (unreleased) - Overhaul phase 6: interface, part two
+## 1.7.0 (included in 2.0.0) - Overhaul phase 6: interface, part two
 
 - **Build catalogue**: furniture is shown with its picture, can be searched and filtered by category, and each entry's tooltip gives its size, cost and effects.
 - **Rows**: drag while placing furniture to lay out a whole row in one go.
@@ -77,7 +93,7 @@
 - **Achievements and statistics**: 22 achievements with XP rewards and progress bars, and lifetime statistics, both in the Company window.
 - Save format 6 (adds statistics and achievements). Older saves upgrade automatically.
 
-## 1.6.0 (unreleased) - Overhaul phase 5: interface, part one
+## 1.6.0 (included in 2.0.0) - Overhaul phase 5: interface, part one
 
 - **New look**: one theme across every panel (colours, spacing, shadows, focus rings, scrollbars) and a single set of line icons in place of emoji.
 - **Top bar**: the money counter rolls to its new value and each change floats past as a green or red figure; weather has its own icon; a **notification bell** shows how many messages are unread and rings for warnings.
@@ -88,7 +104,7 @@
 - Shops now record takings per product and customers per hour each day to feed these charts (existing saves start collecting from the first day played).
 - New key bindings: N for notifications, M for the map. Both can be rebound in Settings.
 
-## 1.5.0 (unreleased) - Overhaul phase 4: staff, rivals and thieves
+## 1.5.0 (included in 2.0.0) - Overhaul phase 4: staff, rivals and thieves
 
 - **Task priorities**: every role now has an ordered list of jobs and works down it, taking the first one with something waiting. A cashier serves while there are customers, restocks when the shop is quiet and cleans when the shelves are full; stockers and cooks step in elsewhere when their own work is done. Reorder each role's list per shop on the new **Task priorities** board in the Staff tab. Defaults live in `src/data/employees.json`.
 - **Breaks and chatting**: tired staff take a short break when there is no queue and come back with more energy; staff with nothing to do chat, which lifts morale a little. Lazy staff sometimes ignore low-priority jobs. Small icons over their heads show a break, a chat or a chase.
@@ -99,7 +115,7 @@
 - Removed the old "rival nearby" event and the hourly shoplifting dice roll, which these replace.
 - Save format 5 (adds rival companies and job offers). Older saves upgrade automatically.
 
-## 1.4.0 (unreleased) - Overhaul phase 3: customer AI
+## 1.4.0 (included in 2.0.0) - Overhaul phase 3: customer AI
 
 Customers are no longer anonymous dice rolls. The city now has 380 residents who persist from day to day and across saves, plus tourists passing through.
 
@@ -114,7 +130,7 @@ Customers are no longer anonymous dice rolls. The city now has 380 residents who
 - Click anyone to see their persona, who they are with, their most pressing needs, what they think of each of your shops, and their plan.
 - Save format 4 (adds residents and reviews). Older saves upgrade automatically and the city is populated on first load.
 
-## 1.3.0 (unreleased) - Overhaul phase 2: characters and atmosphere
+## 1.3.0 (included in 2.0.0) - Overhaul phase 2: characters and atmosphere
 
 - **72 distinct people** made by recolouring the pack's six characters (five skin tones, seven hair colours, nine tops, six trousers), including children drawn smaller and grey-haired seniors. Each has a walk cycle in four directions and a soft shadow.
 - **Emotes** over people's heads show what is going on at a glance: happy, angry, waiting, carrying a bag, eating. People who sit are drawn on the seat.
@@ -126,7 +142,7 @@ Customers are no longer anonymous dice rolls. The city now has 380 residents who
 - **Performance**: sprites are pooled and reused, anything off screen is hidden and skipped, and shadows are part of the sprite. New **Graphics quality** setting (Low, Medium, High) controls lighting, particles and weather density.
 - Save format 3 (adds weather). Older saves upgrade automatically.
 
-## 1.2.0 (unreleased) - Overhaul phase 1: art pipeline and world
+## 1.2.0 (included in 2.0.0) - Overhaul phase 1: art pipeline and world
 
 The game is now pixel art: 32×32 tiles in one consistent style, built on Kenney's CC0 "RPG Urban Pack" and "Roguelike Indoors" with everything else drawn in code to match.
 
@@ -139,7 +155,7 @@ The game is now pixel art: 32×32 tiles in one consistent style, built on Kenney
 - **People and cars** use the pack's characters and vehicles: six characters with walk cycles in four directions, cars with four drawn views in six colours. Staff carry a small badge in their role colour. (Full character variety comes in phase 2.)
 - Broken machines show an out-of-order badge; dirty shops show litter; producers show a progress bar.
 
-## 1.1.0 (unreleased) - Overhaul phase 0: foundations
+## 1.1.0 (included in 2.0.0) - Overhaul phase 0: foundations
 
 First step of the 2.0 overhaul. Nothing looks different yet; this makes the later phases safe.
 

@@ -1,10 +1,10 @@
 # BusinessSim
 
-A top-down 2D business tycoon game for Windows. You start nearly broke with one tiny shop, and grow into a city-wide empire of nine kinds of business, watched over by a few hundred simulated customers who walk in, browse, queue, buy, complain and leave.
+A top-down 2D business tycoon game for Windows. You start nearly broke with one tiny shop and grow into a city-wide empire of 23 kinds of business, in a city of 420 residents who each have needs, tastes, a budget and a memory of how you treated them, alongside three rival companies after the same customers.
 
 Built with TypeScript, Phaser 3, Vite and Electron. The art is 32×32 pixel art built on Kenney's CC0 packs, with the gaps drawn in code to match; all sound is synthesised.
 
-**Version 1.0.0.** See [CHANGELOG.md](CHANGELOG.md) for what each milestone added.
+**Version 2.0.0.** See [CHANGELOG.md](CHANGELOG.md) for what each step added.
 
 ## Download and install
 
@@ -45,14 +45,44 @@ A checklist in the game walks you through your first shop. The short version:
 | Business | Unlocks | What makes it different |
 | --- | --- | --- |
 | Convenience store | Level 1 | Shelves, fridges, freezers and a checkout |
-| Coffee shop & bakery | Level 2 | Made-to-order drinks, an oven baking fresh batches, decor raises prices |
+| Coffee shop & bakery | Level 2 | Made-to-order drinks, an oven baking fresh batches, decor matters |
 | Laundromat | Level 2 | Wash and dry cycles paid at the machine; breakdowns |
 | Vending machine business | Level 2 | Machines on any pavement in the city; a van round restocks and collects |
 | Fast food restaurant | Level 3 | Order counter, kitchen queue, cooks, impatient customers |
 | Card & collectibles shop | Level 3 | Open packs for volatile singles; collectors; tournaments |
+| Drug store | Level 3 | Medicines and toiletries; cold remedies in winter, sunscreen in summer |
+| Bookstore | Level 3 | Browsers who like a pleasant shop |
 | Gas station | Level 4 | Cars pull in for fuel, a mini-mart, a car wash and a repair bay |
-| Workshop / factory | Level 4 | Recipes turn ingredients into house brands to sell or ship to your shops |
+| Workshop / factory | Level 4 | Makes goods, ingredients and clothes for less than they cost to buy |
+| Warehouse | Level 4 | Cheaper bulk orders; vans that keep your shops stocked |
+| Clothing store | Level 4 | High margins and strong seasons |
+| Pizza place | Level 4 | One pizza per oven at a time |
 | Fun park | Level 5 | Ticket gate, attractions, guest happiness |
+| Pet shop | Level 5 | Regulars matter most |
+| Arcade | Level 5 | Cabinets, pinball and air hockey paid per game |
+| Electronics store | Level 6 | Expensive stock and a favourite of thieves |
+| Gym | Level 6 | Sessions and classes; busy before and after work |
+| Food truck business | Level 6 | Trucks parked on any pavement; busiest at mealtimes |
+| Bar and nightclub | Level 7 | Open into the small hours; a dance floor keeps guests paying |
+| Movie theater | Level 8 | Eighteen seats a screen, concessions on the way in |
+| Hotel | Level 9 | Rooms by the night, mostly for visitors |
+| Car dealership | Level 10 | A few sales a day worth thousands each |
+
+### What else there is to do
+
+- **Staff**: eight roles that work down a task list you can reorder per shop, take breaks, and can be poached by rivals. Drag shifts on a timeline in the Staff screen.
+- **Customers**: click anyone to see their persona, needs, plans and what they think of your shops. They compare your prices, reputation and distance with rival shops, become regulars, tell their friends and post reviews.
+- **Rivals**: three companies that open shops, start price wars, hold sales and close when they lose. Buy them out, or out-compete them.
+- **Thieves**: visible shoplifters; guards chase them, cameras help, insurance pays.
+- **Seasons, weather and holidays** change who is out and what they want.
+- **Marketing**: eight campaigns from flyers to TV.
+- **Logistics**: warehouses, your own delivery vans, supplier contracts, and factories that feed your shops.
+- **Franchising**: other people open shops under your brand and pay royalties.
+- **Property**: a market that moves, tenants, buying low and selling high.
+- **Finance**: loans, investors, weekly tax, insurance, and a chart of your worth against the rivals'.
+- **You**: energy, a home and a car, and visiting your shops in person.
+- **Goals**: 22 achievements, delivery orders, six scenarios with deadlines, and a sandbox.
+- **Photo mode** and ten save slots with pictures.
 
 ### Controls
 
@@ -60,19 +90,25 @@ A checklist in the game walks you through your first shop. The short version:
 | --- | --- |
 | Drag, `WASD`, arrow keys | Move the camera |
 | Mouse wheel, `=` / `-` | Zoom |
+| Click or drag on the minimap | Jump the camera there |
 | `Space`, `1` / `2` / `3` | Pause; speed 1x / 2x / 4x |
-| Left click | Select a person, a lot, a piece of furniture or a vending machine |
-| `B` / `F` / `T` | Businesses, finances and staff windows |
+| Left click | Select a person, a lot, a piece of furniture, a rival shop or a vending machine |
+| `B` / `F` / `T` / `K` | Businesses, finances, staff and stock windows |
+| `N` / `M` | Notifications; show or hide the minimap |
 | `R` | Rotate furniture while building |
+| `C` | Copy tool while building |
+| `Ctrl+Z` / `Ctrl+Y` | Undo and redo building |
+| `P` | Photo mode (`Enter` takes the picture) |
+| `F1` | Controls and help |
 | `Esc` | Back out one step; with nothing selected, open the pause menu |
 | `F5` | Quick save to slot 1 |
 | `F11` | Fullscreen |
 
-In build mode, left click places and drag paints floors and walls; right click puts the tool away; pan with the middle or right mouse button. Every key except `F11` can be rebound in Settings.
+In build mode, left click places one piece and dragging lays out a row or paints floors and walls; right click puts the tool away; pan with the middle or right mouse button. The keys in the first column of the help window can be rebound in Settings, which also has the interface size, colour-blind colours and graphics quality.
 
 ### Saves
 
-Five manual slots plus an autosave at 06:00 each game day.
+Ten manual slots, each with a picture of the city, plus an autosave at 06:00 each game day.
 
 - Desktop: `%APPDATA%\BusinessSim\saves\*.json`
 - Browser dev mode: `localStorage` keys prefixed `businesssim:`
@@ -230,9 +266,12 @@ Art credits are in [CREDITS.md](CREDITS.md).
 
 ## Testing and known limits
 
-- Developed on Linux. The game was exercised by scripted playthroughs in Chromium and in the Electron app on Linux, including saving and loading through the real file bridge. The Windows executables are built and uploaded by GitHub Actions, but nobody has yet played them on a Windows machine.
-- The updater's interface was tested against a simulated update, and its real code was run in a packaged Linux build against this repository (where it correctly reported that no releases exist yet). A real download and install on Windows has not been done; follow the test release steps to confirm it.
+- `npm test` runs about sixty headless tests of the simulation: every business opening and trading from its starter layout, saves from 1.0.0 loading, staff, rivals, thieves, deliveries, contracts, franchises, tax, scenarios and more. `npm run balance` prints takings, costs and payback for every business (it takes a couple of minutes).
+- Developed on Linux. The game was exercised by scripted playthroughs in Chromium and in the Electron app on Linux, including saving and loading through the real file bridge. The Windows executables are built by GitHub Actions; they have not been played through on Windows as part of development.
+- Frame rate was profiled without a graphics card: with 420 people on the streets the game's own work is well under a millisecond a frame, and the software renderer used for testing reaches about 40 frames a second. A real graphics card should hold 60, but that was not measured. If the game feels slow, lower Graphics quality in Settings.
+- The updater's interface was tested against a simulated update, and its real code was run in a packaged Linux build against this repository. Updating an installed 1.0.0 to 2.0.0 on Windows has not been done in development.
 - Sound has not been checked by ear.
-- Balance is a first pass, tuned from single-day simulated runs of each business. Expect to adjust the numbers in `src/data/`.
+- Balance was tuned from averaged multi-day simulated runs of each business on its own. A whole career played by a person will find things those runs did not; the numbers are all in `src/data/`.
+- One test (`every business type opens and takes money`) failed once during development and could not be reproduced in many later runs; the cause was not found.
 - Pedestrians and cars in transit are not saved; the streets repopulate when a game loads.
 - `window.__dbg` in the developer console exposes helpers for testing, such as `__dbg.addXp(__dbg.session.state, 5000)` and `__dbg.session.state.money += 50000`.

@@ -153,7 +153,7 @@
     "fineMax": 700
   },
   "theft": {
-    "thiefPerHour": 0.045,
+    "thiefPerHour": 0.035,
     "vandalPerHour": 0.008,
     "seenBase": 0.12,
     "seenGuard": 0.5,

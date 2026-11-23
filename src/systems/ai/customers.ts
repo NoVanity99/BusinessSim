@@ -17,6 +17,7 @@ import { addToStorage, consumeIngredients, hasIngredients, takeFromSlot } from '
 import { fairPrice } from '../shop/pricing';
 import { weatherCrowd, weatherDef, weatherProductBoost } from '../world/weather';
 import { PERSONAS } from '../../data';
+import { hasRoom } from './residents';
 import { afterVisit, appetite, chooseNeed, chooseShop, generateResidents, metElsewhere, personaOf, pruneMemories, type Resident } from './residents';
 import { ADULT_LOOKS, CHILD_LOOKS } from '../../art/looks';
 import { shopDemandMult } from '../events/events';
@@ -214,7 +215,7 @@ function makePlan(typeId: string, persona: string, kids: number): Step[] {
   const type = SHOP_TYPES[typeId];
   const P = personaOf(persona);
   // Bigger spenders set out to buy more things.
-  const count = (options: number[]): number => Math.max(1, Math.round(rand.pick(options) * P.basket));
+  const count = (options: number[]): number => Math.max(1, Math.round(rand.pick(options) * P.basket * (type.basket ?? 1)));
   // Children ask for their favourites, if this place sells them.
   const treats = (P.kidsWant ?? []).filter((p) => type.products.includes(p));
   const goods = type.products.filter(isShelfGood);
@@ -223,6 +224,12 @@ function makePlan(typeId: string, persona: string, kids: number): Step[] {
     case 'counter':
       plan.push({ t: 'order', items: [...new Set([...pickSeveral(type.products.filter((p) => kindOf(p) === 'menu'), count([1, 1, 2, 2, 3]), P.likes), ...(kids ? treats.filter((p) => kindOf(p) === 'menu').slice(0, kids) : [])])] });
       plan.push({ t: 'use', service: 'seat', optional: true });
+      // In a bar, most people stay for another.
+      for (let round = 1; round < (type.rounds ?? 1); round++) {
+        if (!rand.chance(0.6)) break;
+        plan.push({ t: 'order', items: pickSeveral(type.products.filter((p) => kindOf(p) === 'menu'), count([1, 1, 2]), P.likes) });
+        plan.push({ t: 'use', service: 'seat', optional: true });
+      }
       // A bar with a dance floor: some stay on.
       for (const svc of type.after ?? []) if (rand.chance(0.45)) plan.push({ t: 'use', service: svc, optional: true });
       break;
@@ -342,6 +349,9 @@ function spawn(crook?: { shop: ShopState; kind: 'steal' | 'vandal' }): Customer 
     const top = Math.max(0, ...T.products.filter((p) => PRODUCTS[p].kind === 'service' || T.bigTicket).map((p) => PRODUCTS[p].market));
     if (T.bigTicket) c.budget = Math.round(top * rand.range(0.35, 1.25) * from.wealth);
     else if (top > 0) c.budget = Math.max(c.budget, Math.round(top * rand.range(1.2, 2.2)));
+    // People set out with roughly enough for what they mean to buy; not always quite enough.
+    const planned = c.plan.reduce((a, st) => a + (st.t === 'buy' ? PRODUCTS[st.product].market : 0), 0);
+    if (!T.bigTicket && planned > 0) c.budget = Math.max(c.budget, Math.round(planned * rand.range(0.4, 1.2)));
   }
   if (!setPath(c, to.tile)) return null;
   rt.customers.push(c);
@@ -527,7 +537,7 @@ function considerShops(c: Customer): void {
     const dy = Math.max(lot.y - c.y, 0, c.y - (lot.y + lot.h));
     if (Math.max(dx, dy) > POPULATION.noticeRadius * (weatherDef(s).notice ?? 1)) continue;
     c.seen.push(shop.id);
-    if (!isOpenNow(s, shop)) continue;
+    if (!isOpenNow(s, shop) || !hasRoom(shop)) continue;
     // Reputation decides how tempting the shop looks from the street.
     const resident = c.residentId >= 0 ? s.residents.find((r) => r.id === c.residentId) ?? null : null;
     const keen = clamp(appetite(s, resident, c.persona, shop.type), 0.4, 1.4);
@@ -567,6 +577,21 @@ function enterShop(c: Customer): void {
   if (shop.dirt > 55) think(c, 'This place is filthy.', 'bad', -4);
   const bins = shop.objects.filter((o) => defOf(o).kind === 'bin').length;
   shop.dirt = clamp(shop.dirt + 0.4 * (1 - Math.min(0.45, bins * 0.15)), 0, 100);
+  // People mostly know what a shop carries: much of a list that it does not stock is swapped
+  // for things it does, rather than every visitor asking for something it has never sold.
+  const carried = new Set<string>();
+  for (const o of shop.objects) if (defOf(o).kind === 'shelf') for (const sl of o.slots ?? []) if (sl.product) carried.add(sl.product);
+  if (carried.size) {
+    const wanted = new Set(c.plan.map((st) => (st.t === 'buy' ? st.product : '')));
+    for (const st of c.plan) {
+      if (st.t !== 'buy' || carried.has(st.product) || !rand.chance(0.65)) continue;
+      const others = [...carried].filter((p) => !wanted.has(p));
+      if (!others.length) continue;
+      wanted.delete(st.product);
+      st.product = weightedPick(others, personaOf(c.persona).likes);
+      wanted.add(st.product);
+    }
+  }
   c.state = 'browse';
   c.timer = rand.range(0.2, 0.6);
   bus.emit('door:enter', { shopId: shop.id });

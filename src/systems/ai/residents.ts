@@ -1,7 +1,8 @@
 import { LOOK_COUNT } from '../../art/looks';
+import { FURNITURE } from '../../data';
 import { couponCut, loyaltyBoost } from '../marketing/marketing';
 import { allRivalShops, rivalOpenNow, rivalUtility, type RivalShop } from '../rivals/rivals';
-import { rt } from './runtime';
+import { regKey, rt } from './runtime';
 import { bus } from '../../core/events';
 import { clamp } from '../../core/format';
 import { rand } from '../../core/rng';
@@ -173,6 +174,21 @@ export function shopUtility(s: GameState, r: Resident | null, persona: string, s
   return u;
 }
 
+/**
+ * Whether a business that works by appointment with its equipment (a hotel's rooms, a cinema's
+ * seats, a laundromat's washers) has a place free. People can see a "full" sign from the street.
+ */
+export function hasRoom(shop: ShopState): boolean {
+  const type = SHOP_TYPES[shop.type];
+  const first = type.flow === 'service' && !type.planFree ? type.plan?.[0] : undefined;
+  if (!first) return true;
+  const stations = shop.objects.filter((o) => FURNITURE[o.def].kind === 'service' && FURNITURE[o.def].service === first && !o.broken);
+  // Nothing built yet is the owner's problem, not a full house.
+  if (!stations.length) return true;
+  // One party may be on its way already; leave a little slack rather than turning everyone back at the door.
+  return stations.some((o) => (rt.stations.get(regKey(shop.id, o.id))?.length ?? 0) < (FURNITURE[o.def].capacity ?? 1));
+}
+
 export const isRegular = (m: ShopMemory | undefined): boolean => !!m && m.visits >= 3 && m.score > 0.4;
 
 /**
@@ -180,7 +196,7 @@ export const isRegular = (m: ShopMemory | undefined): boolean => !!m && m.visits
  * kind, rival companies' shops, and somewhere else in town.
  */
 export function chooseShop(s: GameState, r: Resident | null, persona: string, type: string, fromTile: number): { shop?: ShopState; rival?: RivalShop } {
-  const mine = s.shops.filter((sh) => sh.type === type && isOpenNow(s, sh));
+  const mine = s.shops.filter((sh) => sh.type === type && isOpenNow(s, sh) && hasRoom(sh));
   // Franchises of the player's brands are places to go too; custom there earns a royalty.
   const theirs = rivalOpenNow(s) ? [...allRivalShops(s), ...s.franchises].filter((sh) => sh.type === type) : [];
   if (!mine.length && !theirs.length) return {};

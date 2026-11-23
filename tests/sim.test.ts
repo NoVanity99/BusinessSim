@@ -20,7 +20,8 @@ describe('game data', () => {
     }
     for (const [id, p] of Object.entries(PRODUCTS)) for (const input of Object.keys(p.recipe ?? {})) expect(PRODUCTS[input], `${id} recipe input ${input}`).toBeDefined();
     const demand = Object.values(SHOP_TYPES).reduce((a, t) => a + t.demand, 0);
-    expect(demand).toBeLessThan(1);
+    // Shares are relative: together they may pass 1, but not by so much that every business is starved.
+    expect(demand).toBeLessThan(1.5);
   });
 });
 

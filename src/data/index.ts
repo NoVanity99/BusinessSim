@@ -181,6 +181,10 @@ export interface ShopTypeDef {
   planFree?: boolean;
   /** Chance a customer of a service business buys goods on the way in (cinema concessions). */
   goodsFirst?: number;
+  /** Multiplier on how many things a customer sets out to buy here (fewer where things are dear). */
+  basket?: number;
+  /** Counter businesses where people order more than once (a bar): the most rounds anyone has. */
+  rounds?: number;
   /** Sells things that cost thousands: customers come with finance arranged and buy one. */
   bigTicket?: boolean;
   /** Optional services customers may use after shopping. */

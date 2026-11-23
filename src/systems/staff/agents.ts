@@ -73,10 +73,12 @@ function setPath(a: StaffAgent, goal: number): boolean {
 /** Where someone stands to work a checkout or station: behind it if possible, otherwise beside it. */
 export function operatorTile(obj: PlacedObject): number | null {
   const g = rt.grid;
-  const front = frontTiles(obj)[0];
+  const fronts = frontTiles(obj);
   const back = backTile(obj);
-  const options = [back, { x: obj.x - 1, y: obj.y }, { x: obj.x + 1, y: obj.y }, { x: obj.x, y: obj.y - 1 }, { x: obj.x, y: obj.y + 1 }];
-  const spot = options.find((t) => walkable(g, t.x, t.y) && !(t.x === front.x && t.y === front.y));
+  const own = objectTiles(obj);
+  // Behind it first, then any tile touching any part of it, so wide pieces against a wall still have a spot.
+  const options = [back, ...own.flatMap((t) => [{ x: t.x - 1, y: t.y }, { x: t.x + 1, y: t.y }, { x: t.x, y: t.y - 1 }, { x: t.x, y: t.y + 1 }])];
+  const spot = options.find((t) => walkable(g, t.x, t.y) && !fronts.some((f) => f.x === t.x && f.y === t.y) && !own.some((o) => o.x === t.x && o.y === t.y));
   return spot ? tileOf(spot.x, spot.y) : null;
 }
 
