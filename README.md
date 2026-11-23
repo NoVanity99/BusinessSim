@@ -139,6 +139,7 @@ Needs Node.js 20 or newer.
 | `npm start` | Build and launch the desktop app |
 | `npm run dist:win` | Build the Windows installer and portable `.exe` into `release/`, without publishing |
 | `npm run dist:win:portable` | Build only the portable `.exe` |
+| `npm test` | Run the logic tests: save migration and a headless simulation of every business |
 | `npm run release` | Bump the version, tag and push, which publishes a GitHub release |
 | `npm run icon` | Regenerate the placeholder icon |
 
@@ -209,6 +210,12 @@ src/core/            Shared state, event bus, settings, input, utilities
 ```
 
 Game state is plain JSON (`src/core/state.ts`), kept separate from rendering, which is what makes saving simple.
+
+### Changing what gets saved
+
+Saves have a format number. If you add, rename or reshape anything in `GameState`, add one step to `src/systems/save/migrations.ts` that upgrades the previous format, and extend `tests/save.test.ts`. Never edit a step that has shipped. The test suite loads a real 1.0.0 save (`tests/fixtures/save-v1.json`) on every run, so breaking old saves fails the build.
+
+Art credits are in [CREDITS.md](CREDITS.md).
 
 ## Testing and known limits
 

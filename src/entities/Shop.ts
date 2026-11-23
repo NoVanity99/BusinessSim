@@ -79,7 +79,15 @@ export interface ShopState {
   moodAvg?: number;
   today: ShopDayStats;
   yesterday: ShopDayStats;
+  /** Closed days, oldest first, capped at SHOP_HISTORY_DAYS. */
+  history: ShopDayRecord[];
 }
+
+export interface ShopDayRecord extends ShopDayStats {
+  day: number;
+}
+
+export const SHOP_HISTORY_DAYS = 120;
 
 export const emptyStats = (): ShopDayStats => ({ customers: 0, served: 0, walkouts: 0, revenue: 0, unitsSold: 0, costs: 0 });
 

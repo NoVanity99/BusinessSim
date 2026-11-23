@@ -49,6 +49,9 @@ jobs:
 
       - run: npm ci
 
+      # A release never goes out with failing tests (old saves must still load).
+      - run: npm test
+
       - name: Build the game
         run: npm run build
 

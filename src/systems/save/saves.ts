@@ -2,7 +2,8 @@ import { SAVE_VERSION } from '../../core/constants';
 import { bus, toast } from '../../core/events';
 import { session, type GameState } from '../../core/state';
 import { settings } from '../../core/settings';
-import { emptyStats } from '../../entities/Shop';
+import { migrateState, SaveTooNewError } from './migrations';
+import { APP_VERSION } from '../../core/platform';
 import { generateCity } from '../city/generate';
 import { netWorth } from '../economy/networth';
 import { dayOf } from '../time/clock';
@@ -25,7 +26,10 @@ export interface SaveMeta {
 }
 
 interface SaveFile {
+  /** Save format, see migrations.ts. */
   version: number;
+  /** Game release that wrote the file, for support. */
+  gameVersion?: string;
   meta: SaveMeta;
   state: GameState;
 }
@@ -35,6 +39,7 @@ export async function saveGame(slot: string, quiet = false): Promise<boolean> {
   if (!s) return false;
   const file: SaveFile = {
     version: SAVE_VERSION,
+    gameVersion: APP_VERSION,
     meta: {
       slot,
       company: s.companyName,
@@ -57,6 +62,7 @@ export async function saveGame(slot: string, quiet = false): Promise<boolean> {
   }
 }
 
+/** Slots hold saves; backups written before a migration are not listed. */
 export async function listSaves(): Promise<SaveMeta[]> {
   const out: SaveMeta[] = [];
   for (const slot of [AUTOSAVE, ...SLOTS]) {
@@ -76,43 +82,36 @@ export function deleteSave(slot: string): Promise<void> {
   return storage.remove(keyOf(slot));
 }
 
-/** Fill in anything an older save lacks, so every system can rely on the current shape. */
-function migrate(s: GameState): GameState {
-  s.shops ??= [];
-  s.orders ??= [];
-  s.staff ??= [];
-  s.candidates ??= [];
-  s.nextPersonId ??= 1;
-  s.upgrades ??= {};
-  s.xp ??= 0;
-  s.level ??= 1;
-  s.loans ??= [];
-  s.nextLoanId ??= 1;
-  s.events ??= [];
-  s.news ??= [];
-  s.won ??= false;
-  s.bankrupt ??= false;
-  for (const shop of s.shops) {
-    shop.dirt ??= 0;
-    shop.autoReorder ??= true;
-    shop.today = { ...emptyStats(), ...shop.today };
-    shop.yesterday = { ...emptyStats(), ...shop.yesterday };
+export type LoadResult = { ok: true; migrated: string[] } | { ok: false; reason: string };
+
+/**
+ * Load a slot into the session. The caller then (re)starts the city scene.
+ * Older saves are upgraded step by step; the original file is kept as a backup first.
+ */
+export async function loadGameDetailed(slot: string): Promise<LoadResult> {
+  const file = await readJson<SaveFile>(keyOf(slot));
+  if (!file?.state) return { ok: false, reason: 'That save is missing or unreadable.' };
+  const from = file.version ?? 1;
+  let migrated: string[];
+  try {
+    if (from < SAVE_VERSION) {
+      // Keep the untouched original so a bad migration can never destroy a save.
+      await writeJson(`backup_${slot}_v${from}`, file).catch(() => undefined);
+    }
+    migrated = migrateState(file.state, from);
+  } catch (err) {
+    if (err instanceof SaveTooNewError) return { ok: false, reason: err.message };
+    console.error('Save migration failed', err);
+    return { ok: false, reason: 'That save could not be upgraded to this version of the game. The original file has not been changed.' };
   }
-  s.version = SAVE_VERSION;
-  return s;
+  if (migrated.length) console.info(`Upgraded save "${slot}" from format ${from}:`, migrated);
+  session.state = file.state;
+  session.city = generateCity();
+  return { ok: true, migrated };
 }
 
-/** Load a slot into the session. The caller then (re)starts the city scene. */
 export async function loadGame(slot: string): Promise<boolean> {
-  const file = await readJson<SaveFile>(keyOf(slot));
-  if (!file?.state) return false;
-  if (file.version > SAVE_VERSION) {
-    console.warn(`Save "${slot}" was written by a newer version of the game.`);
-    return false;
-  }
-  session.state = migrate(file.state);
-  session.city = generateCity();
-  return true;
+  return (await loadGameDetailed(slot)).ok;
 }
 
 /** Autosave at 06:00 every game day. Returns a cleanup function. */

@@ -87,6 +87,7 @@ export function createShop(s: GameState, lot: LotDef, typeId: string): ShopState
     autoReorder: true,
     today: emptyStats(),
     yesterday: emptyStats(),
+    history: [],
   };
   s.shops.push(shop);
   toast(`${shop.name} is set up. Furnish it from the Build tab; the Overview tab lists what is still missing.`, "good");

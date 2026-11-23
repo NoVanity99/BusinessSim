@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { createNewGame, session } from '../core/state';
 import { generateCity } from '../systems/city/generate';
 import { music } from '../systems/audio/audio';
-import { loadGame } from '../systems/save/saves';
+import { loadGameDetailed } from '../systems/save/saves';
 import { startUpdateChecks } from '../systems/update/updater';
 import { clear, h, uiRoot } from '../ui/dom';
 import { MainMenu } from '../ui/screens/MainMenu';
@@ -33,8 +33,9 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private async loadSlot(slot: string): Promise<void> {
-    if (await loadGame(slot)) this.scene.start('City');
-    else alert('That save could not be loaded.');
+    const result = await loadGameDetailed(slot);
+    if (result.ok) this.scene.start('City');
+    else alert(result.reason);
   }
 
   private showMain(): void {

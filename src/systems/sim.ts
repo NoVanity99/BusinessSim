@@ -1,7 +1,12 @@
 import { bus, toast } from '../core/events';
 import { money } from '../core/format';
 import { session } from '../core/state';
-import { emptyStats } from '../entities/Shop';
+import { emptyStats, SHOP_HISTORY_DAYS } from '../entities/Shop';
+import { initAi, onShopLayoutChanged, updateAi } from './ai/customers';
+import { initVehicles, syncVending, updateVehicles } from './ai/vehicles';
+import { updateProduction } from './shop/production';
+import { updateStaff } from './staff/agents';
+import { advanceClock } from './time/clock';
 import { closeDay, spend } from './economy/finance';
 import { driftMarket } from './economy/market';
 import { chargeDailyRent, rentOf } from './economy/property';
@@ -17,16 +22,50 @@ import { DIFFICULTIES, EVENTS } from '../data';
 import { rt } from './ai/runtime';
 
 /**
- * Wires the clock to everything that happens on a schedule.
+ * Advance the whole simulation by `realSeconds` of wall-clock time at the current game speed.
+ * The city scene calls this every frame; the tests call it in a loop with no renderer.
+ * Returns the game minutes that passed.
+ */
+export function stepSimulation(realSeconds: number): number {
+  const s = session.state;
+  const gameMinutes = advanceClock(s.time, realSeconds);
+  updateProduction(s, gameMinutes);
+  updateStaff(gameMinutes);
+  updateAi(gameMinutes);
+  updateVehicles(gameMinutes);
+  return gameMinutes;
+}
+
+/**
+ * Starts the simulation around `session.state`: populates the streets, then wires the
+ * clock and shop changes to everything that reacts to them.
  * Returns a function that removes the listeners.
  */
 export function installSim(): () => void {
   const s = session.state;
   if (!s.candidates.length) refreshCandidates(s, 0);
+  initAi();
+  initVehicles();
+  // Remembers where each shop stood so its tiles can be freed when it is removed.
+  const shopLots = new Map(s.shops.map((sh) => [sh.id, sh.lotId]));
   initEvents(s);
 
   const offs = [
     installProgress(s),
+    // Any change to a shop's walls or furniture changes where people can walk and queue.
+    bus.on('shop:changed', (id) => {
+      const lotId = s.shops.find((sh) => sh.id === id)?.lotId;
+      if (lotId === undefined) return;
+      shopLots.set(id, lotId);
+      onShopLayoutChanged(id, lotId);
+      syncVending();
+    }),
+    bus.on('shop:removed', (id) => {
+      const lotId = shopLots.get(id);
+      if (lotId !== undefined) onShopLayoutChanged(id, lotId);
+      shopLots.delete(id);
+      syncVending();
+    }),
     bus.on('time:minute', () => processDeliveries(s)),
     bus.on('time:hour', () => {
       staffHourly(s);
@@ -49,6 +88,8 @@ export function installSim(): () => void {
       const closed = closeDay(s, day);
       for (const shop of s.shops) {
         shop.yesterday = shop.today;
+        shop.history.push({ day: day - 1, ...shop.today });
+        if (shop.history.length > SHOP_HISTORY_DAYS) shop.history.shift();
         shop.today = emptyStats();
       }
       driftMarket(s);

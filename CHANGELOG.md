@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased - GitHub releases and in-game updater
+## 1.1.0 (unreleased) - Overhaul phase 0: foundations
+
+First step of the 2.0 overhaul. Nothing looks different yet; this makes the later phases safe.
+
+- **Save versioning**: saves carry a format number (now 2) and the game version that wrote them. Older saves are upgraded step by step through `src/systems/save/migrations.ts`, and the untouched original is kept as a backup before upgrading. A save from a newer game is refused with a clear message instead of being loaded wrongly.
+- **Tests** (`npm test`): a real save written by the released 1.0.0 build is loaded, upgraded and played through a midnight; every business type is opened and must take money; game data is checked for dangling references. They run without a browser in about two seconds, and in CI before every build and release.
+- Each shop now keeps up to 120 days of daily history (customers, revenue, costs), ready for the dashboards.
+- The simulation is self-contained (`stepSimulation`, `installSim`): the rendering scene no longer owns any game logic, which is what lets the tests run it headless.
+- Art sources for the graphics overhaul added under `art-src/kenney/` (CC0), with `CREDITS.md`.
+
+## 1.0.0 follow-up - GitHub releases and in-game updater
 
 - Windows installer (NSIS) is now the main download: choose the install folder, desktop and Start Menu shortcuts, uninstaller, app icon. The portable exe remains as a secondary download.
 - `release.yml` workflow: pushing a `v*` tag builds and publishes a GitHub release with the installer, portable exe, `latest.yml` and blockmaps, with generated release notes. It fails early if the tag and `package.json` version differ.
