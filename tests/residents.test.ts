@@ -47,7 +47,7 @@ describe('residents', () => {
     expect(shopUtility(s, r, r.persona, shop, r.home)).toBeLessThan(neutral - 2);
     // With that grudge they almost never choose it over going elsewhere.
     let chosen = 0;
-    for (let i = 0; i < 300; i++) if (chooseShop(s, r, r.persona, 'convenience', r.home)) chosen++;
+    for (let i = 0; i < 300; i++) if (chooseShop(s, r, r.persona, 'convenience', r.home).shop) chosen++;
     expect(chosen).toBeLessThan(40);
   });
 

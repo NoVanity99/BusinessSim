@@ -11,6 +11,7 @@ import upgradesJson from './upgrades.json';
 import eventsJson from './events.json';
 import weatherJson from './weather.json';
 import personasJson from './personas.json';
+import rivalsJson from './rivals.json';
 
 export interface NeighborhoodDef {
   name: string;
@@ -246,6 +247,8 @@ export interface RoleDef {
   wage: number;
   color: string;
   description: string;
+  /** What this role does on the shop floor, most important first. Players can reorder it per shop. */
+  tasks: string[];
 }
 
 /** Numeric modifiers a trait applies; all optional. */
@@ -307,9 +310,9 @@ export interface EventsConfig {
   /** Cash level at which the bank pulls the plug. */
   bankruptcyCash: number;
   holidays: { everyDays: number; offset: number; name: string; crowd: number }[];
-  chances: { shopliftPerHourPerShop: number; inspectionPerDay: number; rivalPerDay: number; viralPerDay: number; shortagePerDay: number };
+  chances: { inspectionPerDay: number; viralPerDay: number; shortagePerDay: number };
   inspection: { dirtLimit: number; fineMin: number; fineMax: number };
-  rival: { minDays: number; maxDays: number; demandMult: number; minDay: number };
+  theft: { thiefPerHour: number; vandalPerHour: number; seenBase: number; seenGuard: number; seenCameras: number; seenPerStaff: number; seenStaffMax: number; cameraRecover: number };
   viral: { days: number; goodMult: number; badMult: number };
   shortage: { days: number; priceMult: number };
   xp: { perCustomer: number; perRevenueDollar: number; perDay: number; perShopOpened: number; base: number; power: number };
@@ -390,3 +393,43 @@ export interface PersonaConfig {
 }
 
 export const PERSONAS = personasJson as unknown as PersonaConfig;
+
+export interface RivalCompanyDef {
+  name: string;
+  short: string;
+  color: string;
+  /** Roof style its shops are drawn with. */
+  roof: string;
+  /** 0-1: how readily it starts price wars, opens next to you and poaches staff. */
+  aggression: number;
+}
+
+export interface RivalConfig {
+  companies: RivalCompanyDef[];
+  shopNames: Record<string, string[]>;
+  startCash: [number, number];
+  firstDay: number;
+  dailyIncome: number;
+  openCostBase: number;
+  openCostRentDays: number;
+  maxShopsBase: number;
+  maxShopsCap: number;
+  openChance: number;
+  dailyOverhead: number;
+  margin: number;
+  baseVisits: number;
+  hours: [number, number];
+  minPrice: number;
+  restPrice: number;
+  saleCut: number;
+  saleDays: number;
+  saleChance: number;
+  closeAfterDays: number;
+  closeBelowProfit: number;
+  competeRadius: number;
+  poachChance: number;
+  buyoutBase: number;
+  buyoutProfitDays: number;
+}
+
+export const RIVALS = rivalsJson as unknown as RivalConfig;

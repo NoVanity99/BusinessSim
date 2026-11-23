@@ -11,6 +11,7 @@ import type { Loan } from '../systems/economy/loans';
 import type { ActiveEvent, NewsItem } from '../systems/events/events';
 import { newWeatherState, type WeatherState } from '../systems/world/weather';
 import type { Resident } from '../systems/ai/residents';
+import type { PoachOffer, RivalCompany } from '../systems/rivals/rivals';
 
 export interface LotOwnership {
   owner: 'rented' | 'owned';
@@ -53,6 +54,11 @@ export interface GameState {
   weather: WeatherState;
   /** Everyone who lives in the city. Filled in when the simulation first starts. */
   residents: Resident[];
+  /** Competing companies and their shops. Created when the simulation first starts. */
+  rivals: RivalCompany[];
+  nextRivalShopId: number;
+  /** Job offers rivals have made to the player's staff. */
+  offers: PoachOffer[];
 }
 
 export interface NewGameOptions {
@@ -90,6 +96,9 @@ export function createNewGame(opts: NewGameOptions): GameState {
     bankrupt: false,
     weather: newWeatherState(),
     residents: [],
+    rivals: [],
+    nextRivalShopId: 1,
+    offers: [],
   };
 }
 

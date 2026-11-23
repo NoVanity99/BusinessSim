@@ -84,6 +84,8 @@ export interface ShopState {
   history: ShopDayRecord[];
   /** Customer reviews, newest first. */
   reviews: Review[];
+  /** Task order per staff role, where the player has changed it from the default. */
+  priorities?: Record<string, string[]>;
 }
 
 export interface ShopDayRecord extends ShopDayStats {

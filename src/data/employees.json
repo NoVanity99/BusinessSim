@@ -4,14 +4,14 @@
   "overtimeAfterHours": 8,
   "overtimeMult": 1.5,
   "roles": {
-    "cashier":  { "name": "Cashier",        "wage": 11, "color": "#5aa9e6", "description": "Runs a checkout. Speed sets how fast the line moves; friendliness lifts customer mood." },
-    "stocker":  { "name": "Stocker",        "wage": 10, "color": "#e58f4f", "description": "Carries stock from the back room to the shelves." },
-    "cleaner":  { "name": "Cleaner",        "wage": 9,  "color": "#7cc576", "description": "Keeps the place clean. Dirty shops put customers in a bad mood." },
-    "cook":     { "name": "Cook",           "wage": 12, "color": "#f2f2f2", "description": "Works cooking stations in food businesses." },
-    "mechanic": { "name": "Mechanic",       "wage": 15, "color": "#8f9bb0", "description": "Repairs broken machines and keeps them from failing." },
-    "security": { "name": "Security Guard", "wage": 13, "color": "#7b8799", "description": "Deters and catches shoplifters." },
-    "manager":  { "name": "Manager",        "wage": 20, "color": "#b07cc6", "description": "Reorders stock automatically and keeps the team's morale up." },
-    "driver":   { "name": "Delivery Driver","wage": 13, "color": "#f2b84b", "description": "Drives your van between warehouses, shops and vending machines." }
+    "cashier":  { "name": "Cashier", "tasks": ["serve", "restock", "clean"],        "wage": 11, "color": "#5aa9e6", "description": "Runs a checkout, and restocks or cleans when it is quiet. Speed sets how fast the line moves; friendliness lifts customer mood." },
+    "stocker":  { "name": "Stocker", "tasks": ["restock", "clean", "serve"],        "wage": 10, "color": "#e58f4f", "description": "Carries stock from the back room to the shelves." },
+    "cleaner":  { "name": "Cleaner", "tasks": ["clean", "restock"],        "wage": 9,  "color": "#7cc576", "description": "Keeps the place clean. Dirty shops put customers in a bad mood." },
+    "cook":     { "name": "Cook", "tasks": ["cook", "clean", "serve"],           "wage": 12, "color": "#f2f2f2", "description": "Works cooking stations in food businesses." },
+    "mechanic": { "name": "Mechanic", "tasks": ["repair", "clean"],       "wage": 15, "color": "#8f9bb0", "description": "Repairs broken machines and keeps them from failing." },
+    "security": { "name": "Security Guard", "tasks": ["guard", "clean"], "wage": 13, "color": "#7b8799", "description": "Watches the door, chases shoplifters and throws out troublemakers. A fast guard catches more of them." },
+    "manager":  { "name": "Manager", "tasks": ["manage", "serve", "restock"],        "wage": 20, "color": "#b07cc6", "description": "Reorders stock automatically and keeps the team's morale up." },
+    "driver":   { "name": "Delivery Driver", "tasks": [],"wage": 13, "color": "#f2b84b", "description": "Drives your van between warehouses, shops and vending machines." }
   },
   "traits": {
     "hardworker": { "name": "Hard Worker",   "description": "Works faster but tires sooner.",                "speed": 1.5, "energyDrain": 1.25 },

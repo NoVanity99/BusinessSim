@@ -24,7 +24,12 @@ import { dayOf, hourFloat, isWeekend } from '../time/clock';
 import { buildGrid, rebuildLot, walkable } from './grid';
 import { findPath } from './pathfind';
 import { regKey, rt, type RegisterRuntime } from './runtime';
-import { cashierAt, staffLayoutChanged } from '../staff/agents';
+import { cashierAt, prioritiesOf, registerCovered, staffLayoutChanged } from '../staff/agents';
+import { allRivalShops, frontTile, rivalById, rivalPrice } from '../rivals/rivals';
+import { upgradeLevel } from '../progress/upgrades';
+import { EVENTS } from '../../data';
+import { news } from '../events/events';
+import { money } from '../../core/format';
 import { skill } from '../staff/staff';
 
 const MAX_QUEUE_SLOTS = 8;
@@ -252,20 +257,20 @@ function pickResident(): Resident | null {
   return null;
 }
 
-function spawn(): Customer | null {
+function spawn(crook?: { shop: ShopState; kind: 'steal' | 'vandal' }): Customer | null {
   const s = session.state;
   // Most people on the street live here; some are visitors with no history in the city.
-  const resident = rand.chance(PERSONAS.touristShare) ? null : pickResident();
+  const resident = crook || rand.chance(PERSONAS.touristShare) ? null : pickResident();
   const persona = resident?.persona ?? 'tourist';
   const P = personaOf(persona);
   const from = resident ? { tile: resident.home, weight: 1, wealth: resident.wealth } : pickSpawnPoint();
   let to = pickSpawnPoint();
   for (let i = 0; i < 4 && to.tile === from.tile; i++) to = pickSpawnPoint();
   const g = rt.grid;
-  const need = chooseNeed(s, resident, persona);
+  const need = crook ? crook.shop.type : chooseNeed(s, resident, persona);
   // Families bring children, students and tourists bring friends.
   const companions: number[] = [];
-  if (P.group && rand.chance(P.group[0])) {
+  if (!crook && P.group && rand.chance(P.group[0])) {
     const n = rand.int(P.group[1], P.group[2]);
     for (let i = 0; i < n; i++) companions.push(P.group[3] === 'child' ? rand.pick(CHILD_LOOKS) : rand.pick(ADULT_LOOKS));
   }
@@ -284,7 +289,7 @@ function spawn(): Customer | null {
     dest: to.tile,
     speed: POPULATION.walkSpeed * rand.range(0.85, 1.2) * (companions.length ? 0.9 : 1),
     need,
-    plan: need ? makePlan(need, persona, kids) : [],
+    plan: crook ? [{ t: crook.kind }] : need ? makePlan(need, persona, kids) : [],
     step: 0,
     cart: [],
     budget: Math.round(rand.range(POPULATION.budgetMin, POPULATION.budgetMax) * from.wealth * P.budget * (need === 'funpark' ? 1.6 : 1) * (1 + companions.length * 0.4)),
@@ -311,6 +316,11 @@ function spawn(): Customer | null {
     persona,
     companions,
     elsewhere: false,
+    rivalId: -1,
+    crook: !!crook,
+    loot: [],
+    fleeing: false,
+    fleeFrom: -1,
   };
   if (!setPath(c, to.tile)) return null;
   rt.customers.push(c);
@@ -318,10 +328,23 @@ function spawn(): Customer | null {
   if (resident) rt.out.add(resident.id);
 
   // Decide where to go for it: one of your shops, or somewhere else in town.
-  if (need) {
-    const shop = chooseShop(s, resident, persona, need, from.tile);
+  if (crook) {
+    if (!headToShop(c, crook.shop)) {
+      despawn(c);
+      return null;
+    }
+  } else if (need) {
+    const { shop, rival } = chooseShop(s, resident, persona, need, from.tile);
     if (shop) headToShop(c, shop);
-    else c.elsewhere = true;
+    else {
+      c.elsewhere = true;
+      // Walk to the rival's door, where everyone can see the custom going there.
+      const door = rival ? frontTile(session.city, session.city.lots[rival.lotId]) : -1;
+      if (rival && setPath(c, door)) {
+        c.dest = door;
+        c.rivalId = rival.id;
+      }
+    }
   }
   return c;
 }
@@ -332,6 +355,12 @@ function despawn(c: Customer): void {
   rt.out.delete(c.residentId);
   // Whoever went elsewhere got what they were after; their need starts building again.
   if (c.elsewhere && !c.entered) metElsewhere(session.state, c.residentId, c.need);
+  // Count the visit for the rival they walked to.
+  if (c.elsewhere && c.rivalId >= 0 && !c.path.length) {
+    const rival = rivalById(session.state, c.rivalId);
+    if (rival) rival.today++;
+  }
+  if (c.loot.length) gotAway(c);
   const i = rt.customers.indexOf(c);
   if (i >= 0) {
     rt.customers[i] = rt.customers[rt.customers.length - 1];
@@ -414,7 +443,7 @@ function releaseStation(c: Customer): void {
 function leaveShop(c: Customer): void {
   const s = session.state;
   const shop = shopOf(c);
-  if (shop && c.entered) {
+  if (shop && c.entered && !c.crook) {
     if (!c.bought) shop.today.walkouts++;
     else shop.today.served++;
     // Each visit nudges reputation; paying customers count for more than window-shoppers.
@@ -449,7 +478,9 @@ function acceptsPrice(c: Customer, shop: ShopState, product: string, price: numb
   const maxRatio = 1 + 0.2 * c.wealth * c.generosity;
   if (ratio > maxRatio) {
     const outrageous = ratio > maxRatio + 0.3;
-    think(c, outrageous ? `What a rip-off! $${price.toFixed(2)} for ${productName(product)}?` : 'Too expensive!', 'bad', outrageous ? -20 : -12);
+    // People know what the competition charges.
+    const cheaper = allRivalShops(session.state).find((r) => r.type === shop.type && rivalPrice(session.state, r) < ratio - 0.05);
+    think(c, outrageous ? `What a rip-off! $${price.toFixed(2)} for ${productName(product)}?` : cheaper && rand.chance(0.6) ? `Too expensive! It's cheaper at ${cheaper.name}.` : 'Too expensive!', 'bad', outrageous ? -20 : -12);
     return false;
   }
   if (price > c.budget - c.cart.reduce((a, l) => a + l.qty * l.price, 0)) {
@@ -482,6 +513,7 @@ function considerShops(c: Customer): void {
     c.seen.pop();
     if (headToShop(c, shop)) {
       c.elsewhere = false;
+      c.rivalId = -1;
       return;
     }
     c.seen.push(shop.id);
@@ -497,6 +529,11 @@ function enterShop(c: Customer): void {
     return resumeWalk(c);
   }
   c.entered = true;
+  if (c.crook) {
+    c.state = 'browse';
+    c.timer = rand.range(0.4, 1.2);
+    return;
+  }
   shop.today.customers++;
   // First impressions: decor lifts the mood, dirt drags it down. Every visitor leaves a little mess.
   const fussy = personaOf(c.persona).ambience ?? 1;
@@ -525,6 +562,9 @@ function nextStep(c: Customer): void {
       return joinQueue(c, shop, "There's nobody taking orders!");
     case 'use':
       return goToStation(c, shop, step);
+    case 'steal':
+    case 'vandal':
+      return goToTarget(c, shop, step.t);
   }
 }
 
@@ -585,6 +625,7 @@ function goToShelf(c: Customer, shop: ShopState, step: Extract<Step, { t: 'buy' 
 function evaluateShelf(c: Customer): void {
   const shop = shopOf(c);
   if (!shop) return resumeWalk(c);
+  if (c.crook) return commitCrime(c, shop);
   const step = c.plan[c.step];
   c.state = 'browse';
   c.timer = rand.range(0.2, 0.6);
@@ -659,6 +700,11 @@ function joinQueue(c: Customer, shop: ShopState, nobody: string): void {
   for (const obj of registers(shop)) {
     const reg = rt.registers.get(regKey(shop.id, obj.id));
     if (reg && reg.slots.length && operatorSpeed(s, shop, obj) > 0) open.push(reg);
+  }
+  // Nobody at a till right now, but someone on shift serves: queue up and they will come over.
+  if (!open.length && registerCovered(s, shop)) for (const obj of registers(shop)) {
+    const reg = rt.registers.get(regKey(shop.id, obj.id));
+    if (reg && reg.slots.length) open.push(reg);
   }
   if (!open.length) {
     think(c, registers(shop).length ? nobody : "There's nowhere to pay!", 'bad', -30);
@@ -958,6 +1004,155 @@ function finishUsing(c: Customer): void {
   c.timer = rand.range(0.2, 0.5);
 }
 
+// ---------- Shoplifters and troublemakers ----------
+
+const FLEE_SPEED = 1.55;
+/** Minutes after which a thief who has not been caught is gone for good. */
+const GETAWAY_MINUTES = 6;
+
+/** Send a shoplifter or troublemaker to a shop. */
+export function sendCrook(shop: ShopState, kind: 'steal' | 'vandal'): boolean {
+  return !!spawn({ shop, kind });
+}
+
+/** Staff on the premises right now, and whether any of them is there to guard. */
+function watchers(shop: ShopState): { staff: number; guard: boolean } {
+  const s = session.state;
+  let staff = 0;
+  let guard = false;
+  for (const e of s.staff) {
+    if (e.shopId !== shop.id || !rt.staff.has(e.id)) continue;
+    staff++;
+    if (prioritiesOf(shop, e.role).includes('guard') && rt.staff.get(e.id)!.task !== 'break') guard = true;
+  }
+  return { staff, guard };
+}
+
+/** Walk to whatever they have come for: the most valuable shelf, or a machine to wreck. */
+function goToTarget(c: Customer, shop: ShopState, kind: 'steal' | 'vandal'): void {
+  const g = rt.grid;
+  c.shelfId = -1;
+  c.slotIndex = -1;
+  if (kind === 'steal') {
+    let best: { obj: PlacedObject; slot: number; value: number } | null = null;
+    for (const obj of shop.objects) {
+      if (defOf(obj).kind !== 'shelf') continue;
+      obj.slots?.forEach((sl, i) => {
+        if (!sl.product || batchQty(sl.batches) <= 0) return;
+        const value = (shop.prices[sl.product] ?? 0) * rand.range(0.7, 1.3);
+        if (!best || value > best.value) best = { obj, slot: i, value };
+      });
+    }
+    const target = best as { obj: PlacedObject; slot: number; value: number } | null;
+    const spot = target ? frontTiles(target.obj).find((t) => walkable(g, t.x, t.y)) : undefined;
+    if (!target || !spot || !setPath(c, spot.y * g.w + spot.x)) {
+      c.need = null;
+      return resumeWalk(c);
+    }
+    c.shelfId = target.obj.id;
+    c.slotIndex = target.slot;
+  } else {
+    const machines = shop.objects.filter((o) => defOf(o).breakChance && !o.broken && tilesAround(o).length);
+    const obj = machines.length ? rand.pick(machines) : undefined;
+    if (obj && setPath(c, rand.pick(tilesAround(obj)))) c.shelfId = obj.id;
+  }
+  c.state = 'toShelf';
+  if (!c.path.length) {
+    c.state = 'pick';
+    c.timer = rand.range(1, 2);
+  }
+}
+
+function commitCrime(c: Customer, shop: ShopState): void {
+  const s = session.state;
+  const { staff, guard } = watchers(shop);
+  const cameras = upgradeLevel(s, shop.id, 'cameras') > 0;
+  const obj = shop.objects.find((o) => o.id === c.shelfId);
+  c.need = null;
+  c.waited = 0;
+
+  if (c.plan[0]?.t === 'vandal') {
+    if (guard && rand.chance(0.75)) {
+      news(s, `Security at ${shop.name} threw out a troublemaker before they could do any damage.`, 'good');
+      think(c, 'All right, all right, I am going.', 'bad');
+    } else if (obj && !obj.broken) {
+      obj.broken = true;
+      news(s, `A troublemaker wrecked the ${defOf(obj).name.toLowerCase()} at ${shop.name}.${guard ? '' : ' A security guard would stop this.'}`, 'warn');
+      bus.emit('shop:changed', shop.id);
+    } else {
+      shop.dirt = clamp(shop.dirt + 18, 0, 100);
+      news(s, `A troublemaker made a mess of ${shop.name}.${guard ? '' : ' A security guard would stop this.'}`, 'warn');
+    }
+    bus.emit('world:bubble', { x: c.x, y: c.y - 0.8, text: '!', kind: 'bad' });
+    return resumeWalk(c);
+  }
+
+  const slot = obj?.slots?.[c.slotIndex];
+  const product = slot?.product;
+  if (!slot || !product) return resumeWalk(c);
+  // Small expensive things walk out one at a time; cheap things by the armful.
+  const taken = takeFromSlot(shop, slot, PRODUCTS[product].market > 10 ? rand.int(1, 2) : rand.int(2, 6));
+  if (!taken) return resumeWalk(c);
+  c.loot = [{ product, qty: taken, price: shop.prices[product] }];
+  c.fleeFrom = shop.id;
+  bus.emit('stock:changed', shop.id);
+  // The more eyes on the shop floor, the likelier someone notices.
+  const T = EVENTS.theft;
+  const seen = T.seenBase + (guard ? T.seenGuard : 0) + (cameras ? T.seenCameras : 0) + Math.min(T.seenStaffMax, staff * T.seenPerStaff) + (s.ownerAt?.shopId === shop.id ? T.seenPerStaff : 0);
+  if (rand.chance(seen)) {
+    c.fleeing = true;
+    c.speed *= FLEE_SPEED;
+    think(c, 'They saw me. Run!', 'bad');
+    bus.emit('world:bubble', { x: c.x, y: c.y - 0.8, text: 'Thief!', kind: 'bad' });
+    toast(`Shoplifter spotted at ${shop.name}!${guard ? ' Security is giving chase.' : ''}`, 'warn');
+  }
+  resumeWalk(c);
+}
+
+const lootValue = (c: Customer): number => Math.round(c.loot.reduce((a, l) => a + l.qty * l.price, 0));
+const lootText = (c: Customer): string => c.loot.map((l) => `${l.qty} ${productName(l.product)}`).join(', ');
+
+/** A guard caught up with a fleeing thief: the goods go back to the stock room. */
+export function thiefCaught(customerId: number, byStaffId: number): void {
+  const s = session.state;
+  const c = rt.byId.get(customerId);
+  if (!c || !c.loot.length) return;
+  const shop = shopById(s, c.fleeFrom);
+  const guard = s.staff.find((e) => e.id === byStaffId);
+  if (shop) {
+    const today = dayOf(s.time);
+    for (const l of c.loot) addToStorage(shop, l.product, l.qty, PRODUCTS[l.product].shelfLife ? today + 1 : 0);
+    bus.emit('stock:changed', shop.id);
+    news(s, `${guard?.name ?? 'Security'} caught a shoplifter at ${shop.name}. The ${lootText(c)} ${c.loot[0].qty === 1 && c.loot.length === 1 ? 'is' : 'are'} back in the stock room.`, 'good');
+  }
+  if (guard) guard.morale = clamp(guard.morale + 4, 0, 100);
+  bus.emit('world:bubble', { x: c.x, y: c.y - 0.8, text: 'Caught!', kind: 'good' });
+  c.loot = [];
+  c.fleeing = false;
+  c.speed /= FLEE_SPEED;
+  think(c, 'Caught.', 'bad', -30);
+}
+
+/** Nobody stopped them. Cameras sometimes identify a thief afterwards. */
+function gotAway(c: Customer): void {
+  const s = session.state;
+  const shop = shopById(s, c.fleeFrom);
+  const value = lootValue(c);
+  if (shop) {
+    const cameras = upgradeLevel(s, shop.id, 'cameras') > 0;
+    const { guard } = watchers(shop);
+    if (cameras && rand.chance(EVENTS.theft.cameraRecover)) {
+      earn(s, value, 'refund');
+      news(s, `A shoplifter took ${lootText(c)} from ${shop.name}, but your cameras identified them and ${money(value)} was recovered.`, 'info');
+    } else {
+      news(s, `Shoplifter at ${shop.name}: ${lootText(c)} gone (${money(value)} of stock).${guard ? '' : cameras ? ' A security guard could have caught them.' : ' Cameras or a security guard would help.'}`, 'warn');
+    }
+  }
+  if (c.fleeing) c.speed /= FLEE_SPEED;
+  c.loot = [];
+  c.fleeing = false;
+}
+
 // ---------- Vending machines ----------
 
 const VENDING_CHANCE = 0.14;
@@ -1056,6 +1251,10 @@ export function updateAi(dt: number): void {
 
   for (let i = rt.customers.length - 1; i >= 0; i--) {
     const c = rt.customers[i];
+    if (c.loot.length) {
+      c.waited += dt;
+      if (c.waited > GETAWAY_MINUTES) gotAway(c);
+    }
     switch (c.state) {
       case 'browse':
       case 'pick':

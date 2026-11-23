@@ -1,0 +1,40 @@
+{
+  "_comment": "Rival companies. They rent free lots, open shops that compete for the same residents, and react to what you do.",
+  "companies": [
+    { "name": "MegaMart Group",   "short": "MegaMart", "color": "#d9483b", "roof": "brick",  "aggression": 0.8 },
+    { "name": "Blue Harbor Co.",  "short": "Blue Harbor", "color": "#3a7bd5", "roof": "office", "aggression": 0.45 },
+    { "name": "Sunny Side Shops", "short": "Sunny Side", "color": "#e0a02c", "roof": "resort", "aggression": 0.25 }
+  ],
+  "shopNames": {
+    "convenience": ["Express", "Quick Stop", "Mini Market"],
+    "cardshop": ["Cards & Games", "Hobby Vault"],
+    "fastfood": ["Burger Bar", "Grill"],
+    "coffee": ["Coffee House", "Espresso"],
+    "laundromat": ["Wash & Go", "Laundry"],
+    "gas": ["Fuel Stop"],
+    "default": ["Store", "Outlet"]
+  },
+  "startCash": [5000, 9000],
+  "firstDay": 3,
+  "dailyIncome": 140,
+  "openCostBase": 2500,
+  "openCostRentDays": 10,
+  "maxShopsBase": 2,
+  "maxShopsCap": 6,
+  "openChance": 0.16,
+  "dailyOverhead": 40,
+  "margin": 0.5,
+  "baseVisits": 40,
+  "hours": [8, 22],
+  "minPrice": 0.76,
+  "restPrice": 1.06,
+  "saleCut": 0.15,
+  "saleDays": 3,
+  "saleChance": 0.05,
+  "closeAfterDays": 6,
+  "closeBelowProfit": -35,
+  "competeRadius": 42,
+  "poachChance": 0.07,
+  "buyoutBase": 2500,
+  "buyoutProfitDays": 25
+}

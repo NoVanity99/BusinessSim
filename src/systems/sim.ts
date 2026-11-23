@@ -2,7 +2,10 @@ import { bus, toast } from '../core/events';
 import { money } from '../core/format';
 import { session } from '../core/state';
 import { emptyStats, SHOP_HISTORY_DAYS } from '../entities/Shop';
-import { initAi, onShopLayoutChanged, updateAi } from './ai/customers';
+import { initAi, onShopLayoutChanged, sendCrook, thiefCaught, updateAi } from './ai/customers';
+import { ensureRivals, rivalsDaily } from './rivals/rivals';
+import { rebuildLot } from './ai/grid';
+import { onCrook } from './events/events';
 import { initVehicles, syncVending, updateVehicles } from './ai/vehicles';
 import { updateProduction } from './shop/production';
 import { updateStaff } from './staff/agents';
@@ -45,6 +48,8 @@ export function stepSimulation(realSeconds: number): number {
 export function installSim(): () => void {
   const s = session.state;
   if (!s.candidates.length) refreshCandidates(s, 0);
+  ensureRivals(s);
+  onCrook((shop, kind) => sendCrook(shop, kind));
   initAi();
   initVehicles();
   // Remembers where each shop stood so its tiles can be freed when it is removed.
@@ -68,6 +73,9 @@ export function installSim(): () => void {
       syncVending();
     }),
     bus.on('time:minute', () => processDeliveries(s)),
+    bus.on('thief:caught', ({ customerId, by }) => thiefCaught(customerId, by)),
+    // A rival moving in or out changes where people can walk.
+    bus.on('lot:changed', (lotId) => rebuildLot(rt.grid, session.city, session.city.lots[lotId])),
     bus.on('time:hour', () => {
       staffHourly(s);
       managerReorder(s);
@@ -98,6 +106,7 @@ export function installSim(): () => void {
       expireStock(s);
       staffDaily(s);
       eventsDaily(s);
+      rivalsDaily(s);
       const income = Object.values(closed.income).reduce((a, b) => a + (b ?? 0), 0);
       const expense = Object.values(closed.expense).reduce((a, b) => a + (b ?? 0), 0);
       if (rent + utilities > 0 || income > 0) {

@@ -1,4 +1,5 @@
 import { bus } from '../../core/events';
+import { companyValue, matchOffer } from '../../systems/rivals/rivals';
 import { money } from '../../core/format';
 import { session, shopById } from '../../core/state';
 import { selectLot, selectStaff, setOverlay, ui, type Overlay } from '../../core/uiState';
@@ -126,7 +127,7 @@ function staff(focus: (lotId: number) => void): HTMLElement {
       h('td', { class: e.energy < 30 ? 'warn' : '' }, `${Math.round(e.energy)}%`),
       h('td', { class: e.morale < 30 ? 'bad' : '' }, `${Math.round(e.morale)}%`),
       h('td', money(Math.round(dailyWageBill(e)))),
-      h('td', { class: 'dim' }, rt.staff.get(e.id)?.activity ?? 'Off shift'),
+      h('td', { class: s.offers.some((o) => o.staffId === e.id) ? 'warn' : 'dim' }, s.offers.some((o) => o.staffId === e.id) ? h('button.primary', { onclick: (ev: Event) => { ev.stopPropagation(); matchOffer(s, e.id); }, tip: 'A rival has made them an offer. Match it or they leave at midnight.' }, `Match ${money(s.offers.find((o) => o.staffId === e.id)!.wage)}/h`) : rt.staff.get(e.id)?.activity ?? 'Off shift'),
     );
   });
   const total = s.staff.reduce((a, e) => a + dailyWageBill(e), 0);
@@ -155,6 +156,21 @@ function company(): HTMLElement {
       h('div', h('div.label', `Goal ${money(goal)}`), h('div.value', s.won ? 'Reached!' : `${Math.max(0, Math.round((worth / goal) * 100))}%`)),
     ),
     next.length > 0 && h('div.note', { style: { marginTop: '0' } }, `Coming up: ${next.map((t) => `${t.name} (level ${t.unlockLevel})`).join(', ')}.`),
+    h('div.section', 'Rival companies'),
+    h(
+      'table.table',
+      h('tr', h('th', 'Company'), h('th', 'Shops'), h('th', 'Worth'), h('th', 'Style')),
+      h('tr', h('td', h('span.tag', { style: { background: 'var(--accent)' } }, s.companyName)), h('td', `${s.shops.length}`), h('td', money(Math.round(worth))), h('td', { class: 'dim' }, 'You')),
+      ...s.rivals.map((c) =>
+        h(
+          'tr',
+          h('td', h('span.tag', { style: { background: c.color, color: '#fff' } }, c.name)),
+          h('td', { tip: c.shops.map((sh) => sh.name).join('\n') || 'No shops yet' }, `${c.shops.length}`),
+          h('td', money(companyValue(c))),
+          h('td', { class: 'dim' }, c.aggression > 0.6 ? 'Cut-throat' : c.aggression > 0.35 ? 'Competitive' : 'Easy-going'),
+        ),
+      ),
+    ),
     h('div.section', 'Company-wide upgrades'),
     ...upgradesFor(null).map(([id, d]) => {
       const level = upgradeLevel(s, COMPANY, id);

@@ -29,6 +29,8 @@ import { rentOf } from '../systems/economy/property';
 import { setSpeed } from '../systems/time/clock';
 import { Atmosphere } from './city/Atmosphere';
 import { CityProps } from './city/CityProps';
+import { RivalViews } from './city/RivalViews';
+import { companyOf, rivalOnLot } from '../systems/rivals/rivals';
 import { Effects } from './city/Effects';
 import { clear, h, nightLayer, uiRoot } from '../ui/dom';
 import { TopBar } from '../ui/hud/TopBar';
@@ -56,6 +58,7 @@ export class CityScene extends Phaser.Scene {
   private night = nightLayer();
   private atmosphere!: Atmosphere;
   private props!: CityProps;
+  private rivalViews!: RivalViews;
   private effects!: Effects;
   private zoomTarget = 1;
   private zoomAnchor: { x: number; y: number } | null = null;
@@ -98,6 +101,7 @@ export class CityScene extends Phaser.Scene {
     // The simulation (people, cars, schedules) must exist before anything draws it.
     this.cleanups.push(installSim());
     this.npcViews = new NpcViews(this);
+    this.rivalViews = new RivalViews(this);
     this.atmosphere = new Atmosphere(this);
     this.props = new CityProps(this, this.atmosphere);
     this.effects = new Effects(this);
@@ -164,6 +168,8 @@ export class CityScene extends Phaser.Scene {
         this.shopLots.delete(id);
       }),
       () => this.npcViews.destroy(),
+      () => this.rivalViews.destroy(),
+      bus.on('rivals:changed', () => this.drawLots()),
       () => this.effects.destroy(),
       () => this.atmosphere.destroy(),
       bus.on('stock:changed', (id) => this.shopViews.markStockDirty(id)),
@@ -498,7 +504,8 @@ export class CityScene extends Phaser.Scene {
       const s = session.state;
       const own = s.lots[lot.id];
       const n = NEIGHBORHOODS[lot.district];
-      const line = own ? (own.owner === 'owned' ? 'Owned by you' : `Leased · ${money(rentOf(s, lot))}/day`) : `For rent · ${money(rentOf(s, lot))}/day`;
+      const rival = rivalOnLot(s, lot.id);
+      const line = rival ? `${rival.name}\nRun by ${companyOf(s, rival).name}` : own ? (own.owner === 'owned' ? 'Owned by you' : `Leased · ${money(rentOf(s, lot))}/day`) : `For rent · ${money(rentOf(s, lot))}/day`;
       const ev = p.event as MouseEvent;
       showTip(`Lot #${lot.id} · ${n.name}\n${lot.w} × ${lot.h} tiles\n${line}`, ev.clientX, ev.clientY);
     } else hideTip();
@@ -510,7 +517,7 @@ export class CityScene extends Phaser.Scene {
     const g = this.lotGfx;
     g.clear();
     for (const lot of city.lots) {
-      if (!lot.rentable) continue;
+      if (!lot.rentable || rivalOnLot(state, lot.id)) continue;
       const own = state.lots[lot.id];
       const color = own ? 0x4fc3a1 : 0xf2d24b;
       const x = lot.x * TILE;
@@ -569,6 +576,7 @@ export class CityScene extends Phaser.Scene {
     this.shopViews.flush(dt);
     // Props add their lamps to the lighting first; then the atmosphere draws night and weather.
     this.props.update(dt);
+    for (const l of this.rivalViews.lights()) this.atmosphere.extra.push({ x: l.x, y: l.y, rx: l.radius, ry: l.radius * 0.8, strength: 0.85 });
     this.effects.update(dt);
     this.atmosphere.update();
     this.stepTimer -= dt * session.state.time.speed;

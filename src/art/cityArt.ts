@@ -57,10 +57,10 @@ export function drawTile(ctx: CanvasRenderingContext2D, city: City, tx: number, 
 }
 
 /** A non-player building: tiled roof, plus a wall with door and windows if it faces the camera. */
-export function drawBuilding(ctx: CanvasRenderingContext2D, lot: LotDef, ox: number, oy: number): void {
-  const style = NEIGHBORHOODS[lot.district].buildingStyle;
+export function drawBuilding(ctx: CanvasRenderingContext2D, lot: LotDef, ox: number, oy: number, styleOverride?: string, variantOverride?: number): void {
+  const style = styleOverride ?? NEIGHBORHOODS[lot.district].buildingStyle;
   const key = ROOF_COLORS[style] ? style : 'house';
-  const variant = lot.style % 4;
+  const variant = (variantOverride ?? lot.style) % 4;
   // The yard strip sits at the back of the lot.
   const top = lot.front === 'n' ? lot.y : lot.y + 1;
   const rows = lot.h - 1;

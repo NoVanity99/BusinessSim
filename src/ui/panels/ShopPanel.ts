@@ -26,7 +26,10 @@ import { fairPrice } from '../../systems/shop/pricing';
 import { openOrders } from '../../systems/shop/kitchen';
 import { defOf } from '../../entities/Shop';
 import { dayOf } from '../../systems/time/clock';
-import { personaOf, regularsOf, shopRating } from '../../systems/ai/residents';
+import { movePriority, prioritiesOf, taskApplies, TASK_NAMES } from '../../systems/staff/agents';
+import { matchOffer, rivalsNear, rivalPrice } from '../../systems/rivals/rivals';
+import { rt } from '../../systems/ai/runtime';
+import { personaOf, priceIndex, regularsOf, shopRating } from '../../systems/ai/residents';
 import { buyUpgrade, upgradeCost, upgradeLevel, upgradesFor } from '../../systems/progress/upgrades';
 import { shopDemandMult } from '../../systems/events/events';
 
@@ -101,10 +104,13 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
       h('div.kv', { tip: 'Customers remember good and bad visits. Reputation draws people in or keeps them away.' }, h('span.k', 'Reputation'), h('span.v', `${Math.round(shop.reputation)} / 100`)),
       h('div.meter', h('div', { style: { width: `${shop.reputation}%`, background: 'var(--accent)' } })),
       h('div.kv', { tip: 'Average of the latest customer reviews. People check it before deciding where to go.' }, h('span.k', 'Rating'), h('span.v', shop.reviews.length ? `${stars(shopRating(shop))} ${shopRating(shop).toFixed(1)} (${shop.reviews.length})` : 'No reviews yet')),
+      ...rivalsNear(s, shop).map((r) =>
+        h('div.kv', { tip: 'A rival shop competing for your customers. Click its building on the map for details.' }, h('span.k', `Rival: ${r.name}`), h('span.v', { class: rivalPrice(s, r) < priceIndex(s, shop) - 0.02 ? 'warn' : '' }, `prices ${Math.round((rivalPrice(s, r) - 1) * 100)}% · you ${Math.round((priceIndex(s, shop) - 1) * 100)}%`)),
+      ),
       h('div.kv', { tip: 'Residents who have been in at least three times and like the place. They come back on their own.' }, h('span.k', 'Regulars'), h('span.v', regularsOf(s, shop.id))),
       h('div.kv', { tip: 'Every visitor leaves a little mess. Dirt puts customers in a bad mood. Bins slow it down; a cleaner removes it.' }, h('span.k', 'Cleanliness'), h('span.v', { class: shop.dirt > 55 ? 'bad' : shop.dirt > 30 ? 'warn' : '' }, `${Math.round(100 - shop.dirt)}%`)),
       shop.dirt > 15 && h('div.actions', { style: { margin: '2px 0 8px' } }, h('button', { disabled: s.money < deepCleanCost(shop), onclick: () => { if (tryPay(s, deepCleanCost(shop), 'maintenance')) { shop.dirt = 0; bus.emit('shop:changed', shop.id); } }, tip: 'Pay a cleaning crew for a one-off scrub.' }, `Deep clean (${money(deepCleanCost(shop))})`)),
-      shopDemandMult(s, shop) !== 1 && h('div.kv', { tip: 'Advertising, rivals and viral reviews change how many passers-by come in.' }, h('span.k', 'Customer interest'), h('span.v', { class: shopDemandMult(s, shop) < 1 ? 'bad' : 'good' }, `${Math.round(shopDemandMult(s, shop) * 100)}%`)),
+      shopDemandMult(s, shop) !== 1 && h('div.kv', { tip: 'Advertising and viral reviews change how many passers-by come in.' }, h('span.k', 'Customer interest'), h('span.v', { class: shopDemandMult(s, shop) < 1 ? 'bad' : 'good' }, `${Math.round(shopDemandMult(s, shop) * 100)}%`)),
       h('div.kv', h('span.k', 'Back-room storage'), h('span.v', `${storageUsed(shop)} / ${storageCapacity(shop)} units`)),
       h('div.kv', { tip: 'Charged at midnight: a base fee, floor area and powered equipment.' }, h('span.k', 'Utilities'), h('span.v', `${money(utilityCost(s, shop))} / day`)),
       h('div.kv', h('span.k', 'Wages'), h('span.v', `${money(Math.round(staffOf(s, shop.id).reduce((a, e) => a + dailyWageBill(e), 0)))} / day`)),
@@ -401,6 +407,18 @@ function pricesTab(s: GameState, shop: ShopState): Tab {
 
 // ---------- Staff ----------
 
+/** A rival's job offer to this employee, with a button to match it. */
+export function offerLine(s: GameState, e: Employee): HTMLElement | false {
+  const offer = s.offers.find((o) => o.staffId === e.id);
+  if (!offer) return false;
+  const company = s.rivals.find((c) => c.id === offer.companyId);
+  return h(
+    'div.line.offer',
+    h('span', `${company?.name ?? 'A rival'} has offered ${money(offer.wage)}/h. They leave at midnight.`),
+    h('button.primary', { onclick: () => matchOffer(s, e.id), tip: `Raise their wage to ${money(offer.wage)} an hour so they stay.` }, `Match ${money(offer.wage)}/h`),
+  );
+}
+
 function staffTab(s: GameState, shop: ShopState): Tab {
   const type = SHOP_TYPES[shop.type];
   const body = h('div');
@@ -426,6 +444,7 @@ function staffTab(s: GameState, shop: ShopState): Tab {
     return h(
       'div.person',
       h('div.head', h('span.name', { onclick: () => selectStaff(e.id), tip: 'Show details' }, e.name), roleTag(e.role)),
+      h('div.dim', { style: { fontSize: '12.5px', marginBottom: '4px' } }, rt.staff.get(e.id)?.activity ?? 'Off shift'),
       skillBars(e),
       h('div.line', ...traitTags(e)),
       h(
@@ -446,6 +465,7 @@ function staffTab(s: GameState, shop: ShopState): Tab {
             ...regs.map((r, i) => h('option', { value: r.id, selected: e.stationId === r.id }, `Checkout ${i + 1}`)),
           ),
         ),
+      offerLine(s, e),
       h(
         'div.line',
         h('span', { class: fair < 0.95 ? 'warn' : '', tip: `Someone with these skills usually earns about ${money(Math.round(e.fairWage * 100) / 100)} an hour.` }, `${money(e.wage)}/h · ${money(Math.round(dailyWageBill(e)))}/day`),
@@ -474,6 +494,25 @@ function staffTab(s: GameState, shop: ShopState): Tab {
       h('div.section', `Team (${mine.length})`),
       mine.length === 0 && h('div.note', { style: { marginTop: '0' } }, 'Nobody works here yet. You can run one checkout yourself; everything else needs staff.'),
       ...mine.map(employeeCard),
+      mine.length > 0 && h('div.section', { tip: 'Each role works down its list: the first job that has something waiting gets done. Reorder a list to change what this shop\'s staff put first.' }, 'Task priorities'),
+      ...[...new Set(mine.map((e) => e.role))]
+        .filter((role) => prioritiesOf(shop, role).filter((t) => taskApplies(shop, t)).length > 1)
+        .map((role) => {
+          const tasks = prioritiesOf(shop, role).filter((t) => taskApplies(shop, t));
+          return h(
+            'div.taskboard',
+            h('div.role', roleTag(role)),
+            ...tasks.map((t, i) =>
+              h(
+                'div.task',
+                h('span.n', `${i + 1}`),
+                h('span.label', TASK_NAMES[t] ?? t),
+                h('button', { disabled: i === 0, tip: 'Do this sooner', onclick: () => movePriority(shop, role, t, -1) }, '▲'),
+                h('button', { disabled: i === tasks.length - 1, tip: 'Do this later', onclick: () => movePriority(shop, role, t, 1) }, '▼'),
+              ),
+            ),
+          );
+        }),
       h('div.section', 'Looking for work'),
       pool.length === 0 && h('div.note', { style: { marginTop: '0' } }, 'No suitable candidates today. New people apply every morning.'),
       ...pool.map(candidateCard),

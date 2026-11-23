@@ -6,13 +6,12 @@ import { EMPLOYEES, EVENTS, PRODUCTS, SHOP_TYPES } from '../../data';
 import { batchQty, defOf, type ShopState } from '../../entities/Shop';
 import { rt } from '../ai/runtime';
 import { earn, spend } from '../economy/finance';
-import { takeFromSlot } from '../economy/stock';
 import { upgradeLevel } from '../progress/upgrades';
 import { isOpenNow } from '../shop/status';
 import { fire, hasTrait, onDuty } from '../staff/staff';
 import { dayOf } from '../time/clock';
 
-export type EventType = 'rival' | 'viralGood' | 'viralBad' | 'shortage' | 'holiday';
+export type EventType = 'viralGood' | 'viralBad' | 'shortage' | 'holiday';
 
 /** Something temporary that is changing the rules. Saved with the game. */
 export interface ActiveEvent {
@@ -47,7 +46,6 @@ export function shopDemandMult(s: GameState, shop: ShopState): number {
   let m = 1 + upgradeLevel(s, shop.id, 'localAds') * 0.15;
   for (const e of s.events) {
     if (e.shopId !== shop.id) continue;
-    if (e.type === 'rival') m *= EVENTS.rival.demandMult;
     if (e.type === 'viralGood') m *= EVENTS.viral.goodMult;
     if (e.type === 'viralBad') m *= EVENTS.viral.badMult;
   }
@@ -67,16 +65,6 @@ function applyHolidays(s: GameState): void {
     }
   }
   rt.crowdMult = crowd;
-}
-
-function startRival(s: GameState): void {
-  const day = dayOf(s.time);
-  const targets = customerShops(s).filter((sh) => !s.events.some((e) => e.type === 'rival' && e.shopId === sh.id));
-  if (day < EVENTS.rival.minDay || !targets.length) return;
-  const shop = rand.pick(targets);
-  const days = rand.int(EVENTS.rival.minDays, EVENTS.rival.maxDays);
-  s.events.push({ type: 'rival', untilDay: day + days, shopId: shop.id, label: `Rival ${SHOP_TYPES[shop.type].name.toLowerCase()} near ${shop.name}` });
-  news(s, `A rival ${SHOP_TYPES[shop.type].name.toLowerCase()} has opened near ${shop.name}. Expect fewer customers there until it folds. Sharp prices and a good reputation will see it off sooner.`, 'warn');
 }
 
 function startViral(s: GameState): void {
@@ -118,25 +106,24 @@ function healthInspection(s: GameState): void {
   }
 }
 
-/** Shoplifters target shops with stock on open shelves. Guards catch most of them. */
-function shoplifting(s: GameState): void {
+/** Every so often someone comes in to steal or cause trouble. Guards and cameras put most of them off. */
+function crooks(s: GameState): void {
   for (const shop of s.shops) {
-    if (SHOP_TYPES[shop.type].flow !== 'retail' || !isOpenNow(s, shop)) continue;
+    if (!isOpenNow(s, shop)) continue;
+    const flow = SHOP_TYPES[shop.type].flow;
     const cameras = upgradeLevel(s, shop.id, 'cameras') > 0;
-    if (!rand.chance(C.shopliftPerHourPerShop * (cameras ? 0.5 : 1))) continue;
-    const slots = shop.objects.flatMap((o) => (defOf(o).kind === 'shelf' ? (o.slots ?? []).filter((sl) => sl.product && batchQty(sl.batches) > 0) : []));
-    if (!slots.length) continue;
-    const slot = rand.pick(slots);
-    const product = slot.product!;
     const guard = s.staff.some((e) => e.shopId === shop.id && e.role === 'security' && onDuty(s, e));
-    if (guard && rand.chance(0.75)) {
-      news(s, `Security at ${shop.name} stopped a shoplifter going for the ${PRODUCTS[product].name.toLowerCase()}.`, 'good');
-      continue;
-    }
-    // Small expensive things walk out one at a time; cheap things by the armful.
-    const taken = takeFromSlot(shop, slot, PRODUCTS[product].market > 10 ? rand.int(1, 2) : rand.int(2, 6));
-    if (taken) news(s, `Shoplifter at ${shop.name}: ${taken} ${PRODUCTS[product].name.toLowerCase()} gone (${money(Math.round(taken * shop.prices[product]))} of stock).${guard ? '' : ' A security guard would deter this.'}`, 'warn');
+    const deterred = (cameras ? 0.7 : 1) * (guard ? 0.55 : 1);
+    const stocked = shop.objects.some((o) => defOf(o).kind === 'shelf' && (o.slots ?? []).some((sl) => sl.product && batchQty(sl.batches) > 0));
+    if (flow === 'retail' && stocked && rand.chance(EVENTS.theft.thiefPerHour * deterred)) emitCrook(shop, 'steal');
+    else if (['retail', 'counter', 'service', 'park'].includes(flow) && rand.chance(EVENTS.theft.vandalPerHour * deterred)) emitCrook(shop, 'vandal');
   }
+}
+
+let emitCrook: (shop: ShopState, kind: 'steal' | 'vandal') => void = () => {};
+/** The customer system registers how to put a crook on the street (avoids a circular import). */
+export function onCrook(fn: typeof emitCrook): void {
+  emitCrook = fn;
 }
 
 /** Staff with sticky fingers skim the till. Cameras or a guard eventually catch them. */
@@ -160,16 +147,13 @@ function staffTheft(s: GameState): void {
   }
 }
 
-/** Rivals close early when the player's shop is clearly winning. */
 function expire(s: GameState): void {
   const day = dayOf(s.time);
   for (let i = s.events.length - 1; i >= 0; i--) {
     const e = s.events[i];
     const shop = e.shopId !== undefined ? shopById(s, e.shopId) : undefined;
-    const beaten = e.type === 'rival' && shop && shop.reputation >= 72;
-    if (e.untilDay >= day && !beaten && !(e.shopId !== undefined && !shop)) continue;
+    if (e.untilDay >= day && !(e.shopId !== undefined && !shop)) continue;
     s.events.splice(i, 1);
-    if (e.type === 'rival' && shop) news(s, beaten ? `The rival near ${shop.name} could not compete with you and has closed.` : `The rival near ${shop.name} has gone out of business.`, 'good');
     if (e.type === 'shortage' && e.product) {
       s.market.mult[e.product] = (s.market.mult[e.product] ?? 1) / EVENTS.shortage.priceMult;
       news(s, `${PRODUCTS[e.product].name} supplies are back to normal.`, 'info');
@@ -183,7 +167,6 @@ export function eventsDaily(s: GameState): void {
   expire(s);
   applyHolidays(s);
   staffTheft(s);
-  if (rand.chance(C.rivalPerDay)) startRival(s);
   if (rand.chance(C.viralPerDay)) startViral(s);
   if (rand.chance(C.shortagePerDay)) startShortage(s);
   if (rand.chance(C.inspectionPerDay)) healthInspection(s);
@@ -191,7 +174,7 @@ export function eventsDaily(s: GameState): void {
 }
 
 export function eventsHourly(s: GameState): void {
-  shoplifting(s);
+  crooks(s);
 }
 
 /** Restore runtime effects of saved events after loading. */

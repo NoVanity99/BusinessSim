@@ -145,6 +145,9 @@ export function registerActorFrames(): void {
   emote('wait', (p) => p.r(2, 4, 1, 1, '#5c6278').r(4, 4, 1, 1, '#5c6278').r(6, 4, 1, 1, '#5c6278'));
   emote('question', (p) => p.r(3, 2, 3, 1, '#59b6d8').r(5, 3, 1, 1, '#59b6d8').r(4, 4, 1, 1, '#59b6d8').r(4, 6, 1, 1, '#59b6d8'));
   emote('food', (p) => p.r(2, 3, 5, 1, '#c77b47').r(2, 4, 5, 1, '#4ba86d').r(2, 5, 5, 1, '#8f563b').r(2, 6, 5, 1, '#c77b47'));
+  emote('alert', (p) => p.r(4, 1, 1, 4, '#d9483b').r(3, 1, 3, 2, '#d9483b').r(4, 6, 1, 1, '#d9483b'));
+  emote('rest', (p) => p.r(2, 2, 4, 1, '#59b6d8').r(4, 3, 1, 1, '#59b6d8').r(3, 4, 1, 1, '#59b6d8').r(2, 5, 4, 1, '#59b6d8').r(6, 5, 2, 1, '#8fd0ea').r(6, 7, 2, 1, '#8fd0ea').r(7, 6, 1, 1, '#8fd0ea'));
+  emote('chat', (p) => p.r(2, 2, 5, 3, '#5c6278').r(3, 5, 1, 1, '#5c6278').r(3, 3, 1, 1, '#ffffff').r(5, 3, 1, 1, '#ffffff'));
   emote('bag', (p) => p.box(2, 3, 5, 5, '#c8a480', '#8f673f').r(3, 2, 3, 1, '#8f673f'));
 
   // Soft blob shadow under people, and tiny birds.

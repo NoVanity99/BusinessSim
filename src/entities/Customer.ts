@@ -17,7 +17,10 @@ export type Step =
   | { t: 'buy'; product: string; done?: boolean }
   | { t: 'pay' }
   | { t: 'order'; items: string[] }
-  | { t: 'use'; service: string; optional?: boolean };
+  | { t: 'use'; service: string; optional?: boolean }
+  /** Shoplifters and troublemakers. */
+  | { t: 'steal' }
+  | { t: 'vandal' };
 
 export type ThoughtKind = 'good' | 'bad' | 'neutral';
 
@@ -91,6 +94,16 @@ export interface Customer {
   companions: number[];
   /** Set when they decided to go somewhere other than the player's shops. */
   elsewhere: boolean;
+  /** The rival shop they are walking to, or -1. */
+  rivalId: number;
+  /** Here to steal or cause trouble rather than shop. */
+  crook: boolean;
+  /** Stolen goods they are carrying. */
+  loot: CartLine[];
+  /** Seen stealing and running for it; guards give chase. */
+  fleeing: boolean;
+  /** Shop they robbed. */
+  fleeFrom: number;
 }
 
 export const cartTotal = (c: Customer): number => c.cart.reduce((a, l) => a + l.qty * l.price, 0);

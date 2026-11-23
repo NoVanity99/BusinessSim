@@ -30,6 +30,10 @@ export interface StaffAgent {
   taskSlot: number;
   /** What they are doing, for the info panel. */
   activity: string;
+  /** The task they are on: serve, restock, clean, cook, repair, guard, manage, break, chat, idle. */
+  task: string;
+  /** Game minute before which they will not take another break. */
+  breakAfter: number;
 }
 
 /** A paid-for food order being prepared. */
@@ -97,8 +101,6 @@ export const rt: {
   out: Set<number>;
   /** People per tile right now, so paths can steer around crowds. */
   crowd: Uint8Array;
-  /** Extra pull of rival businesses for a shop type; rival companies plug in here. */
-  rivalPull: (type: string) => number;
 } = {
   grid: undefined as unknown as Grid,
   customers: [],
@@ -122,7 +124,6 @@ export const rt: {
   heat: new Float32Array(0),
   out: new Set(),
   crowd: new Uint8Array(0),
-  rivalPull: () => 0,
 };
 
 export const regKey = (shopId: number, objectId: number): string => `${shopId}:${objectId}`;

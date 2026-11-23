@@ -47,6 +47,9 @@ export interface GameEvents {
   /** Something visual happened at a tile: dust when building, sparkles at a till. */
   fx: { kind: 'dust' | 'coins' | 'steam' | 'smoke' | 'splash'; x: number; y: number };
   'staff:removed': number;
+  /** A guard got hold of a fleeing shoplifter. */
+  'thief:caught': { customerId: number; by: number };
+  'rivals:changed': void;
   'staff:selected': number | null;
   'object:selected': { shopId: number; objectId: number } | null;
 }

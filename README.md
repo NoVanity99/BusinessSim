@@ -200,11 +200,12 @@ scripts/             Release helper and icon generator
 src/main.ts          Phaser config and scene list
 src/scenes/          Boot, menu and city scenes; city/ holds the build tool and world renderers
 src/systems/
-  ai/                Walk grid, A* pathfinding, customer brain, road vehicles
+  ai/                Walk grid, A* pathfinding, residents, customer brain (and shoplifters), road vehicles
   build/             Placing and selling furniture, walls and floors
   city/              City generator
   economy/           Finance ledger, market prices, stock and orders, property, loans, transfers, net worth
-  events/            Random events, rivals, news
+  events/            Random events, news, when thieves turn up
+  rivals/            Rival companies: their shops, pricing, expansion and staff poaching
   progress/          Levels and upgrades
   save/              Storage backend, save slots, autosave
   shop/              Opening hours, kitchens, production, pricing, cards, vending

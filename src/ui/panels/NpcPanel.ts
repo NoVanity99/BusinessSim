@@ -34,6 +34,7 @@ export function NpcPanel(): { el: HTMLElement; destroy(): void } {
       h('h3', h('span', c.name), h('button.close', { onclick: () => selectNpc(null) }, '×')),
       h('div.sub', h('span.tag', { style: { background: 'var(--info)' }, tip: P.description }, P.name), c.companions.length ? `  with ${c.companions.length} ${P.group?.[3] === 'child' ? (c.companions.length === 1 ? 'child' : 'children') : c.companions.length === 1 ? 'friend' : 'friends'}` : ''),
       h('div.sub', c.need ? `${STATE_LABEL[c.state]} · ${c.elsewhere ? 'going elsewhere for' : 'looking for'} a ${SHOP_TYPES[c.need].name.toLowerCase()}` : STATE_LABEL[c.state]),
+      c.fleeing && h('div.note', { style: { marginTop: '4px', color: 'var(--danger)' } }, 'Shoplifter! Running off with stolen goods.'),
       h('div.kv', h('span.k', 'Mood'), h('span.v', { class: cls }, word)),
       h('div.meter', h('div', { style: { width: `${c.mood}%`, background: c.mood >= 45 ? 'var(--accent)' : c.mood >= 28 ? 'var(--warn)' : 'var(--danger)' } })),
       h('div.kv', { tip: 'What they can spend on this trip.' }, h('span.k', 'Money'), h('span.v', money(c.budget))),
@@ -54,7 +55,7 @@ export function NpcPanel(): { el: HTMLElement; destroy(): void } {
       !resident && h('div.note', { style: { marginTop: '4px' } }, 'Just visiting the city.'),
       c.plan.length > 0 && h('div.section', 'Plans'),
       ...c.plan
-        .filter((st) => st.t !== 'pay')
+        .filter((st) => st.t !== 'pay' && st.t !== 'steal' && st.t !== 'vandal')
         .map((st) => {
           const i = c.plan.indexOf(st);
           const label = st.t === 'buy' ? `Buy ${PRODUCTS[st.product].name.toLowerCase()}` : st.t === 'order' ? `Order ${st.items.map((p) => PRODUCTS[p].name.toLowerCase()).join(', ')}` : st.t === 'use' ? USE_LABEL[st.service] ?? `Use ${PRODUCTS[st.service]?.name.toLowerCase() ?? st.service}` : '';

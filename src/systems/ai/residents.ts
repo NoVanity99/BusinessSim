@@ -1,4 +1,6 @@
 import { LOOK_COUNT } from '../../art/looks';
+import { allRivalShops, rivalOpenNow, rivalUtility, type RivalShop } from '../rivals/rivals';
+import { rt } from './runtime';
 import { bus } from '../../core/events';
 import { clamp } from '../../core/format';
 import { rand } from '../../core/rng';
@@ -11,7 +13,6 @@ import { fairPrice } from '../shop/pricing';
 import { isOpenNow } from '../shop/status';
 import { dayOf, hourOf } from '../time/clock';
 import { weatherDemand } from '../world/weather';
-import { rt } from './runtime';
 
 /** What a resident remembers about one shop. */
 export interface ShopMemory {
@@ -174,19 +175,24 @@ export const isRegular = (m: ShopMemory | undefined): boolean => !!m && m.visits
 
 /**
  * Having decided what kind of place they want, choose between the player's shops of that
- * kind and going somewhere else in town. Returns the chosen shop, or null for elsewhere.
+ * kind, rival companies' shops, and somewhere else in town.
  */
-export function chooseShop(s: GameState, r: Resident | null, persona: string, type: string, fromTile: number): ShopState | null {
-  const options = s.shops.filter((sh) => sh.type === type && isOpenNow(s, sh));
-  if (!options.length) return null;
-  // "Elsewhere" stands for every other business in the city: always available, never special.
-  const elsewhere = 1 + rt.rivalPull(type);
+export function chooseShop(s: GameState, r: Resident | null, persona: string, type: string, fromTile: number): { shop?: ShopState; rival?: RivalShop } {
+  const mine = s.shops.filter((sh) => sh.type === type && isOpenNow(s, sh));
+  const theirs = rivalOpenNow(s) ? allRivalShops(s).filter((sh) => sh.type === type) : [];
+  if (!mine.length && !theirs.length) return {};
   const TEMPERATURE = 0.6;
-  const weights = options.map((sh) => Math.exp(shopUtility(s, r, persona, sh, fromTile) / TEMPERATURE));
-  const other = Math.exp(elsewhere / TEMPERATURE);
-  let roll = rand.next() * (weights.reduce((a, b) => a + b, 0) + other);
-  for (let i = 0; i < options.length; i++) if ((roll -= weights[i]) <= 0) return options[i];
-  return null;
+  const sense = personaOf(persona).priceSense;
+  const weights = [
+    ...mine.map((sh) => Math.exp(shopUtility(s, r, persona, sh, fromTile) / TEMPERATURE)),
+    ...theirs.map((sh) => Math.exp(rivalUtility(s, sh, sense, fromTile) / TEMPERATURE)),
+    // "Elsewhere" stands for every other business in the city: always available, never special.
+    Math.exp(1 / TEMPERATURE),
+  ];
+  let roll = rand.next() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < mine.length; i++) if ((roll -= weights[i]) <= 0) return { shop: mine[i] };
+  for (let i = 0; i < theirs.length; i++) if ((roll -= weights[mine.length + i]) <= 0) return { rival: theirs[i] };
+  return {};
 }
 
 const REVIEW_TEXT: { test: RegExp; stars: [number, number]; lines: string[] }[] = [

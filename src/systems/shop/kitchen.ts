@@ -27,7 +27,7 @@ export function openTicket(shopId: number, customerId: number, items: string[]):
 /** Cooks on shift and physically in the kitchen, as work-rate multipliers. */
 function cookSpeeds(shop: ShopState): number[] {
   const s = session.state;
-  const speeds = s.staff.filter((e) => e.shopId === shop.id && e.role === 'cook' && rt.staff.get(e.id)?.state === 'working').map((e) => performance(e));
+  const speeds = s.staff.filter((e) => e.shopId === shop.id && rt.staff.get(e.id)?.state === 'working' && rt.staff.get(e.id)?.task === 'cook').map((e) => performance(e));
   if (speeds.length) return speeds;
   const counterStaffed = registers(shop).some((r) => operatorSpeed(s, shop, r) > 0);
   return counterStaffed ? [COUNTER_STAFF_COOK_SPEED] : [];

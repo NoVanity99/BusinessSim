@@ -114,6 +114,18 @@ export class NpcViews {
     map.delete(id);
   }
 
+  /** Staff emotes share the customer pool under negative keys. */
+  private staffEmote(staffId: number, name: string, x: number, y: number): void {
+    const key = -staffId - 1;
+    let e = this.emotes.get(key);
+    if (!e) {
+      e = this.emotePool.pop() ?? this.scene.add.image(0, 0, ATLAS, `emote:${name}`).setScale(SCALE).setOrigin(0.5, 1);
+      e.setVisible(true);
+      this.emotes.set(key, e);
+    }
+    e.setFrame(`emote:${name}`).setPosition(x, y).setDepth(DEPTH.npcs + 2);
+  }
+
   private dropEmote(id: number): void {
     const e = this.emotes.get(id);
     if (!e) return;
@@ -184,6 +196,7 @@ export class NpcViews {
 
   /** What a customer is visibly doing, as an emote name, or null. */
   private statusEmote(c: Customer): string | null {
+    if (c.fleeing) return 'alert';
     if (c.state === 'queue' && c.waited > 3) return 'wait';
     if (c.state === 'awaitOrder') return c.waited > 4 ? 'wait' : null;
     if (c.state === 'waitStation') return 'wait';
@@ -262,6 +275,12 @@ export class NpcViews {
       if (visible && person) {
         const color = Phaser.Display.Color.HexStringToColor(EMPLOYEES.roles[person.role]?.color ?? '#ffffff').color;
         this.ring.fillStyle(0x10141c, 1).fillRect(a.x * TILE - 5, a.y * TILE - 33, 10, 8).fillStyle(color, 1).fillRect(a.x * TILE - 3, a.y * TILE - 31, 6, 4);
+        // What they are up to, when it is not plain work.
+        const mark = a.task === 'chase' ? 'alert' : a.task === 'break' ? 'rest' : a.task === 'chat' && a.state === 'working' ? 'chat' : null;
+        if (mark && showEmotes) this.staffEmote(a.id, mark, a.x * TILE + 11, a.y * TILE - 26);
+        else this.dropEmote(-a.id - 1);
+      } else {
+        this.dropEmote(-a.id - 1);
       }
     }
 

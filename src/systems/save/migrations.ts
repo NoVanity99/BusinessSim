@@ -76,6 +76,17 @@ export const MIGRATIONS: Migration[] = [
       for (const shop of s.shops ?? []) shop.reviews ??= [];
     },
   },
+  {
+    to: 5,
+    name: 'Add rival companies; the old "rival nearby" event is replaced by real rival shops',
+    up(s) {
+      // Companies are created when the simulation starts.
+      s.rivals ??= [];
+      s.nextRivalShopId ??= 1;
+      s.offers ??= [];
+      s.events = (s.events ?? []).filter((e: { type: string }) => e.type !== 'rival');
+    },
+  },
 ];
 
 export const LATEST_SAVE_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.to), 1);

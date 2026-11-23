@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0 (unreleased) - Overhaul phase 4: staff, rivals and thieves
+
+- **Task priorities**: every role now has an ordered list of jobs and works down it, taking the first one with something waiting. A cashier serves while there are customers, restocks when the shop is quiet and cleans when the shelves are full; stockers and cooks step in elsewhere when their own work is done. Reorder each role's list per shop on the new **Task priorities** board in the Staff tab. Defaults live in `src/data/employees.json`.
+- **Breaks and chatting**: tired staff take a short break when there is no queue and come back with more energy; staff with nothing to do chat, which lifts morale a little. Lazy staff sometimes ignore low-priority jobs. Small icons over their heads show a break, a chat or a chase.
+- Customers no longer walk out because the cashier stepped away to restock: they queue and the cashier comes back.
+- **Rival companies** (`src/data/rivals.json`): three companies with their own cash and temperament rent free lots and open real shops you can see on the map. Residents choose between your shops, theirs and the rest of town on price, quality and distance, and you can watch custom walk to their door. Each day they react to you: undercutting your prices, holding sales, opening next to your best shop, poaching underpaid or unhappy staff (match the offer or lose them at midnight), and closing shops that keep losing money. Click a rival shop to compare prices and quality, or buy it out. The Company window ranks every company by worth.
+- Customers who think you are too dear now say where it is cheaper.
+- **Shoplifters and troublemakers** are people you can see. A thief walks in, takes from your most valuable shelf and leaves. Staff, cameras and above all a security guard make it likelier they are spotted; guards then give chase and, if they catch up, the goods go back to the stock room. Cameras sometimes get the value back afterwards. Troublemakers wreck a machine or make a mess unless a guard throws them out.
+- Removed the old "rival nearby" event and the hourly shoplifting dice roll, which these replace.
+- Save format 5 (adds rival companies and job offers). Older saves upgrade automatically.
+
 ## 1.4.0 (unreleased) - Overhaul phase 3: customer AI
 
 Customers are no longer anonymous dice rolls. The city now has 380 residents who persist from day to day and across saves, plus tourists passing through.
