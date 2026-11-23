@@ -6,6 +6,7 @@ import { music, sfx } from '../systems/audio/audio';
 import { installAutosave, loadGame, saveGame } from '../systems/save/saves';
 import { PauseMenu } from '../ui/screens/PauseMenu';
 import { Sidebar } from '../ui/panels/Windows';
+import { Guide } from '../ui/hud/Guide';
 import { bus, toast } from '../core/events';
 import { clamp, money } from '../core/format';
 import { session, shopOnLot } from '../core/state';
@@ -59,6 +60,7 @@ export class CityScene extends Phaser.Scene {
   private npcViews!: NpcViews;
   private overlayGfx!: Phaser.GameObjects.Graphics;
   private overlayTimer = 0;
+  private stepTimer = 0;
   private frame = 0;
   /** Remembers where each shop stood so its tiles can be freed when it is removed. */
   private shopLots = new Map<number, number>();
@@ -109,6 +111,7 @@ export class CityScene extends Phaser.Scene {
       bus.on('game:won', () => this.showEnding(true)),
       bus.on('game:over', () => this.showEnding(false)),
       bus.on('level:up', () => sfx('good')),
+      bus.on('time:hour', () => session.state.shops.forEach((sh) => this.shopViews.markStockDirty(sh.id))),
       bus.on('sale', ({ x, y }) => sfx('register', this.audibility(x, y))),
       bus.on('door:enter', ({ shopId }) => {
         const lot = session.city.lots[this.shopLots.get(shopId) ?? -1];
@@ -256,7 +259,7 @@ export class CityScene extends Phaser.Scene {
       const lot = session.city.lots[lotId];
       this.cameras.main.centerOn((lot.x + lot.w / 2) * TILE, (lot.y + lot.h / 2) * TILE);
     }, () => this.openPauseMenu());
-    const parts = [TopBar(), this.sidebar, LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel(), StaffInfoPanel()];
+    const parts = [TopBar(), this.sidebar, LotPanel(), ShopPanel(), ObjectPanel(), NpcPanel(), StaffInfoPanel(), Guide()];
     uiRoot().append(...parts.map((p) => p.el), h('div.hint', 'Drag or WASD to move · Scroll to zoom · Space to pause'));
     this.cleanups.push(...parts.map((p) => p.destroy), mountToasts());
   }
@@ -521,6 +524,14 @@ export class CityScene extends Phaser.Scene {
     if (this.frame === 0) for (const shop of session.state.shops) if (shop.objects.some((o) => defOf(o).kind === 'producer' && (o.progress ?? 0) > 0)) this.shopViews.markStockDirty(shop.id);
     this.npcViews.update(dt);
     this.shopViews.flush();
+    this.stepTimer -= dt * session.state.time.speed;
+    if (this.stepTimer <= 0 && cam.zoom >= 1.3 && session.state.time.speed > 0) {
+      this.stepTimer = 0.32;
+      const v = cam.worldView;
+      let near = 0;
+      for (const c of rt.customers) if (c.x * TILE > v.x && c.x * TILE < v.right && c.y * TILE > v.y && c.y * TILE < v.bottom && c.path.length) near++;
+      if (near) sfx('footstep', Math.min(0.5, 0.15 + near * 0.02));
+    }
     // Overlays read live data; refresh about once a second.
     this.overlayTimer += dt;
     if (ui.overlay && this.overlayTimer > 1) {

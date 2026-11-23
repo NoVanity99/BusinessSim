@@ -286,7 +286,7 @@ function spawn(): Customer | null {
   if (need) {
     const s = session.state;
     const today = dayOf(s.time);
-    const known = s.shops.filter((sh) => sh.type === need && isOpenNow(s, sh) && rand.chance((sh.reputation / 100) * 0.3 + (sh.eventDay === today ? 0.5 : 0)));
+    const known = s.shops.filter((sh) => sh.type === need && isOpenNow(s, sh) && rand.chance((sh.reputation / 100) * (POPULATION.wordOfMouth + (SHOP_TYPES[sh.type].destination ?? 0)) * shopDemandMult(s, sh) + (sh.eventDay === today ? 0.5 : 0)));
     if (known.length) headToShop(c, rand.pick(known));
   }
   return c;
@@ -888,7 +888,7 @@ function finishUsing(c: Customer): void {
 
 // ---------- Vending machines ----------
 
-const VENDING_CHANCE = 0.05;
+const VENDING_CHANCE = 0.14;
 
 /** Anyone walking right past a vending machine may buy something on impulse. */
 function passVending(c: Customer, tile: number): void {
@@ -960,7 +960,7 @@ export function updateAi(dt: number): void {
   const target = targetPopulation();
   if (rt.customers.length < target) {
     rt.spawnDebt += dt * Math.max(1, target / 14);
-    let budget = 6;
+    let budget = 3;
     while (rt.spawnDebt >= 1 && budget-- > 0 && rt.customers.length < target) {
       rt.spawnDebt--;
       spawn();

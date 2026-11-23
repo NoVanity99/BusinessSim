@@ -54,6 +54,8 @@ export interface Car {
   timer: number;
   /** Services still to use at the station they pulled into. */
   todo: string[];
+  /** Stations already considered on this trip. */
+  seen: number[];
   /** Where to rejoin the road. */
   roadTile: number;
   /** Vending van: machines still to visit, as object ids. */

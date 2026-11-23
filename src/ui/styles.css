@@ -284,3 +284,16 @@ button.locked { background: var(--panel-2); border-color: var(--border); color: 
 .overlay-legend .ramp { height: 10px; width: 180px; border-radius: 3px; margin: 5px 0 3px; }
 .overlay-legend .ends { display: flex; justify-content: space-between; color: var(--dim); font-size: 11.5px; }
 .modal-text { line-height: 1.5; margin-bottom: 14px; }
+
+/* ---------- Getting-started checklist ---------- */
+.guide { left: 50%; transform: translateX(-50%); top: 54px; width: 300px; padding: 10px 12px; }
+.guide h3 { font-size: 14px; }
+.guide .step { font-size: 13px; padding: 1px 0; color: var(--dim); }
+.guide .step.done { color: var(--accent); }
+.guide .step.now { color: var(--text); font-weight: 600; }
+.guide .mark { display: inline-block; width: 16px; }
+.guide .note { margin-top: 6px; }
+
+.guide { z-index: 0; }
+.float-window, .shop-panel, .lot-panel, .object-panel, .npc-panel { z-index: 2; }
+.overlay { z-index: 5; }

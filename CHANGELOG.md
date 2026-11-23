@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0 - Milestone 9: balance, polish and performance
+
+- Balance pass from full-day simulated runs of all nine businesses: more people on the street, demand shared more evenly between business types, word of mouth brings shoppers from across town, parks and card shops act as destinations, lower rents in the busiest districts, and machine breakdowns cut to roughly one every few days instead of several a day.
+- Gas stations: each passing car decides once per trip; fuel margin and traffic retuned.
+- Performance: the simulation costs about 0.05 ms a frame at 1x and 0.14 ms at 4x with 320 pedestrians (measured), and spawning is capped at three path searches a frame.
+- Getting-started checklist that follows your progress through the first shop.
+- The Overview tab flags prices that are far below or far above what customers would pay.
+- Litter appears on the floor as a shop gets dirty; footsteps when zoomed in close.
+- End-to-end test of the Electron app: new game, play, save to disk, quit to menu, continue.
+
 ## 0.8.0 - Milestone 8: events, progression, upgrades, loans, rivals
 
 - Player level and XP from serving customers, sales, opening businesses and surviving days. Business types unlock at levels 1 to 5; the top bar shows level and average reputation.

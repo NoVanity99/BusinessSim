@@ -54,7 +54,7 @@
    "manager",
    "security"
   ],
-  "demand": 0.16
+  "demand": 0.13
  },
  "coffee": {
   "name": "Coffee Shop & Bakery",
@@ -103,8 +103,9 @@
    "cleaner",
    "manager"
   ],
-  "demand": 0.09,
-  "decorWeight": 2
+  "demand": 0.11,
+  "decorWeight": 2,
+  "destination": 0.1
  },
  "laundromat": {
   "name": "Laundromat",
@@ -147,7 +148,7 @@
    "mechanic",
    "manager"
   ],
-  "demand": 0.05
+  "demand": 0.06
  },
  "fastfood": {
   "name": "Fast Food Restaurant",
@@ -199,7 +200,8 @@
    "manager",
    "mechanic"
   ],
-  "demand": 0.11
+  "demand": 0.14,
+  "destination": 0.1
  },
  "cardshop": {
   "name": "Card & Collectibles Shop",
@@ -247,7 +249,8 @@
    "manager",
    "security"
   ],
-  "demand": 0.05
+  "demand": 0.06,
+  "destination": 0.45
  },
  "gas": {
   "name": "Gas Station",
@@ -438,6 +441,7 @@
    "manager",
    "security"
   ],
-  "demand": 0.06
+  "demand": 0.07,
+  "destination": 0.6
  }
 }

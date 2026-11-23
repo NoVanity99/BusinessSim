@@ -173,6 +173,8 @@ export interface ShopTypeDef {
   /** Relative rate of cars pulling in. */
   carDemand?: number;
   openAir?: boolean;
+  /** Extra pull on shoppers from across town, 0-1, on top of reputation. */
+  destination?: number;
   /** Share of the lot's depth taken by the building; the rest is an open forecourt. */
   shellDepth?: number;
   forecourtFloor?: string;
@@ -211,6 +213,8 @@ export interface PopulationConfig {
   walkSpeed: number;
   /** How close (in tiles) a shopper must pass to notice a shop. */
   noticeRadius: number;
+  /** Share of shoppers who head straight for a shop they have heard of, at reputation 100. */
+  wordOfMouth: number;
   budgetMin: number;
   budgetMax: number;
   /** Game minutes a customer will queue before giving up. */

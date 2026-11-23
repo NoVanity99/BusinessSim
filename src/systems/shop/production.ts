@@ -12,7 +12,7 @@ import { dayOf } from '../time/clock';
 import { breakMult } from './modifiers';
 
 /** Share of the wholesale price the market pays for goods you make yourself. */
-export const FACTORY_SALE_SHARE = 0.85;
+export const FACTORY_SALE_SHARE = 0.9;
 
 /** What a producer in this shop can be set to make. */
 export function recipesFor(shop: ShopState, obj: PlacedObject): string[] {

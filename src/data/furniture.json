@@ -205,7 +205,7 @@
   "description": "Customers pay per wash. Breaks down now and then.",
   "service": "svc_wash",
   "capacity": 1,
-  "breakChance": 0.035,
+  "breakChance": 0.012,
   "repairCost": 70,
   "power": 5
  },
@@ -222,7 +222,7 @@
   "description": "Customers pay per dry cycle. Breaks down now and then.",
   "service": "svc_dry",
   "capacity": 1,
-  "breakChance": 0.03,
+  "breakChance": 0.01,
   "repairCost": 60,
   "power": 7
  },
@@ -423,7 +423,7 @@
   "description": "Mixes ingredients into sauces. Needs staff on shift.",
   "station": "mix",
   "power": 8,
-  "breakChance": 0.02,
+  "breakChance": 0.012,
   "repairCost": 150
  },
  "ind_oven": {
@@ -439,7 +439,7 @@
   "description": "Bakes in bulk. Needs staff on shift.",
   "station": "bake",
   "power": 12,
-  "breakChance": 0.02,
+  "breakChance": 0.012,
   "repairCost": 160
  },
  "bottler": {
@@ -455,7 +455,7 @@
   "description": "Mixes and bottles drinks. Needs staff on shift.",
   "station": "bottle",
   "power": 10,
-  "breakChance": 0.025,
+  "breakChance": 0.015,
   "repairCost": 180
  },
  "roaster": {
@@ -471,7 +471,7 @@
   "description": "Roasts green beans for your coffee shops. Needs staff on shift.",
   "station": "roast",
   "power": 9,
-  "breakChance": 0.02,
+  "breakChance": 0.012,
   "repairCost": 150
  },
  "pallet_rack": {
@@ -501,7 +501,7 @@
   "service": "fuel",
   "capacity": 1,
   "vehicle": true,
-  "breakChance": 0.01,
+  "breakChance": 0.004,
   "repairCost": 120,
   "power": 2,
   "outdoor": true
@@ -534,7 +534,7 @@
   "service": "svc_carwash",
   "capacity": 1,
   "vehicle": true,
-  "breakChance": 0.04,
+  "breakChance": 0.015,
   "repairCost": 160,
   "power": 10,
   "outdoor": true
@@ -609,7 +609,7 @@
   "capacity": 3,
   "duration": 5,
   "fun": 11,
-  "breakChance": 0.02,
+  "breakChance": 0.012,
   "repairCost": 140,
   "power": 4,
   "outdoor": true
@@ -629,7 +629,7 @@
   "capacity": 12,
   "duration": 14,
   "fun": 13,
-  "breakChance": 0.015,
+  "breakChance": 0.01,
   "repairCost": 260,
   "power": 12,
   "outdoor": true
@@ -649,7 +649,7 @@
   "capacity": 8,
   "duration": 5,
   "fun": 8,
-  "breakChance": 0.02,
+  "breakChance": 0.01,
   "repairCost": 150,
   "power": 5,
   "outdoor": true
@@ -669,7 +669,7 @@
   "capacity": 8,
   "duration": 6,
   "fun": 14,
-  "breakChance": 0.04,
+  "breakChance": 0.02,
   "repairCost": 220,
   "power": 9,
   "outdoor": true
@@ -688,7 +688,7 @@
   "service": "svc_arcade",
   "capacity": 1,
   "fun": 5,
-  "breakChance": 0.02,
+  "breakChance": 0.008,
   "repairCost": 50,
   "power": 2
  },

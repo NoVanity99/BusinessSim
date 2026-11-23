@@ -661,7 +661,7 @@
   "name": "Fuel (10 L)",
   "category": "fuel",
   "storage": "ambient",
-  "wholesale": 16.6,
+  "wholesale": 16.0,
   "market": 18.5,
   "caseSize": 50,
   "shelfLife": 0,
@@ -877,7 +877,7 @@
    "sugar": 1
   },
   "station": "bake",
-  "prepMinutes": 40,
+  "prepMinutes": 30,
   "batch": 24
  },
  "hotsauce": {
@@ -896,7 +896,7 @@
    "vinegar": 1
   },
   "station": "mix",
-  "prepMinutes": 35,
+  "prepMinutes": 28,
   "batch": 12
  },
  "mangosauce": {

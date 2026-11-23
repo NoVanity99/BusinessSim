@@ -107,6 +107,17 @@ export class ShopViews {
   private drawBars(shop: ShopState, v: View): void {
     const g = v.bars;
     g.clear();
+    // Litter: the dirtier the shop, the more of it lies around. Positions are fixed per shop so it does not flicker.
+    const lot = session.city.lots[shop.lotId];
+    const bits = Math.floor(shop.dirt / 7);
+    for (let i = 0; i < bits; i++) {
+      const tx = (shop.id * 7 + i * 13) % lot.w;
+      const ty = (shop.id * 3 + i * 29) % lot.h;
+      if (shop.wall[ty * lot.w + tx] !== WALL_NONE || !shop.floor[ty * lot.w + tx]) continue;
+      const px = (lot.x + tx) * TILE + 6 + ((i * 11) % 18);
+      const py = (lot.y + ty) * TILE + 6 + ((i * 17) % 18);
+      g.fillStyle(i % 3 ? 0x7a6a55 : 0xd9d2c0, 0.9).fillRect(px, py, 4, 3);
+    }
     for (const o of shop.objects) {
       const def = defOf(o);
       if (o.slots) {

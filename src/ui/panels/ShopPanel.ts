@@ -67,6 +67,9 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
     const has = (pred: (o: (typeof shop.objects)[number]) => boolean): boolean => shop.objects.some(pred);
     const broken = shop.objects.filter((o) => o.broken).length;
     const menu = type.products.filter((p) => PRODUCTS[p].kind === 'menu');
+    const priced = flow === 'factory' ? [] : type.products.filter((p) => PRODUCTS[p].market > 0 && shop.prices[p] !== undefined);
+    const cheap = priced.filter((p) => shop.prices[p] < fairPrice(s, shop, p) * 0.8).length;
+    const dear = priced.filter((p) => shop.prices[p] > fairPrice(s, shop, p) * 1.25).length;
     const problems = [
       needsCheckout && !regs.length && (flow === 'counter' ? 'No order counter. Customers cannot order.' : 'No checkout. Customers cannot pay.'),
       needsCheckout && regs.length > 0 && !staffed && 'Nobody is working the counter.',
@@ -80,6 +83,8 @@ function overviewTab(s: GameState, shop: ShopState): Tab {
       flow === 'depot' && !has((o) => defOf(o).kind === 'vending') && 'No vending machines placed yet. Pick one in Build and click any pavement.',
       shop.type === 'gas' && !has((o) => defOf(o).service === 'fuel') && 'No fuel pumps.',
       shop.type === 'gas' && has((o) => defOf(o).service === 'fuel') && inStorage(shop, 'fuel') <= 0 && 'The fuel tanks are empty.',
+      cheap >= 2 && `${cheap} prices are well below what customers here would pay. See the Prices tab.`,
+      dear >= 1 && `${dear} price${dear === 1 ? ' is' : 's are'} high enough to drive customers away.`,
       broken > 0 && `${broken} machine${broken === 1 ? ' is' : 's are'} broken. Click one to repair it.`,
       shop.closed && 'Closed by you.',
     ].filter(Boolean) as string[];

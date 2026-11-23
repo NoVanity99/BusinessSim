@@ -98,6 +98,7 @@ function spawnCar(van?: Car['van']): Car | null {
     objId: -1,
     timer: 0,
     todo: [],
+    seen: [],
     roadTile: from,
     van,
   };
@@ -163,7 +164,8 @@ function considerStations(s: GameState, car: Car): void {
     const lot = session.city.lots[shop.lotId];
     const dx = Math.max(lot.x - car.x, 0, car.x - (lot.x + lot.w));
     const dy = Math.max(lot.y - car.y, 0, car.y - (lot.y + lot.h));
-    if (Math.max(dx, dy) > 3) continue;
+    if (Math.max(dx, dy) > 3 || car.seen.includes(shop.id)) continue;
+    car.seen.push(shop.id);
     if (!rand.chance(TRAFFIC.fuelStopChance * type.carDemand * (0.4 + shop.reputation / 83))) continue;
     const pump = claim(s, shop, 'fuel', car);
     if (!pump) continue;

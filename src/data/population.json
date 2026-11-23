@@ -1,6 +1,6 @@
 {
-  "basePopulation": 170,
-  "maxPopulation": 320,
+  "basePopulation": 220,
+  "maxPopulation": 380,
   "hourly": [
     0.06,
     0.04,
@@ -109,11 +109,12 @@
     "Gray"
   ],
   "traffic": {
-    "cars": 26,
+    "cars": 40,
     "speed": 9,
-    "fuelStopChance": 0.14,
+    "fuelStopChance": 0.6,
     "washChance": 0.3,
     "martChance": 0.35,
     "repairPerHour": 0.5
-  }
+  },
+  "wordOfMouth": 0.55
 }
